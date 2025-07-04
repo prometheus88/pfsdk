@@ -68,6 +68,18 @@ jobs:
           print('✅ Generated code imports successfully')
           "
 
+      - name: Generate Python types from protobuf
+        run: python scripts/generate_python_types.py
+
+      - name: Commit generated files to main branch
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -f postfiat/types/enums.py postfiat/exceptions.py postfiat/v3/*_pb2.py postfiat/v3/*_pb2_grpc.py
+          git diff --staged --quiet || git commit -m "chore: add generated files for main branch [skip ci]"
+          git push
+
   tests:
     name: Tests
     runs-on: ubuntu-latest
