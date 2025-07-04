@@ -1,0 +1,235 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "postfiat-sdk"
+version = "3.0.0"
+description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    { name = "PostFiat Team", email = "team@postfiat.org" }
+]
+maintainers = [
+    { name = "PostFiat Team", email = "team@postfiat.org" }
+]
+keywords = [
+    "cryptocurrency", "wallet", "xrp", "ledger", "sdk", "blockchain", 
+    "task-management", "encrypted-messaging", "postfiat", "crypto"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Distributed Computing",
+]
+requires-python = ">=3.10"
+
+# Core SDK dependencies (minimal, no GUI dependencies in core)
+dependencies = [
+    "xrpl-py>=2.0.0",
+    "cryptography>=41.0.7",
+    "pycryptodome>=3.18.0",
+    "requests>=2.31.0",
+    "pynacl>=1.5.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.24.0",
+    "aiofiles>=23.0.0",
+    "protobuf>=6.31.1",
+    "grpcio-tools>=1.62.0",
+    "python-dotenv-vault",
+    "openai>=1.93.0",
+    "loguru>=0.7.0",
+    "structlog>=23.0.0",
+    "sqlmodel>=0.0.24",
+    "alembic>=1.12.1",
+    "fastapi>=0.104.0",
+    "pydantic-ai>=0.0.1",
+    "googleapis-common-protos>=1.70.0",
+    "protoc-gen-openapiv2>=0.0.1",
+]
+
+[project.optional-dependencies]
+# GUI reference implementation dependencies
+gui = [
+    "PyQt6>=6.4.0",
+]
+
+# CLI reference implementation dependencies  
+cli = [
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "questionary>=1.10.0",
+]
+
+# Development and testing dependencies
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "grpcio-tools>=1.62.0",  # For protobuf compilation
+]
+
+# Documentation dependencies
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings[python]>=0.22.0",
+]
+
+# Jupyter notebook examples
+notebooks = [
+    "jupyter>=1.0.0",
+    "jupyterlab>=4.0.0",
+    "ipywidgets>=8.0.0",
+    "matplotlib>=3.7.0",
+]
+
+# Integration dependencies (for Discord bot compatibility, etc.)
+integrations = [
+    "PyGithub>=1.59.0",
+    "google-api-python-client>=2.95.0",
+    "watchdog>=3.0.0",
+]
+
+# Advanced observability with Pydantic Logfire
+observability = [
+    "logfire>=0.1.0",
+]
+
+# LLM provider dependencies (optional)
+llm = [
+    "anthropic>=0.25.0",  # For Anthropic Claude
+    "google-generativeai>=0.3.0",  # For Google Gemini
+    "mistralai>=0.4.0",  # For Mistral AI
+    # httpx and openai are already in core dependencies
+    # Ollama doesn't require additional dependencies (uses httpx)
+]
+
+# All optional dependencies for complete installation
+all = [
+    "postfiat-wallet[gui,cli,dev,docs,notebooks,integrations,observability,llm]"
+]
+
+[project.urls]
+Homepage = "https://github.com/postfiat/postfiat-wallet"
+Documentation = "https://docs.postfiat.org/wallet"
+Repository = "https://github.com/postfiat/postfiat-wallet"
+Issues = "https://github.com/postfiat/postfiat-wallet/issues"
+Changelog = "https://github.com/postfiat/postfiat-wallet/blob/main/CHANGELOG.md"
+
+[project.scripts]
+postfiat-wallet-cli = "reference_implementations.cli:main"
+postfiat-wallet-gui = "reference_implementations.gui:main"
+postfiat-build-protobuf = "scripts.build_protobuf:build_protobuf"
+
+[project.entry-points."postfiat.wallet.storage"]
+sqlite = "postfiat.wallet.storage.sqlite:SQLiteStorage"
+memory = "postfiat.wallet.storage.memory:MemoryStorage"
+
+[project.entry-points."postfiat.wallet.encryption"]
+default = "postfiat.wallet.crypto.encryption:DefaultEncryption"
+
+[tool.hatch.build.targets.wheel]
+packages = ["postfiat", "reference_implementations"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"postfiat/wallet/py.typed" = "postfiat/wallet/py.typed"
+
+# Development tools configuration
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Exclude auto-generated files
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["postfiat"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "xrpl.*",
+    "PyQt6.*",
+    "nacl.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gui: marks tests that require GUI",
+]
+
+[tool.coverage.run]
+source = ["postfiat.wallet"]
+omit = [
+    "*/tests/*",
+    "*/examples/*", 
+    "*/docs/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
