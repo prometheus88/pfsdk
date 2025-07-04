@@ -124,33 +124,32 @@ llm = [
 
 # All optional dependencies for complete installation
 all = [
-    "postfiat-wallet[gui,cli,dev,docs,notebooks,integrations,observability,llm]"
+    "postfiat[gui,cli,dev,docs,notebooks,integrations,observability,llm]"
 ]
 
 [project.urls]
-Homepage = "https://github.com/postfiat/postfiat-wallet"
-Documentation = "https://docs.postfiat.org/wallet"
-Repository = "https://github.com/postfiat/postfiat-wallet"
-Issues = "https://github.com/postfiat/postfiat-wallet/issues"
-Changelog = "https://github.com/postfiat/postfiat-wallet/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/postfiat/pfsdk"
+Documentation = "https://docs.postfiat.org/sdk"
+Repository = "https://github.com/postfiat/pfsdk"
+Issues = "https://github.com/postfiat/pfsdk/issues"
+Changelog = "https://github.com/postfiat/pfsdk/blob/main/CHANGELOG.md"
 
 [project.scripts]
 postfiat-wallet-cli = "reference_implementations.cli:main"
 postfiat-wallet-gui = "reference_implementations.gui:main"
 postfiat-build-protobuf = "scripts.build_protobuf:build_protobuf"
 
-[project.entry-points."postfiat.wallet.storage"]
-sqlite = "postfiat.wallet.storage.sqlite:SQLiteStorage"
-memory = "postfiat.wallet.storage.memory:MemoryStorage"
+[project.entry-points."postfiat.storage"]
+sqlite = "postfiat.storage.sqlite:SQLiteStorage"
+memory = "postfiat.storage.memory:MemoryStorage"
 
-[project.entry-points."postfiat.wallet.encryption"]
-default = "postfiat.wallet.crypto.encryption:DefaultEncryption"
+[project.entry-points."postfiat.encryption"]
+default = "postfiat.crypto.encryption:DefaultEncryption"
 
 [tool.hatch.build.targets.wheel]
 packages = ["postfiat", "reference_implementations"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"postfiat/wallet/py.typed" = "postfiat/wallet/py.typed"
+# No forced includes needed for now
 
 # Development tools configuration
 [tool.black]
@@ -213,7 +212,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["postfiat.wallet"]
+source = ["postfiat"]
 omit = [
     "*/tests/*",
     "*/examples/*", 
