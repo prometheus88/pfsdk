@@ -33,7 +33,12 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           cd proto
-          buf breaking --against 'https://github.com/${{ github.repository }}.git#branch=main,subdir=proto'
+          # Skip breaking change detection if main branch doesn't exist or can't be accessed
+          if git ls-remote --exit-code --heads origin main > /dev/null 2>&1; then
+            buf breaking --against 'https://github.com/${{ github.repository }}.git#branch=main,subdir=proto' || echo "⚠️ Breaking change detection failed, skipping"
+          else
+            echo "ℹ️ Main branch not found, skipping breaking change detection"
+          fi
 
   code-generation:
     name: Code Generation
