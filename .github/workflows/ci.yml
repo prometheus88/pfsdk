@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, dev ]
 
+permissions:
+  contents: write  # Required for auto-committing generated files
+
 env:
   PYTHON_VERSION: "3.12"
 
@@ -77,8 +80,12 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -f postfiat/types/enums.py postfiat/exceptions.py postfiat/v3/*_pb2.py postfiat/v3/*_pb2_grpc.py
-          git diff --staged --quiet || git commit -m "chore: add generated files for main branch [skip ci]"
-          git push
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: add generated files for main branch [skip ci]"
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
 
   tests:
     name: Tests
