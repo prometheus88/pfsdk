@@ -21,7 +21,7 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from postfiat.v3 import messages_pb2
+from postfiat.v3 import messages_pb2, errors_pb2
 # Import other services when they exist
 try:
     from postfiat.v3 import wallet_service_pb2
@@ -48,6 +48,7 @@ class ProtobufTestGenerator:
         self.output_base = Path(output_base)
         self.modules = {
             'messages': messages_pb2,
+            'errors': errors_pb2,
         }
         self.timestamp = datetime.now().isoformat()
         
@@ -150,7 +151,7 @@ from pydantic import ValidationError
 from google.protobuf.message import Message
 
 # Import all protobuf message types
-from postfiat.v3 import messages_pb2
+from postfiat.v3 import messages_pb2, errors_pb2
 
 
 class TestProtobufValidation:
@@ -401,7 +402,7 @@ from typing import Any, Dict, List
 from google.protobuf.message import Message
 
 # Import all protobuf message types
-from postfiat.v3 import messages_pb2
+from postfiat.v3 import messages_pb2, errors_pb2
 
 
 class TestSerializationIntegrity:
