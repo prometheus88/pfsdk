@@ -208,8 +208,202 @@ class Wallet(SQLModel, table=True):
     balance: float = Field(default=0.0, ge=0)
     currency: str = Field(default="USD")
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     # Automatic Pydantic validation + SQLAlchemy ORM
+```
+
+### Data Model Relationships
+```mermaid
+classDiagram
+    class User {
+        +str id
+        +str email
+        +str name
+        +datetime created_at
+        +bool is_active
+        +create_wallet()
+        +get_wallets()
+    }
+
+    class Wallet {
+        +str id
+        +str user_id
+        +float balance
+        +str currency
+        +datetime created_at
+        +add_transaction()
+        +get_balance()
+    }
+
+    class Transaction {
+        +str id
+        +str wallet_id
+        +float amount
+        +str type
+        +str description
+        +datetime timestamp
+        +validate_amount()
+    }
+
+    class AIAgent {
+        +str id
+        +str name
+        +str model_type
+        +dict config
+        +datetime created_at
+        +process_request()
+        +get_response()
+    }
+
+    class AIConversation {
+        +str id
+        +str user_id
+        +str agent_id
+        +list messages
+        +datetime started_at
+        +add_message()
+        +get_history()
+    }
+
+    class Message {
+        +str id
+        +str conversation_id
+        +str content
+        +str role
+        +datetime timestamp
+        +MessageType type
+        +EncryptionMode encryption
+    }
+
+    %% Relationships
+    User ||--o{ Wallet : owns
+    Wallet ||--o{ Transaction : contains
+    User ||--o{ AIConversation : participates
+    AIAgent ||--o{ AIConversation : handles
+    AIConversation ||--o{ Message : contains
+
+    %% Enums
+    class MessageType {
+        <<enumeration>>
+        CONTEXTUAL_MESSAGE
+        MULTIPART_MESSAGE_PART
+        RESERVED_100
+    }
+
+    class EncryptionMode {
+        <<enumeration>>
+        NONE
+        LEGACY_SHARED
+        NACL_SECRETBOX
+        NACL_BOX
+    }
+
+    Message --> MessageType
+    Message --> EncryptionMode
+```
+
+## 🏗️ System Components
+
+### Component Relationships
+```mermaid
+graph TB
+    subgraph "External Systems"
+        EXT1[OpenAI API]
+        EXT2[Anthropic API]
+        EXT3[Database]
+        EXT4[Redis Cache]
+    end
+
+    subgraph "PostFiat SDK Core"
+        subgraph "API Layer"
+            REST[FastAPI REST Server]
+            GRPC[gRPC Server]
+            WS[WebSocket Server]
+        end
+
+        subgraph "Service Layer"
+            WS_SVC[Wallet Service]
+            AI_SVC[AI Service]
+            AUTH_SVC[Auth Service]
+            NOTIF_SVC[Notification Service]
+        end
+
+        subgraph "Data Layer"
+            MODELS[SQLModel ORM]
+            CACHE[Cache Manager]
+            VALID[Pydantic Validators]
+        end
+
+        subgraph "AI Layer"
+            AGENTS[PydanticAI Agents]
+            TOOLS[AI Tools & Functions]
+        end
+
+        subgraph "Client Layer"
+            PY_SDK[Python SDK]
+            JS_SDK[JavaScript SDK]
+            CLI[CLI Tool]
+        end
+    end
+
+    subgraph "Generated Code"
+        PROTO_PY[Protobuf Classes]
+        OPENAPI[OpenAPI Specs]
+        TYPES[Pydantic Types]
+    end
+
+    %% External connections
+    AI_SVC --> EXT1
+    AI_SVC --> EXT2
+    MODELS --> EXT3
+    CACHE --> EXT4
+
+    %% Internal connections
+    REST --> WS_SVC
+    REST --> AI_SVC
+    REST --> AUTH_SVC
+    GRPC --> WS_SVC
+    GRPC --> AI_SVC
+
+    WS_SVC --> MODELS
+    AI_SVC --> AGENTS
+    AI_SVC --> MODELS
+    AUTH_SVC --> MODELS
+
+    AGENTS --> TOOLS
+    AGENTS --> EXT1
+    AGENTS --> EXT2
+
+    MODELS --> VALID
+    MODELS --> CACHE
+
+    %% Client connections
+    PY_SDK --> REST
+    PY_SDK --> GRPC
+    JS_SDK --> REST
+    CLI --> REST
+
+    %% Generated code usage
+    PROTO_PY -.-> GRPC
+    PROTO_PY -.-> WS_SVC
+    OPENAPI -.-> REST
+    TYPES -.-> VALID
+
+    classDef external fill:#ffebee
+    classDef api fill:#e3f2fd
+    classDef service fill:#f3e5f5
+    classDef data fill:#e8f5e8
+    classDef ai fill:#fff3e0
+    classDef client fill:#fce4ec
+    classDef generated fill:#f5f5f5
+
+    class EXT1,EXT2,EXT3,EXT4 external
+    class REST,GRPC,WS api
+    class WS_SVC,AI_SVC,AUTH_SVC,NOTIF_SVC service
+    class MODELS,CACHE,VALID data
+    class AGENTS,TOOLS ai
+    class PY_SDK,JS_SDK,CLI client
+    class PROTO_PY,OPENAPI,TYPES generated
 ```
 
 ## 🏗️ Architectural Patterns
@@ -250,22 +444,66 @@ class Wallet(SQLModel, table=True):
 ## 🔄 Data Flow Architecture
 
 ### Request Flow (REST API)
-```
-Client Request → FastAPI → Pydantic Validation → Service Layer → SQLModel → Database
-                    ↓
-Client Response ← JSON Serialization ← Pydantic Model ← Service Response ← Query Result
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant F as FastAPI
+    participant P as Pydantic
+    participant S as Service Layer
+    participant M as SQLModel
+    participant D as Database
+
+    C->>F: HTTP Request
+    F->>P: Validate Input
+    P->>S: Validated Data
+    S->>M: ORM Operations
+    M->>D: SQL Query
+    D-->>M: Query Result
+    M-->>S: Model Objects
+    S-->>P: Response Data
+    P-->>F: Validated Response
+    F-->>C: JSON Response
 ```
 
 ### Request Flow (gRPC)
-```
-gRPC Client → Protobuf Deserialization → Service Implementation → SQLModel → Database
-                    ↓
-gRPC Response ← Protobuf Serialization ← Service Response ← Query Result
+```mermaid
+sequenceDiagram
+    participant C as gRPC Client
+    participant G as gRPC Server
+    participant P as Protobuf
+    participant S as Service Layer
+    participant M as SQLModel
+    participant D as Database
+
+    C->>G: Binary Request
+    G->>P: Deserialize
+    P->>S: Proto Objects
+    S->>M: ORM Operations
+    M->>D: SQL Query
+    D-->>M: Query Result
+    M-->>S: Model Objects
+    S-->>P: Response Objects
+    P-->>G: Serialize
+    G-->>C: Binary Response
 ```
 
 ### AI Integration Flow
-```
-User Input → PydanticAI Agent → LLM API → Structured Response → Pydantic Validation → Action
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as PydanticAI Agent
+    participant L as LLM API
+    participant P as Pydantic
+    participant S as Service Layer
+
+    U->>A: Natural Language Input
+    A->>L: Structured Prompt
+    L-->>A: AI Response
+    A->>P: Validate Response
+    P->>S: Execute Action
+    S-->>P: Result
+    P-->>A: Validated Result
+    A-->>U: Structured Output
 ```
 
 ## 🚀 Performance Characteristics
@@ -303,7 +541,137 @@ User Input → PydanticAI Agent → LLM API → Structured Response → Pydantic
 - **Output validation:** Structured response validation
 - **API key management:** Secure credential handling
 
-## 📊 Monitoring and Observability
+## � Deployment Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Applications"
+        WEB[Web Application]
+        MOBILE[Mobile App]
+        CLI_APP[CLI Tool]
+        THIRD[Third-party Apps]
+    end
+
+    subgraph "Load Balancer"
+        LB[NGINX/CloudFlare]
+    end
+
+    subgraph "API Gateway"
+        GATEWAY[API Gateway<br/>Rate Limiting<br/>Authentication]
+    end
+
+    subgraph "Application Tier"
+        subgraph "Container Cluster"
+            API1[FastAPI Instance 1]
+            API2[FastAPI Instance 2]
+            API3[FastAPI Instance 3]
+            GRPC1[gRPC Server 1]
+            GRPC2[gRPC Server 2]
+        end
+
+        subgraph "AI Services"
+            AI_SVC[PydanticAI Service]
+            AI_CACHE[AI Response Cache]
+        end
+    end
+
+    subgraph "Data Tier"
+        subgraph "Primary Database"
+            PG_PRIMARY[(PostgreSQL Primary)]
+        end
+
+        subgraph "Read Replicas"
+            PG_REPLICA1[(PostgreSQL Replica 1)]
+            PG_REPLICA2[(PostgreSQL Replica 2)]
+        end
+
+        subgraph "Cache Layer"
+            REDIS[(Redis Cluster)]
+        end
+
+        subgraph "Message Queue"
+            QUEUE[RabbitMQ/Kafka]
+        end
+    end
+
+    subgraph "External Services"
+        OPENAI[OpenAI API]
+        ANTHROPIC[Anthropic API]
+        MONITORING[Monitoring<br/>Prometheus/Grafana]
+        LOGGING[Logging<br/>ELK Stack]
+    end
+
+    %% Client connections
+    WEB --> LB
+    MOBILE --> LB
+    CLI_APP --> LB
+    THIRD --> LB
+
+    %% Load balancer to gateway
+    LB --> GATEWAY
+
+    %% Gateway to application tier
+    GATEWAY --> API1
+    GATEWAY --> API2
+    GATEWAY --> API3
+    GATEWAY --> GRPC1
+    GATEWAY --> GRPC2
+
+    %% Application to AI services
+    API1 --> AI_SVC
+    API2 --> AI_SVC
+    API3 --> AI_SVC
+    AI_SVC --> AI_CACHE
+
+    %% Application to data tier
+    API1 --> PG_PRIMARY
+    API2 --> PG_PRIMARY
+    API3 --> PG_PRIMARY
+    GRPC1 --> PG_PRIMARY
+    GRPC2 --> PG_PRIMARY
+
+    API1 --> PG_REPLICA1
+    API2 --> PG_REPLICA2
+    API3 --> PG_REPLICA1
+
+    API1 --> REDIS
+    API2 --> REDIS
+    API3 --> REDIS
+    AI_CACHE --> REDIS
+
+    API1 --> QUEUE
+    API2 --> QUEUE
+    API3 --> QUEUE
+
+    %% External service connections
+    AI_SVC --> OPENAI
+    AI_SVC --> ANTHROPIC
+
+    %% Monitoring connections
+    API1 -.-> MONITORING
+    API2 -.-> MONITORING
+    API3 -.-> MONITORING
+    GRPC1 -.-> MONITORING
+    GRPC2 -.-> MONITORING
+
+    API1 -.-> LOGGING
+    API2 -.-> LOGGING
+    API3 -.-> LOGGING
+
+    classDef client fill:#e3f2fd
+    classDef infrastructure fill:#f3e5f5
+    classDef application fill:#e8f5e8
+    classDef data fill:#fff3e0
+    classDef external fill:#ffebee
+
+    class WEB,MOBILE,CLI_APP,THIRD client
+    class LB,GATEWAY infrastructure
+    class API1,API2,API3,GRPC1,GRPC2,AI_SVC,AI_CACHE application
+    class PG_PRIMARY,PG_REPLICA1,PG_REPLICA2,REDIS,QUEUE data
+    class OPENAI,ANTHROPIC,MONITORING,LOGGING external
+```
+
+## �📊 Monitoring and Observability
 
 ### Metrics
 - **API metrics:** Request/response times, error rates
