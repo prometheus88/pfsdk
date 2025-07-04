@@ -280,10 +280,40 @@ tests/
 
 ## 📊 Monitoring and Debugging
 
+### Structured Logging
+
+**Dependencies:**
+- **structlog:** Structured logging with rich context
+- **loguru:** Beautiful console output and formatting
+
+**Usage in Development:**
+```python
+from postfiat.logging import get_logger
+
+logger = get_logger("my_component")
+logger.info("Processing request", user_id="123", action="create_wallet")
+```
+
+**Environment-Aware Output:**
+- **Development/Testing:** Human-readable console output
+- **Production:** JSON structured logs
+- **pytest:** Plain text for test readability
+
 ### Generation Logs
 
-All generation scripts provide detailed logging:
+All generation scripts provide detailed structured logging:
 ```bash
+python scripts/generate_python_types.py
+# {"event": "Starting protobuf-based type generation", "level": "info", "timestamp": "2025-07-04T16:20:00.123Z"}
+# {"enum_types_count": 5, "modules": ["messages", "errors"], "event": "Discovered protobuf definitions", "level": "info"}
+# ✅ Generated /path/to/postfiat/types/enums.py
+# ✅ Generated /path/to/postfiat/exceptions.py
+
+python scripts/generate_protobuf_tests.py
+# {"event": "Starting protobuf-based test suite generation", "level": "info", "timestamp": "2025-07-04T16:20:01.456Z"}
+# {"message_types_count": 6, "services_count": 0, "modules": ["messages", "errors"], "event": "Discovered protobuf definitions", "level": "info"}
+# ✅ Test generation complete!
+
 python scripts/generate_protobuf.py
 # 🚀 Generating comprehensive SDK from protobuf definitions...
 # 📊 Found 3 message types and 0 services
@@ -314,6 +344,68 @@ Check GitHub Actions for detailed logs:
 - Regenerate tests: `python scripts/generate_protobuf_tests.py`
 - Check protobuf message compatibility
 - Verify enum values match proto definitions
+
+## � Logging Best Practices
+
+### When to Add Logging
+
+**✅ DO Log:**
+- **Factory functions:** Exception creation, object construction
+- **Utility methods:** Data processing, transformations
+- **API middleware:** Request/response processing
+- **Service boundaries:** External API calls, database operations
+- **Error handling:** Exception processing and recovery
+
+**❌ DON'T Log:**
+- **Pure data classes:** Pydantic models, simple exception classes
+- **Getters/setters:** Simple property access
+- **Constructors:** Basic object initialization without side effects
+- **Pure functions:** Mathematical operations, simple transformations
+
+### Logging Patterns
+
+**Structured Context:**
+```python
+logger.info(
+    "Processing user request",
+    user_id=user.id,
+    action="create_wallet",
+    request_id=request_id,
+    duration_ms=elapsed_time
+)
+```
+
+**Error Logging:**
+```python
+logger.error(
+    "Database operation failed",
+    operation="insert_wallet",
+    table="wallets",
+    error_code=exc.error_code,
+    retry_count=retry_count,
+    exc_info=True  # Include stack trace
+)
+```
+
+**Debug Information:**
+```python
+logger.debug(
+    "Cache operation",
+    cache_key=key,
+    cache_hit=hit,
+    ttl_seconds=ttl
+)
+```
+
+### Generated Code Logging
+
+The code generators automatically add logging to:
+- **Exception factory functions:** `create_exception_from_error_code()`
+- **Error processing utilities:** `create_exception_from_error_info()`
+- **Serialization methods:** `PostFiatError.to_dict()`
+- **Test generation:** Discovery and generation progress
+
+Pure data classes (enums, simple exceptions) remain clean without logging.
 
 ## 🚀 Performance Considerations
 

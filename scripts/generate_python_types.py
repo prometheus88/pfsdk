@@ -6,6 +6,10 @@ import sys
 from pathlib import Path
 import importlib.util
 
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from postfiat.logging import get_logger
+
 def generate_enums_from_proto():
     """Generate postfiat/types/enums.py from protobuf enums."""
 
@@ -170,7 +174,10 @@ from enum import IntEnum
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert exception to dictionary representation."""
-        return {
+        from postfiat.logging import get_logger
+        logger = get_logger("exceptions.serialization")
+
+        result = {
             'message': self.message,
             'error_code': self.error_code.value if self.error_code else None,
             'category': self.category.value if self.category else None,
@@ -179,6 +186,17 @@ from enum import IntEnum
             'field': self.field,
             'error_id': self.error_id
         }
+
+        logger.debug(
+            "Serialized exception to dictionary",
+            exception_type=self.__class__.__name__,
+            error_code=result['error_code'],
+            has_details=bool(self.details),
+            has_field=bool(self.field),
+            has_error_id=bool(self.error_id)
+        )
+
+        return result
 
 
 '''
@@ -239,15 +257,32 @@ from enum import IntEnum
 
 '''
 
-    # Add utility functions
-    exceptions_code += '''def create_exception_from_error_code(
+    # Add utility functions with logging
+    exceptions_code += '''# Import logging for factory functions
+from postfiat.logging import get_logger
+
+
+def create_exception_from_error_code(
     error_code: Union[int, ErrorCode],
     message: str,
     **kwargs
 ) -> PostFiatError:
     """Create appropriate exception instance based on error code."""
+    logger = get_logger("exceptions.factory")
+
     if isinstance(error_code, int):
         error_code = ErrorCode(error_code)
+
+    # Log exception creation
+    logger.info(
+        "Creating exception from error code",
+        error_code=error_code.name if hasattr(error_code, 'name') else str(error_code),
+        error_value=error_code.value if hasattr(error_code, 'value') else error_code,
+        message=message,
+        has_details=bool(kwargs.get('details')),
+        has_field=bool(kwargs.get('field')),
+        has_error_id=bool(kwargs.get('error_id'))
+    )
 
     # Map error codes to specific exception classes
     exception_map = {
@@ -263,11 +298,32 @@ from enum import IntEnum
     }
 
     exception_class = exception_map.get(error_code, PostFiatError)
+
+    # Log which exception class was selected
+    logger.debug(
+        "Selected exception class",
+        exception_class=exception_class.__name__,
+        is_specific_exception=exception_class != PostFiatError
+    )
+
     return exception_class(message, error_code=error_code, **kwargs)
 
 
 def create_exception_from_error_info(error_info_dict: Dict[str, Any]) -> PostFiatError:
     """Create exception from ErrorInfo protobuf message dictionary."""
+    logger = get_logger("exceptions.error_info")
+
+    # Log ErrorInfo processing
+    logger.info(
+        "Processing ErrorInfo to create exception",
+        error_code=error_info_dict.get('code'),
+        has_message=bool(error_info_dict.get('message')),
+        has_context=bool(error_info_dict.get('context')),
+        has_field=bool(error_info_dict.get('field')),
+        has_error_id=bool(error_info_dict.get('error_id')),
+        severity=error_info_dict.get('severity')
+    )
+
     return create_exception_from_error_code(
         error_code=error_info_dict.get('code'),
         message=error_info_dict.get('message', 'Unknown error'),

@@ -302,6 +302,45 @@ classDiagram
     Message --> EncryptionMode
 ```
 
+### 7. Structured Logging (structlog + loguru)
+**Role:** Production-ready observability and debugging
+
+**Why structlog + loguru:**
+- **Structured data:** JSON logs with rich context for production
+- **Beautiful output:** Human-readable console logs for development
+- **Type safety:** Structured logging with proper typing
+- **Performance:** Efficient logging with minimal overhead
+- **Correlation:** Request tracking across distributed systems
+
+**Features:**
+```python
+from postfiat.logging import get_logger
+
+# Get structured logger
+logger = get_logger("api.auth")
+
+# Log with rich context
+logger.info(
+    "User authentication successful",
+    user_id="user_123",
+    session_id="sess_456",
+    ip_address="192.168.1.1",
+    duration_ms=150
+)
+
+# Automatic JSON output in production:
+# {"user_id": "user_123", "session_id": "sess_456",
+#  "ip_address": "192.168.1.1", "duration_ms": 150,
+#  "event": "User authentication successful",
+#  "level": "info", "timestamp": "2025-07-04T16:20:00.123Z"}
+```
+
+**Logging Strategy:**
+- **Behavior boundaries:** Log at factory functions, middleware, utilities
+- **Pure data classes:** No logging (enums, simple models)
+- **Error tracking:** Integrated with proto-based exception system
+- **Request correlation:** X-Request-ID tracking via FastAPI middleware
+
 ## 🏗️ System Components
 
 ### Component Relationships
@@ -679,9 +718,24 @@ graph TB
 - **AI metrics:** Token usage, response times, success rates
 
 ### Logging
-- **Structured logging:** JSON logs with correlation IDs
-- **Error tracking:** Comprehensive error reporting
-- **Audit trails:** User action logging
+
+**Technology Stack:**
+- **[structlog](https://www.structlog.org/):** Structured logging with rich context
+- **[loguru](https://loguru.readthedocs.io/):** Beautiful console output and formatting
+- **JSON output:** Production-ready structured logs
+
+**Implementation:**
+- **Structured logging:** JSON logs with correlation IDs and rich context
+- **Environment-aware:** JSON for production, console for development/testing
+- **Request correlation:** X-Request-ID tracking for distributed tracing
+- **Error tracking:** Comprehensive error reporting with proto-based error codes
+- **Audit trails:** User action logging with structured metadata
+
+**Logging Locations:**
+- **API Layer:** Request/response logging via FastAPI middleware
+- **Exception System:** Factory function logging for error creation and processing
+- **Generation Scripts:** Structured logging for build-time observability
+- **Pure Data Classes:** No logging (follows best practices)
 
 ### Health Checks
 - **Service health:** Database, AI services, external APIs

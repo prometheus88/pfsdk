@@ -22,6 +22,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from postfiat.v3 import messages_pb2, errors_pb2
+from postfiat.logging import get_logger
 # Import other services when they exist
 try:
     from postfiat.v3 import wallet_service_pb2
@@ -51,16 +52,22 @@ class ProtobufTestGenerator:
             'errors': errors_pb2,
         }
         self.timestamp = datetime.now().isoformat()
+        self.logger = get_logger("test_generator")
         
     def generate_all_tests(self):
         """Generate all test suites."""
-        print("🚀 Generating protobuf-based test suites...")
-        
+        self.logger.info("Starting protobuf-based test suite generation")
+
         # Extract all message types and services
         message_types = self._extract_message_types()
         services = self._extract_services()
-        
-        print(f"📊 Found {len(message_types)} message types and {len(services)} services")
+
+        self.logger.info(
+            "Discovered protobuf definitions",
+            message_types_count=len(message_types),
+            services_count=len(services),
+            modules=list(self.modules.keys())
+        )
         
         # Create the generated tests directory
         generated_dir = self.output_base / "generated"
