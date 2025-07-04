@@ -36,6 +36,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
+          buf mod update
           buf generate --template buf.gen.yaml
 
       - name: Generate Python types from protobuf

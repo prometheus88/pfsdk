@@ -60,6 +60,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
+          buf mod update
           buf generate --template buf.gen.yaml
       
       - name: Verify generated code
@@ -115,6 +116,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
+          buf mod update
           buf generate --template buf.gen.yaml
       
       - name: Test package installation
@@ -146,6 +148,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
+          buf mod update
           buf generate --template buf.gen.yaml
       
       - name: Build package
