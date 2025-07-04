@@ -9,7 +9,7 @@ The PostFiat SDK is built on a **proto-first, API-driven architecture** that aut
 ```mermaid
 graph TB
     subgraph "Source of Truth"
-        A[Protocol Buffers<br/>(.proto files)]
+        A[Protocol Buffers<br/>&lpar;.proto files&rpar;]
     end
     
     subgraph "Code Generation Layer"
@@ -541,7 +541,7 @@ sequenceDiagram
 - **Output validation:** Structured response validation
 - **API key management:** Secure credential handling
 
-## � Deployment Architecture
+## 🚀 Deployment Architecture
 
 ```mermaid
 graph TB
@@ -671,7 +671,7 @@ graph TB
     class OPENAI,ANTHROPIC,MONITORING,LOGGING external
 ```
 
-## �📊 Monitoring and Observability
+## 📊 Monitoring and Observability
 
 ### Metrics
 - **API metrics:** Request/response times, error rates
