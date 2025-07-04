@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package postfiat.v3;
+
+option go_package = "postfiat/v3;postfiatv3";
+option java_package = "com.postfiat.v3";
+option java_multiple_files = true;
+option csharp_namespace = "PostFiat.V3";
+
+// Top-level message envelope - stored unencrypted in XRPL memo
+// Easily detectable as protobuf, version field provides future-proofing
+message MessageEnvelope {
+  // Version for future envelope schema changes
+  uint32 version = 1;
+  
+  // Hash of the message content for integrity verification
+  string content_hash = 2;
+  
+  // Type of message content (determines how to parse message field)
+  MessageType message_type = 3;
+  
+  // How this message is encrypted
+  EncryptionMode encryption = 4;
+  
+  // For content-addressable encryption: XRPL sequence number used for key derivation
+  uint32 sequence_number = 5;
+  
+  // For legacy encryption: indicates shared key was used
+  string shared_key_id = 6;
+  
+  // Message this is replying to (for threading)
+  string reply_to = 7;
+  
+  // Actual message content (may be encrypted based on encryption mode)
+  bytes message = 8;
+  
+  // Optional metadata for routing, filtering, etc.
+  map<string, string> metadata = 9;
+}
+
+// Multi-part message part for large content
+message MultiPartMessagePart {
+  // Unique ID for this multi-part message (shared across all parts)
+  string message_id = 1;
+  
+  // Current part number (1-based)
+  uint32 part_number = 2;
+  
+  // Total number of parts
+  uint32 total_parts = 3;
+  
+  // Content of this part
+  bytes content = 4;
+  
+  // Hash of the complete assembled message for verification
+  string complete_message_hash = 5;
+}
+
+// Contextual message for agent-to-agent communication
+// Supports bidirectional sharing of context, queries, and responses
+// Also serves as the base message type for simple text messages
+message ContextualMessage {
+  // Message content (query, response, or simple text)
+  string content = 1;
+  
+  // Context messages referenced by their content hash
+  repeated string context_hashes = 2;
+  
+  // Optional metadata (processing info, confidence, etc.)
+  map<string, string> metadata = 3;
+}
+
+// Supported message types - extensible enum
+enum MessageType {
+  // Universal message type - handles all communication
+  CONTEXTUAL_MESSAGE = 0;
+  
+  // Special case for large content chunking
+  MULTIPART_MESSAGE_PART = 1;
+  
+  // Reserved for future specialized types when truly needed
+  RESERVED_100 = 100;
+}
+
+// Encryption modes supported
+enum EncryptionMode {
+  // No encryption - plaintext
+  NONE = 0;
+  
+  // Legacy shared secret encryption
+  LEGACY_SHARED = 1;
+  
+  // Content-addressable sequence-based encryption
+  CONTENT_ADDRESSABLE = 2;
+  
+  // Public key encryption
+  PUBLIC_KEY = 3;
+  
+  // Hybrid encryption
+  HYBRID = 4;
+} 

@@ -1,0 +1,56 @@
+name: Repository Setup
+
+on:
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      setup_protection:
+        description: 'Setup branch protection rules'
+        required: true
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  administration: write  # Required for branch protection
+
+jobs:
+  setup-branch-protection:
+    name: Setup Branch Protection
+    runs-on: ubuntu-latest
+    if: github.event.inputs.setup_protection == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup branch protection rules
+        run: |
+          echo "🔒 Setting up branch protection for PostFiat SDK..."
+          
+          # Protect main branch
+          echo "🛡️  Protecting main branch..."
+          gh api repos/${{ github.repository }}/branches/main/protection \
+            --method PUT \
+            --field required_status_checks='{"strict":true,"contexts":["Proto Validation","Code Generation","Tests (3.10)","Tests (3.11)","Tests (3.12)","Build Package"]}' \
+            --field enforce_admins=true \
+            --field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":false}' \
+            --field restrictions=null \
+            --field allow_force_pushes=false \
+            --field allow_deletions=false
+          
+          echo "✅ Main branch protection enabled"
+          
+          # Protect dev branch (more permissive for development)
+          echo "🛡️  Protecting dev branch..."
+          gh api repos/${{ github.repository }}/branches/dev/protection \
+            --method PUT \
+            --field required_status_checks='{"strict":true,"contexts":["Proto Validation","Code Generation","Tests (3.12)"]}' \
+            --field enforce_admins=false \
+            --field required_pull_request_reviews='{"required_approving_review_count":1,"dismiss_stale_reviews":true,"require_code_owner_reviews":false}' \
+            --field restrictions=null \
+            --field allow_force_pushes=false \
+            --field allow_deletions=false
+          
+          echo "✅ Dev branch protection enabled"
+          echo "🎉 Branch protection setup completed!"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
