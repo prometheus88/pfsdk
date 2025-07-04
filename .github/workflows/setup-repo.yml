@@ -11,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  administration: write  # Required for branch protection
 
 jobs:
   setup-branch-protection:
