@@ -48,10 +48,6 @@ class ProtobufTestGenerator:
         self.output_base = Path(output_base)
         self.modules = {
             'messages': messages_pb2,
-            'wallet_service': wallet_service_pb2,
-            'discord_service': discord_service_pb2,
-            'knowledge_service': knowledge_service_pb2,
-            'event_streaming_service': event_streaming_service_pb2,
         }
         self.timestamp = datetime.now().isoformat()
         
@@ -154,11 +150,7 @@ from pydantic import ValidationError
 from google.protobuf.message import Message
 
 # Import all protobuf message types
-from postfiat.wallet.v3 import messages_pb2
-from postfiat.wallet.v3 import wallet_service_pb2
-from postfiat.wallet.v3 import discord_service_pb2
-from postfiat.wallet.v3 import knowledge_service_pb2
-from postfiat.wallet.v3 import event_streaming_service_pb2
+from postfiat.v3 import messages_pb2
 
 
 class TestProtobufValidation:
@@ -409,11 +401,7 @@ from typing import Any, Dict, List
 from google.protobuf.message import Message
 
 # Import all protobuf message types
-from postfiat.wallet.v3 import messages_pb2
-from postfiat.wallet.v3 import wallet_service_pb2
-from postfiat.wallet.v3 import discord_service_pb2
-from postfiat.wallet.v3 import knowledge_service_pb2
-from postfiat.wallet.v3 import event_streaming_service_pb2
+from postfiat.v3 import messages_pb2
 
 
 class TestSerializationIntegrity:
@@ -627,11 +615,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from typing import Any, Dict
 
 # Import protobuf types
-from postfiat.wallet.v3 import messages_pb2
-from postfiat.wallet.v3 import wallet_service_pb2
-from postfiat.wallet.v3 import discord_service_pb2
-from postfiat.wallet.v3 import knowledge_service_pb2
-from postfiat.wallet.v3 import event_streaming_service_pb2
+from postfiat.v3 import messages_pb2
 
 # Import service classes (these may need to be implemented)
 # from postfiat.wallet.services import WalletService, DiscordService, KnowledgeService, EventStreamingService

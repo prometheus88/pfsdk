@@ -220,6 +220,9 @@ postfiat/services/
 postfiat/clients/
 postfiat/integrations/
 
+# Generated tests from protobuf
+tests/generated/
+
 # Generated API documentation
 api/
 
