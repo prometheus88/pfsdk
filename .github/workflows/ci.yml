@@ -80,6 +80,19 @@ jobs:
       - name: Generate Python types from protobuf
         run: python scripts/generate_python_types.py
 
+      - name: Generate protobuf tests
+        run: python scripts/generate_protobuf_tests.py
+
+      - name: Run tests
+        run: |
+          # Run both manual and generated tests
+          python -m pytest tests/ -v --tb=short
+
+      - name: Generate and run protobuf tests
+        run: |
+          python scripts/generate_protobuf_tests.py
+          python -m pytest tests/generated/ -v --tb=short
+
       - name: Commit generated files to main branch
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
@@ -117,6 +130,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
+          pip install pytest
       
       - name: Generate protobuf code
         run: |
@@ -127,6 +141,14 @@ jobs:
       - name: Test package installation
         run: |
           python -c "import postfiat; print(f'PostFiat SDK v{postfiat.__version__} installed successfully')"
+
+      - name: Generate protobuf tests
+        run: python scripts/generate_protobuf_tests.py
+
+      - name: Run test suite
+        run: |
+          # Run both manual and generated tests
+          python -m pytest tests/ -v --tb=short
 
   build:
     name: Build Package
