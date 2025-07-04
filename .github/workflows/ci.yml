@@ -64,7 +64,7 @@ jobs:
           python -c "
           import sys
           sys.path.insert(0, '.')
-          from postfiat.v3 import wallet_service_pb2, messages_pb2
+          from postfiat.v3 import messages_pb2
           print('✅ Generated code imports successfully')
           "
 
