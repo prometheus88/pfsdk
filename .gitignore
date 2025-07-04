@@ -214,6 +214,11 @@ postfiat/v3/*_pb2_grpc.py
 # Generated Python types from protobuf
 postfiat/types/enums.py
 postfiat/exceptions.py
+postfiat/models/envelope_enums.py
+postfiat/managers/
+postfiat/services/
+postfiat/clients/
+postfiat/integrations/
 
 # Generated API documentation
 api/
