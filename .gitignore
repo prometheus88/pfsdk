@@ -211,6 +211,10 @@ __marimo__/
 postfiat/v3/*_pb2.py
 postfiat/v3/*_pb2_grpc.py
 
+# Generated Python types from protobuf
+postfiat/types/enums.py
+postfiat/exceptions.py
+
 # Generated API documentation
 api/
 
