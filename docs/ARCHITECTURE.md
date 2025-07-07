@@ -302,44 +302,58 @@ classDiagram
     Message --> EncryptionMode
 ```
 
-### 7. Structured Logging (structlog + loguru)
-**Role:** Production-ready observability and debugging
+### 7. Observability Stack (structlog + loguru + OpenTelemetry)
+**Role:** Production-ready observability, logging, and distributed tracing
 
-**Why structlog + loguru:**
-- **Structured data:** JSON logs with rich context for production
-- **Beautiful output:** Human-readable console logs for development
-- **Type safety:** Structured logging with proper typing
-- **Performance:** Efficient logging with minimal overhead
-- **Correlation:** Request tracking across distributed systems
+**Why this triple stack:**
+- **structlog:** Structured logging with rich context and JSON output
+- **loguru:** Beautiful console output and developer-friendly formatting
+- **OpenTelemetry:** Distributed tracing, metrics, and standardized observability
+- **Integration:** All three work together seamlessly for comprehensive observability
+- **Proto-native:** OpenTelemetry provides proto-native metrics and tracing
 
 **Features:**
 ```python
 from postfiat.logging import get_logger
+from opentelemetry import trace
 
-# Get structured logger
+# Get structured logger with tracing
 logger = get_logger("api.auth")
+tracer = trace.get_tracer("postfiat.api")
 
-# Log with rich context
-logger.info(
-    "User authentication successful",
-    user_id="user_123",
-    session_id="sess_456",
-    ip_address="192.168.1.1",
-    duration_ms=150
-)
+# Log with rich context + distributed tracing
+with tracer.start_as_current_span("user_authentication") as span:
+    logger.info(
+        "User authentication successful",
+        user_id="user_123",
+        session_id="sess_456",
+        ip_address="192.168.1.1",
+        duration_ms=150,
+        trace_id=span.get_span_context().trace_id
+    )
 
-# Automatic JSON output in production:
-# {"user_id": "user_123", "session_id": "sess_456",
-#  "ip_address": "192.168.1.1", "duration_ms": 150,
-#  "event": "User authentication successful",
-#  "level": "info", "timestamp": "2025-07-04T16:20:00.123Z"}
+    # Span automatically includes structured context
+    span.set_attributes({
+        "user.id": "user_123",
+        "session.id": "sess_456",
+        "auth.duration_ms": 150
+    })
+
+# Development: Beautiful console output via loguru
+# Production: JSON logs + OpenTelemetry traces + metrics
+# {"user_id": "user_123", "trace_id": "abc123...",
+#  "event": "User authentication successful", ...}
 ```
 
-**Logging Strategy:**
+**Observability Strategy:**
+- **Structured logging:** structlog for rich context, loguru for beautiful output
+- **Distributed tracing:** OpenTelemetry spans across gRPC/REST calls
+- **Metrics collection:** Proto-native performance and business metrics
 - **Behavior boundaries:** Log at factory functions, middleware, utilities
 - **Pure data classes:** No logging (enums, simple models)
 - **Error tracking:** Integrated with proto-based exception system
-- **Request correlation:** X-Request-ID tracking via FastAPI middleware
+- **Request correlation:** Trace IDs + X-Request-ID tracking
+- **Proto observability:** gRPC method tracing, proto serialization metrics
 
 ## 🏗️ System Components
 
@@ -717,25 +731,31 @@ graph TB
 - **Database metrics:** Query performance, connection pools
 - **AI metrics:** Token usage, response times, success rates
 
-### Logging
+### Observability & Logging
 
 **Technology Stack:**
 - **[structlog](https://www.structlog.org/):** Structured logging with rich context
 - **[loguru](https://loguru.readthedocs.io/):** Beautiful console output and formatting
-- **JSON output:** Production-ready structured logs
+- **[OpenTelemetry](https://opentelemetry.io/):** Distributed tracing, metrics, and observability
+- **Integration:** All three work together for comprehensive observability
 
 **Implementation:**
-- **Structured logging:** JSON logs with correlation IDs and rich context
-- **Environment-aware:** JSON for production, console for development/testing
-- **Request correlation:** X-Request-ID tracking for distributed tracing
+- **Structured logging:** JSON logs with correlation IDs and rich context (structlog)
+- **Beautiful development:** Human-readable console logs with colors (loguru)
+- **Distributed tracing:** Request tracing across gRPC/REST services (OpenTelemetry)
+- **Proto-native metrics:** gRPC method performance, serialization metrics
+- **Environment-aware:** Console for development, JSON + traces for production
+- **Request correlation:** Trace IDs + X-Request-ID tracking for distributed systems
 - **Error tracking:** Comprehensive error reporting with proto-based error codes
-- **Audit trails:** User action logging with structured metadata
+- **Audit trails:** User action logging with structured metadata and spans
 
-**Logging Locations:**
-- **API Layer:** Request/response logging via FastAPI middleware
+**Observability Locations:**
+- **API Layer:** Request/response logging + tracing via FastAPI middleware
+- **gRPC Services:** Automatic method tracing with OpenTelemetry gRPC instrumentation
 - **Exception System:** Factory function logging for error creation and processing
 - **Generation Scripts:** Structured logging for build-time observability
 - **Pure Data Classes:** No logging (follows best practices)
+- **Proto Operations:** Serialization/deserialization performance metrics
 
 ### Health Checks
 - **Service health:** Database, AI services, external APIs
