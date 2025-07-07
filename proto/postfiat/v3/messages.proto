@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package postfiat.v3;
 
+// Import A2A proto definitions for extension compatibility
+import "a2a/v1/a2a.proto";
+
 option go_package = "postfiat/v3;postfiatv3";
 option java_package = "com.postfiat.v3";
 option java_multiple_files = true;
@@ -111,4 +114,41 @@ enum EncryptionMode {
   // Traditional public key encryption
   // For direct encrypted communication between known parties
   PUBLIC_KEY = 2;
+}
+
+// PostFiat extension for A2A gRPC integration
+// Extension URI: https://postfiat.org/extensions/envelope/v1
+
+// PostFiat agent capabilities extension for A2A AgentCard
+message PostFiatAgentCapabilities {
+  // Supports PostFiat envelope processing
+  bool envelope_processing = 1;
+
+  // Supports XRPL ledger persistence
+  bool ledger_persistence = 2;
+
+  // Supports selective disclosure context DAG traversal
+  bool context_dag_traversal = 3;
+
+  // Maximum context DAG depth supported
+  uint32 max_context_depth = 4;
+
+  // Supported encryption modes
+  repeated EncryptionMode supported_encryption_modes = 5;
+}
+
+// PostFiat envelope payload for A2A Message DataPart
+// This is embedded in A2A Message.content as DataPart.data
+message PostFiatEnvelopePayload {
+  // PostFiat envelope containing selective disclosure content
+  Envelope envelope = 1;
+
+  // Optional XRPL transaction hash for ledger persistence
+  string xrpl_transaction_hash = 2;
+
+  // Content address for content-addressable retrieval
+  string content_address = 3;
+
+  // Metadata for PostFiat-specific processing
+  map<string, string> postfiat_metadata = 4;
 }
