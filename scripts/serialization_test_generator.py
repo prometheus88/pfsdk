@@ -57,14 +57,15 @@ import sys
 from pathlib import Path
 
 # Add scripts directory to path for imports
-scripts_path = Path(__file__).parent.parent / "scripts"
+scripts_path = Path(__file__).parent.parent.parent / "scripts"
 if str(scripts_path) not in sys.path:
     sys.path.insert(0, str(scripts_path))
 
 try:
-    from proto_introspection import ProtoIntrospector
-except ImportError:
+    from proto_introspection import ProtoIntrospector, ProtoTestDataFactory as TestDataFactory
+except ImportError as e:
     # Fallback for when running tests - create minimal implementations
+    print(f"Warning: Could not import TestDataFactory: {{e}}")
     class ProtoIntrospector:
         def __init__(self): pass
     class _TestDataFactory:  # Underscore to avoid pytest collection
@@ -108,8 +109,14 @@ class TestDynamicSerialization:
     
     def _populate_message_with_test_data(self, message: Message) -> Message:
         """Populate message with appropriate test data using introspection."""
-        # Simple fallback - just return the message (individual tests handle population)
-        return message
+        try:
+            introspector = ProtoIntrospector()
+            factory = TestDataFactory(introspector)
+            return factory.populate_message(message)
+        except Exception as e:
+            # Fallback - just return the message unchanged
+            print(f"Warning: Could not populate message with test data: {{e}}")
+            return message
 '''
         
         return content
@@ -144,14 +151,14 @@ class TestDynamicSerialization:
             serialized = original.SerializeToString()
             assert len(serialized) > 0, f"Serialization produced empty bytes for {{message_class.__name__}}"
         except Exception as e:
-            pytest.fail(f"Serialization failed for {{message_class.__name__}}: {{e}}")
-        
+            pytest.fail(f"Serialization failed for {{message_class.__name__}}: {{str(e)}}")
+
         # Test deserialization
         try:
             deserialized = message_class()
             deserialized.ParseFromString(serialized)
         except Exception as e:
-            pytest.fail(f"Deserialization failed for {{message_class.__name__}}: {{e}}")
+            pytest.fail(f"Deserialization failed for {{message_class.__name__}}: {{str(e)}}")
         
         # Verify round-trip integrity
         self._assert_messages_equal(original, deserialized)'''

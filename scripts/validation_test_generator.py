@@ -163,11 +163,8 @@ class TestDynamicValidation:
         
         # Test that all expected values are present
         expected_values = {{{", ".join(str(v.number) for v in enum_info.values)}}}
-        actual_values = set()
-        for attr_name in dir({module_name}_pb2.{enum_info.name}):
-            if not attr_name.startswith('_'):
-                actual_values.add(getattr({module_name}_pb2.{enum_info.name}, attr_name))
-        
+        actual_values = set({module_name}_pb2.{enum_info.name}.values())
+
         assert expected_values.issubset(actual_values), f"Missing enum values in {enum_info.name}"'''
     
     def _generate_field_validation_tests(self, message_schemas: List[MessageSchema]) -> str:
@@ -236,7 +233,15 @@ class TestDynamicValidation:
         for field in enum_fields:
             if field.enum_type:
                 valid_values = field.enum_type.get_valid_values()
-                field_tests.append(f'''
+                if field.is_repeated:
+                    field_tests.append(f'''
+        # Test {field.name} enum field (repeated)
+        for valid_value in {valid_values}:
+            message.{field.name}.clear()
+            message.{field.name}.append(valid_value)
+            assert valid_value in message.{field.name}''')
+                else:
+                    field_tests.append(f'''
         # Test {field.name} enum field
         for valid_value in {valid_values}:
             message.{field.name} = valid_value
@@ -254,7 +259,16 @@ class TestDynamicValidation:
         
         field_tests = []
         for field in string_fields:
-            field_tests.append(f'''
+            if field.is_repeated:
+                field_tests.append(f'''
+        # Test {field.name} string field (repeated)
+        test_values = ["", "test", "unicode_🎯", "long_" + "x" * 100]
+        for test_value in test_values:
+            message.{field.name}.clear()
+            message.{field.name}.append(test_value)
+            assert test_value in message.{field.name}''')
+            else:
+                field_tests.append(f'''
         # Test {field.name} string field
         test_values = ["", "test", "unicode_🎯", "long_" + "x" * 100]
         for test_value in test_values:
@@ -277,8 +291,17 @@ class TestDynamicValidation:
                 test_values = "[0, 1, 100, 1000]"
             else:
                 test_values = "[-1000, -1, 0, 1, 100, 1000]"
-            
-            field_tests.append(f'''
+
+            if field.is_repeated:
+                field_tests.append(f'''
+        # Test {field.name} numeric field (repeated)
+        test_values = {test_values}
+        for test_value in test_values:
+            message.{field.name}.clear()
+            message.{field.name}.append(test_value)
+            assert test_value in message.{field.name}''')
+            else:
+                field_tests.append(f'''
         # Test {field.name} numeric field
         test_values = {test_values}
         for test_value in test_values:
