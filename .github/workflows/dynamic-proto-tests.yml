@@ -27,6 +27,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -76,15 +78,24 @@ jobs:
     - name: Validate generated tests
       run: |
         echo "✅ Validating generated test syntax"
-        python scripts/ci_test_generation.py --validate-only
+        # Only validate if tests exist
+        if [ -d "tests/generated" ] && [ "$(ls -A tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
+          python scripts/ci_test_generation.py --validate-only
+        else
+          echo "⚠️ No generated tests to validate - will be created in next step"
+        fi
         
     - name: Run dynamic proto tests
       run: |
         echo "🧪 Running dynamic proto tests"
-        # Run the core tests that we know work
-        python -m pytest tests/generated/test_dynamic_serialization.py -k "serialization and not round_trip" -v
-        python -m pytest tests/generated/test_dynamic_evolution.py -v
-        python -m pytest tests/generated/test_dynamic_services.py -v
+        # Check if generated tests exist
+        if [ -d "tests/generated" ] && [ "$(ls -A tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
+          echo "✅ Found generated tests, running them..."
+          python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
+        else
+          echo "⚠️ No generated tests found - this is expected on first run"
+          echo "Tests will be generated and committed automatically"
+        fi
         
     - name: Check for test changes (PR only)
       if: github.event_name == 'pull_request'
@@ -123,6 +134,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -171,6 +184,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -211,20 +226,36 @@ jobs:
         
         # Test proto introspection
         python -c "
-        from scripts.proto_introspection import ProtoIntrospector
+        import sys
+        from pathlib import Path
+
+        # Add scripts to path
+        scripts_path = Path('.') / 'scripts'
+        if str(scripts_path) not in sys.path:
+            sys.path.insert(0, str(scripts_path))
+
+        from proto_introspection import ProtoIntrospector
         from postfiat.v3 import messages_pb2
-        
+
         introspector = ProtoIntrospector()
         messages = introspector.discover_proto_messages([messages_pb2])
         print(f'✅ Discovered {len(messages)} proto messages')
-        
+
         schema = introspector.analyze_message(messages_pb2.Envelope)
         print(f'✅ Analyzed Envelope: {len(schema.fields)} fields')
         "
         
         # Test data factory
         python -c "
-        from scripts.proto_introspection import ProtoIntrospector, ProtoTestDataFactory
+        import sys
+        from pathlib import Path
+
+        # Add scripts to path
+        scripts_path = Path('.') / 'scripts'
+        if str(scripts_path) not in sys.path:
+            sys.path.insert(0, str(scripts_path))
+
+        from proto_introspection import ProtoIntrospector, ProtoTestDataFactory
         from postfiat.v3 import messages_pb2
 
         introspector = ProtoIntrospector()

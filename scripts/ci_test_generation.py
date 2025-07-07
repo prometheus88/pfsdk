@@ -16,9 +16,14 @@ from typing import List, Optional
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from postfiat.logging import get_logger
-
-logger = get_logger("ci.test_generation")
+try:
+    from postfiat.logging import get_logger
+    logger = get_logger("ci.test_generation")
+except ImportError:
+    # Fallback for CI environments where package might not be fully installed
+    import logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger("ci.test_generation")
 
 
 class CITestGenerator:
@@ -26,7 +31,12 @@ class CITestGenerator:
     
     def __init__(self, project_root: Optional[Path] = None):
         self.project_root = project_root or Path(__file__).parent.parent
-        self.logger = get_logger("ci.test_generator")
+        try:
+            self.logger = get_logger("ci.test_generator")
+        except NameError:
+            # Fallback if get_logger is not available
+            import logging
+            self.logger = logging.getLogger("ci.test_generator")
         
         # Paths
         self.proto_dir = self.project_root / "proto" / "postfiat" / "v3"

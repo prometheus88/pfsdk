@@ -18,10 +18,19 @@ mkdir -p "$REPO_ROOT/third_party"
 if [ ! -d "$A2A_SUBMODULE_PATH" ]; then
     echo "📦 Adding A2A project as git submodule..."
     cd "$REPO_ROOT"
-    git submodule add https://github.com/a2aproject/A2A.git third_party/a2a
-    git submodule update --init --recursive
+    # Check if submodule is already configured in .gitmodules
+    if git config --file .gitmodules --get-regexp path | grep -q "third_party/a2a"; then
+        echo "🔄 Submodule configured but directory missing, initializing..."
+        git submodule update --init --recursive
+    else
+        echo "➕ Adding new submodule..."
+        git submodule add https://github.com/a2aproject/A2A.git third_party/a2a
+        git submodule update --init --recursive
+    fi
 else
     echo "✅ A2A submodule already exists, updating..."
+    cd "$REPO_ROOT"
+    git submodule update --init --recursive
     cd "$A2A_SUBMODULE_PATH"
     git fetch origin
     git checkout main
