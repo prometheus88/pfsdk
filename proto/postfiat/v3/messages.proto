@@ -28,8 +28,6 @@ message Envelope {
   // Message this is replying to (for threading)
   string reply_to = 5;
 
-  // Removed shared_key_id - PROTECTED mode handles group scenarios
-
   // Public references - always visible for discovery
   // These enable collaboration discovery without revealing private connections
   repeated ContextReference public_references = 6;
@@ -118,13 +116,23 @@ enum EncryptionMode {
 
 // PostFiat extension for A2A gRPC integration
 // Extension URI: https://postfiat.org/extensions/envelope/v1
+//
+// PostFiat extends A2A (Agent-to-Agent) gRPC protocol with selective disclosure.
+// These types are designed to be embedded in A2A Message.content as DataPart structures.
+// A2A proto definitions are available via git submodule at third_party/a2a/
+//
+// Integration pattern:
+// - PostFiatEnvelopePayload embeds in A2A Message.content[DataPart]
+// - PostFiatAgentCapabilities declares in A2A AgentCapabilities.extensions
+// - A2A handles service discovery, routing, task management
+// - PostFiat adds selective disclosure and ledger persistence
 
 // PostFiat agent capabilities extension for A2A AgentCard
 message PostFiatAgentCapabilities {
   // Supports PostFiat envelope processing
   bool envelope_processing = 1;
 
-  // Supports XRPL ledger persistence
+  // Supports ledger persistence
   bool ledger_persistence = 2;
 
   // Supports selective disclosure context DAG traversal
@@ -151,4 +159,17 @@ message PostFiatEnvelopePayload {
 
   // Metadata for PostFiat-specific processing
   map<string, string> postfiat_metadata = 4;
+}
+
+// Helper message for creating A2A Messages with PostFiat envelopes
+// Shows the integration pattern between A2A and PostFiat
+message PostFiatA2AMessage {
+  // Standard A2A Message structure
+  a2a.v1.Message a2a_message = 1;
+
+  // PostFiat envelope payload (also embedded in a2a_message.content)
+  PostFiatEnvelopePayload postfiat_payload = 2;
+
+  // Integration metadata
+  map<string, string> integration_metadata = 3;
 }

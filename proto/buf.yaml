@@ -17,6 +17,9 @@ lint:
     - PACKAGE_VERSION_SUFFIX
     - ENUM_VALUE_PREFIX
     - ENUM_ZERO_VALUE_SUFFIX
+  # Exclude A2A proto files from linting (external dependency)
+  ignore:
+    - a2a
   rpc_allow_same_request_response: false
   rpc_allow_google_protobuf_empty_requests: true
   rpc_allow_google_protobuf_empty_responses: true
