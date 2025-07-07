@@ -222,8 +222,12 @@ class ProtoIntrospector:
         # Handle message fields (nested types)
         message_type = None
         if field_type == FieldType.MESSAGE:
-            # We'll resolve this later to avoid circular dependencies
-            pass
+            try:
+                # Try to resolve the message type
+                message_type = self._resolve_message_type(field_desc.message_type)
+            except Exception as e:
+                logger.debug(f"Could not resolve message type for {field_desc.name}: {e}")
+                # Leave as None - will be handled gracefully in TestDataFactory
         
         return FieldInfo(
             name=field_desc.name,
@@ -234,6 +238,72 @@ class ProtoIntrospector:
             enum_type=enum_type,
             message_type=message_type
         )
+
+    def _resolve_message_type(self, message_desc: Descriptor) -> MessageSchema:
+        """Resolve a message type to a MessageSchema."""
+        # Try to get the message class
+        try:
+            # Get the message class from the descriptor
+            message_class = self._get_message_class_from_descriptor(message_desc)
+
+            # Create a basic MessageSchema
+            return MessageSchema(
+                name=message_desc.name,
+                full_name=message_desc.full_name,
+                module_name=message_desc.file.name,
+                message_class=message_class,
+                fields=[],  # Don't analyze fields to avoid circular dependencies
+                nested_types=[],
+                enum_types=[]
+            )
+        except Exception as e:
+            logger.debug(f"Failed to resolve message class for {message_desc.full_name}: {e}")
+            raise
+
+    def _get_message_class_from_descriptor(self, message_desc: Descriptor):
+        """Get the Python message class from a protobuf descriptor."""
+        # Try to find the message class in the current module
+        full_name = message_desc.full_name
+
+        # Handle common cases
+        if full_name.startswith('postfiat.v3.'):
+            # Our own messages
+            module_name = 'postfiat.v3.messages_pb2'
+            try:
+                import importlib
+                module = importlib.import_module(module_name)
+
+                # Handle nested classes (e.g., PostFiatA2AMessage.IntegrationMetadataEntry)
+                if '.' in full_name.replace('postfiat.v3.', ''):
+                    # This is a nested class
+                    parts = full_name.replace('postfiat.v3.', '').split('.')
+                    parent_class_name = parts[0]
+                    nested_class_name = parts[1]
+                    parent_class = getattr(module, parent_class_name)
+                    return getattr(parent_class, nested_class_name)
+                else:
+                    # Regular top-level class
+                    class_name = message_desc.name
+                    return getattr(module, class_name)
+            except (ImportError, AttributeError):
+                pass
+
+        # Try to get from the file descriptor's generated module
+        try:
+            # This is a more general approach
+            file_desc = message_desc.file
+            if hasattr(file_desc, '_concrete_class'):
+                # Try to find the class in the generated module
+                module_name = file_desc.package.replace('.', '_') + '_pb2'
+                class_name = message_desc.name
+                import importlib
+                module = importlib.import_module(module_name)
+                return getattr(module, class_name)
+        except Exception:
+            pass
+
+        # If all else fails, raise an exception
+        raise ImportError(f"Could not find message class for {full_name}")
     
     def _analyze_enum(self, enum_desc: EnumDescriptor) -> EnumInfo:
         """Analyze a proto enum."""
@@ -288,3 +358,130 @@ class ProtoIntrospector:
                 dependencies.extend(nested_deps)
         
         return list(set(dependencies))  # Remove duplicates
+
+
+class ProtoTestDataFactory:
+    """Factory for creating test data for protobuf messages using introspection."""
+
+    def __init__(self, introspector: ProtoIntrospector):
+        self.introspector = introspector
+
+    def populate_message(self, message: Message) -> Message:
+        """Populate a protobuf message with appropriate test data."""
+        schema = self.introspector.analyze_message(type(message))
+
+        for field in schema.fields:
+            try:
+                if field.label == FieldLabel.REPEATED:
+                    # For repeated fields, add one test item
+                    self._populate_repeated_field(message, field)
+                else:
+                    # For singular fields, set a test value
+                    self._populate_singular_field(message, field)
+            except Exception as e:
+                logger.debug(f"Failed to populate field {field.name}: {e}")
+                continue
+
+        return message
+
+    def _populate_singular_field(self, message: Message, field: FieldInfo):
+        """Populate a singular field with test data."""
+        if field.type == FieldType.STRING:
+            setattr(message, field.name, f"test_{field.name}")
+        elif field.type == FieldType.INT32:
+            setattr(message, field.name, 42)
+        elif field.type == FieldType.UINT32:
+            setattr(message, field.name, 42)
+        elif field.type == FieldType.INT64:
+            setattr(message, field.name, 1234567890)
+        elif field.type == FieldType.UINT64:
+            setattr(message, field.name, 1234567890)
+        elif field.type == FieldType.BOOL:
+            setattr(message, field.name, True)
+        elif field.type == FieldType.BYTES:
+            setattr(message, field.name, b"test_bytes")
+        elif field.type == FieldType.DOUBLE:
+            setattr(message, field.name, 3.14159)
+        elif field.type == FieldType.FLOAT:
+            setattr(message, field.name, 2.718)
+        elif field.type == FieldType.ENUM and field.enum_type:
+            # Set to first non-zero enum value if available
+            values = [v.number for v in field.enum_type.values if v.number != 0]
+            if values:
+                setattr(message, field.name, values[0])
+            else:
+                setattr(message, field.name, 0)
+        elif field.type == FieldType.MESSAGE and field.message_type:
+            # Create and populate nested message
+            try:
+                nested_msg = field.message_type.message_class()
+                self.populate_message(nested_msg)
+                getattr(message, field.name).CopyFrom(nested_msg)
+            except Exception as e:
+                logger.debug(f"Failed to create nested message for field {field.name}: {e}")
+                # Skip this field if we can't create the nested message
+
+    def _populate_repeated_field(self, message: Message, field: FieldInfo):
+        """Populate a repeated field with test data."""
+        repeated_field = getattr(message, field.name)
+
+        # Check if this is a map field (has key/value structure)
+        if field.message_type and hasattr(field.message_type.message_class.DESCRIPTOR, 'GetOptions'):
+            # Check if it's a map entry
+            if (hasattr(field.message_type.message_class.DESCRIPTOR, 'GetOptions') and
+                field.message_type.message_class.DESCRIPTOR.GetOptions().map_entry):
+                # This is a map field - populate it as a map
+                self._populate_map_field(message, field)
+                return
+
+        if field.type == FieldType.STRING:
+            repeated_field.append(f"test_{field.name}_1")
+        elif field.type in [FieldType.INT32, FieldType.UINT32]:
+            repeated_field.append(42)
+        elif field.type in [FieldType.INT64, FieldType.UINT64]:
+            repeated_field.append(1234567890)
+        elif field.type == FieldType.BOOL:
+            repeated_field.append(True)
+        elif field.type == FieldType.BYTES:
+            repeated_field.append(b"test_bytes")
+        elif field.type == FieldType.DOUBLE:
+            repeated_field.append(3.14159)
+        elif field.type == FieldType.FLOAT:
+            repeated_field.append(2.718)
+        elif field.type == FieldType.ENUM and field.enum_type:
+            # Add first non-zero enum value if available
+            values = [v.number for v in field.enum_type.values if v.number != 0]
+            if values:
+                repeated_field.append(values[0])
+            else:
+                repeated_field.append(0)
+        elif field.type == FieldType.MESSAGE and field.message_type:
+            # Create and populate nested message
+            try:
+                nested_msg = repeated_field.add()
+                self.populate_message(nested_msg)
+            except Exception as e:
+                logger.debug(f"Failed to create nested message for repeated field {field.name}: {e}")
+                # Skip this field if we can't create the nested message
+
+    def _populate_map_field(self, message: Message, field: FieldInfo):
+        """Populate a map field with test data."""
+        map_field = getattr(message, field.name)
+
+        # Add a test entry to the map
+        test_key = f"test_key_{field.name}"
+        test_value = f"test_value_{field.name}"
+
+        try:
+            map_field[test_key] = test_value
+        except Exception as e:
+            logger.debug(f"Failed to populate map field {field.name}: {e}")
+            # Fallback: try to add as a regular repeated field
+            try:
+                entry = map_field.add()
+                if hasattr(entry, 'key'):
+                    entry.key = test_key
+                if hasattr(entry, 'value'):
+                    entry.value = test_value
+            except Exception as e2:
+                logger.debug(f"Failed to populate map field {field.name} as repeated: {e2}")
