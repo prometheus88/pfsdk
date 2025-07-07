@@ -23,8 +23,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Developer Test Regeneration")
-    parser.add_argument("--legacy", action="store_true", 
-                       help="Use legacy hardcoded test generator (deprecated)")
+    # Legacy option removed - old generator no longer exists
     parser.add_argument("--run-tests", action="store_true",
                        help="Run tests after generation")
     parser.add_argument("--core-only", action="store_true",
@@ -35,16 +34,12 @@ def main():
     project_root = Path(__file__).parent.parent
     
     try:
-        if args.legacy:
-            logger.info("🔄 Using legacy hardcoded test generator (deprecated)")
-            script = "scripts/generate_protobuf_tests.py"
-        else:
-            logger.info("🚀 Using dynamic proto test generator")
-            script = "scripts/generate_dynamic_protobuf_tests.py"
+        logger.info(" Using dynamic proto test generator")
+        script = "scripts/generate_dynamic_protobuf_tests.py"
         
         # Generate tests
         logger.info(f"Running: {script}")
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, script],
             cwd=project_root,
             check=True

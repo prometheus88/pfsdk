@@ -95,7 +95,7 @@ We use a **hybrid approach** for generated files:
    python scripts/generate_protobuf.py
    
    # Generate tests
-   python scripts/generate_protobuf_tests.py
+   python scripts/generate_dynamic_protobuf_tests.py
    ```
 
 3. **Run tests:**
@@ -130,7 +130,7 @@ git checkout -b feature/your-feature-name
 ```bash
 # Generate and test locally
 python scripts/generate_python_types.py
-python scripts/generate_protobuf_tests.py
+python scripts/generate_dynamic_protobuf_tests.py
 pytest tests/ -v
 
 # Verify package installation
