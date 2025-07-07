@@ -344,14 +344,217 @@ def create_exception_from_error_info(error_info_dict: Dict[str, Any]) -> PostFia
     return True
 
 
+def generate_sqlmodel_models():
+    """Generate SQLModel database models from protobuf message definitions."""
+
+    # Import the generated protobuf module
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+
+    try:
+        from postfiat.v3 import messages_pb2, errors_pb2
+    except ImportError as e:
+        print(f"Error: Could not import generated protobuf files: {e}")
+        print("Make sure to run 'buf generate' first")
+        return False
+
+    print("🔍 Generating SQLModel models from protobuf message definitions...")
+
+    # Start building the models code
+    models_code = '''"""Auto-generated SQLModel database models from protobuf definitions.
+
+DO NOT EDIT - This file is auto-generated from proto files.
+Run 'python scripts/generate_python_types.py' to regenerate.
+"""
+
+from typing import Optional, Dict, Any, List
+from datetime import datetime
+from sqlmodel import SQLModel, Field, Relationship
+from pydantic import ConfigDict
+import json
+
+
+'''
+
+    # Generate models for each protobuf message type
+    protobuf_modules = [
+        ('messages_pb2', messages_pb2),
+        ('errors_pb2', errors_pb2)
+    ]
+
+    # Discover message types
+    message_types = {}
+    for module_name, module in protobuf_modules:
+        print(f"🔍 Scanning {module_name} for message types...")
+        for name in dir(module):
+            if not name.startswith('_') and not name.endswith('_pb2'):
+                attr = getattr(module, name)
+                # Check if this is a message type (has DESCRIPTOR)
+                if hasattr(attr, 'DESCRIPTOR') and hasattr(attr.DESCRIPTOR, 'fields'):
+                    message_types[name] = attr
+                    print(f"📊 Found message type: {name} in {module_name}")
+
+    if not message_types:
+        print("⚠️  No message types found in protobuf modules")
+        return False
+
+    # Generate SQLModel classes for each message type
+    for message_name, message_type in message_types.items():
+        print(f"📝 Generating SQLModel for {message_name}")
+
+        # Skip certain message types that shouldn't be database tables
+        if message_name in ['ExceptionDefinition']:
+            continue
+
+        # Generate the SQLModel class
+        models_code += f'class {message_name}(SQLModel, table=True):\n'
+        models_code += f'    """SQLModel for {message_name} protobuf message."""\n'
+        models_code += f'    model_config = ConfigDict(from_attributes=True)\n\n'
+
+        # Add primary key
+        models_code += f'    id: Optional[int] = Field(default=None, primary_key=True)\n'
+
+        # Process each field in the message
+        for field in message_type.DESCRIPTOR.fields:
+            field_name = field.name
+            field_type = field.type
+
+            # Map protobuf types to Python types
+            if field_type == field.TYPE_STRING:
+                python_type = "Optional[str]"
+                default_value = "None"
+            elif field_type == field.TYPE_INT32 or field_type == field.TYPE_UINT32:
+                python_type = "Optional[int]"
+                default_value = "None"
+            elif field_type == field.TYPE_INT64 or field_type == field.TYPE_UINT64:
+                python_type = "Optional[int]"
+                default_value = "None"
+            elif field_type == field.TYPE_BOOL:
+                python_type = "Optional[bool]"
+                default_value = "None"
+            elif field_type == field.TYPE_BYTES:
+                python_type = "Optional[bytes]"
+                default_value = "None"
+            elif field_type == field.TYPE_ENUM:
+                python_type = "Optional[int]"
+                default_value = "None"
+            elif field_type == field.TYPE_MESSAGE:
+                # Handle nested messages as JSON
+                python_type = "Optional[str]"
+                default_value = "None"
+            else:
+                python_type = "Optional[str]"
+                default_value = "None"
+
+            # Handle reserved field names
+            if field_name == "metadata":
+                field_name = "message_metadata"  # Rename to avoid SQLModel conflict
+
+            # Handle repeated fields
+            if field.label == field.LABEL_REPEATED:
+                if field_name == "message_metadata" or "map" in str(field.message_type).lower():
+                    # Handle map fields as JSON
+                    python_type = "Optional[str]"
+                    models_code += f'    {field_name}: {python_type} = Field(default={default_value}, description="JSON-encoded {field_name}")\n'
+                else:
+                    # Handle repeated fields as JSON arrays
+                    python_type = "Optional[str]"
+                    models_code += f'    {field_name}: {python_type} = Field(default={default_value}, description="JSON-encoded list of {field_name}")\n'
+            else:
+                models_code += f'    {field_name}: {python_type} = Field(default={default_value})\n'
+
+        # Add timestamps
+        models_code += f'    created_at: datetime = Field(default_factory=datetime.utcnow)\n'
+        models_code += f'    updated_at: Optional[datetime] = Field(default=None)\n'
+
+        models_code += '\n'
+
+        # Add helper methods
+        models_code += f'    @classmethod\n'
+        models_code += f'    def from_protobuf(cls, pb_message) -> "{message_name}":\n'
+        models_code += f'        """Create SQLModel instance from protobuf message."""\n'
+        models_code += f'        from postfiat.logging import get_logger\n'
+        models_code += f'        logger = get_logger("models.{message_name.lower()}")\n\n'
+        models_code += f'        data = {{}}\n'
+
+        # Generate field conversion logic
+        for field in message_type.DESCRIPTOR.fields:
+            proto_field_name = field.name
+            model_field_name = "message_metadata" if proto_field_name == "metadata" else proto_field_name
+
+            if field.label == field.LABEL_REPEATED:
+                if proto_field_name == "metadata" or "map" in str(field.message_type).lower():
+                    models_code += f'        if hasattr(pb_message, "{proto_field_name}"):\n'
+                    models_code += f'            data["{model_field_name}"] = json.dumps(dict(pb_message.{proto_field_name}))\n'
+                else:
+                    models_code += f'        if hasattr(pb_message, "{proto_field_name}"):\n'
+                    models_code += f'            data["{model_field_name}"] = json.dumps(list(pb_message.{proto_field_name}))\n'
+            else:
+                models_code += f'        if hasattr(pb_message, "{proto_field_name}"):\n'
+                models_code += f'            data["{model_field_name}"] = pb_message.{proto_field_name}\n'
+
+        models_code += f'\n        logger.debug(\n'
+        models_code += f'            "Converting protobuf to SQLModel",\n'
+        models_code += f'            message_type="{message_name}",\n'
+        models_code += f'            field_count=len(data)\n'
+        models_code += f'        )\n\n'
+        models_code += f'        return cls(**data)\n\n'
+
+        # Add to_protobuf method
+        models_code += f'    def to_protobuf(self):\n'
+        models_code += f'        """Convert SQLModel instance to protobuf message."""\n'
+        models_code += f'        from postfiat.v3 import messages_pb2, errors_pb2\n'
+        models_code += f'        from postfiat.logging import get_logger\n'
+        models_code += f'        logger = get_logger("models.{message_name.lower()}")\n\n'
+
+        # Determine which module contains this message
+        if hasattr(messages_pb2, message_name):
+            models_code += f'        pb_message = messages_pb2.{message_name}()\n'
+        else:
+            models_code += f'        pb_message = errors_pb2.{message_name}()\n'
+
+        # Generate field conversion logic
+        for field in message_type.DESCRIPTOR.fields:
+            proto_field_name = field.name
+            model_field_name = "message_metadata" if proto_field_name == "metadata" else proto_field_name
+
+            models_code += f'        if self.{model_field_name} is not None:\n'
+            if field.label == field.LABEL_REPEATED:
+                if proto_field_name == "metadata" or "map" in str(field.message_type).lower():
+                    models_code += f'            metadata_dict = json.loads(self.{model_field_name})\n'
+                    models_code += f'            pb_message.{proto_field_name}.update(metadata_dict)\n'
+                else:
+                    models_code += f'            items = json.loads(self.{model_field_name})\n'
+                    models_code += f'            pb_message.{proto_field_name}.extend(items)\n'
+            else:
+                models_code += f'            pb_message.{proto_field_name} = self.{model_field_name}\n'
+
+        models_code += f'\n        logger.debug(\n'
+        models_code += f'            "Converting SQLModel to protobuf",\n'
+        models_code += f'            message_type="{message_name}",\n'
+        models_code += f'            model_id=self.id\n'
+        models_code += f'        )\n\n'
+        models_code += f'        return pb_message\n\n\n'
+
+    # Write the generated file
+    output_path = Path(__file__).parent.parent / "postfiat" / "models" / "generated.py"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'w') as f:
+        f.write(models_code)
+
+    print(f"✅ Generated {output_path}")
+    return True
+
+
 def main():
     """Generate all Python types from protobuf definitions."""
     print("🔄 Generating Python types from protobuf definitions...")
-    
+
     success = True
     success &= generate_enums_from_proto()
     success &= generate_exceptions()
-    
+    success &= generate_sqlmodel_models()
+
     if success:
         print("✅ All Python types generated successfully!")
     else:
