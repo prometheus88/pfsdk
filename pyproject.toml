@@ -69,8 +69,12 @@ dependencies = [
     "httpx-sse>=0.4.0,<1.0.0",               # Server-Sent Events
     "sse-starlette>=2.3.6,<3.0.0",           # FastAPI streaming support
 
-    # Basic Logging (minimal)
+    # Logging & Observability (compatible with httpx<0.25.0)
     "loguru>=0.7.0,<1.0.0",                  # Beautiful console logging
+    "structlog>=23.0.0,<25.0.0",             # Structured logging
+
+    # Proto Enhancement (compatible)
+    "proto-plus>=1.26.1,<2.0.0",             # Enhanced proto handling
 ]
 
 [project.optional-dependencies]
@@ -121,29 +125,23 @@ integrations = [
     "watchdog>=3.0.0,<5.0.0",
 ]
 
-# AI & LLM Integration (moved from core to reduce dependency bloat)
-ai = [
-    "pydantic-ai>=0.3.5,<1.0.0",
-    "openai>=1.93.0,<2.0.0",
-    "mcp>=1.9.3,<2.0.0",                     # Model Context Protocol
+# Heavy dependencies that require newer httpx (incompatible with xrpl-py)
+heavy = [
+    "pydantic-ai>=0.3.5,<1.0.0",             # Pydantic AI (causes massive backtracking)
+    "openai>=1.93.0,<2.0.0",                 # OpenAI API (requires httpx>=0.27)
+    "mcp>=1.9.3,<2.0.0",                     # Model Context Protocol (requires httpx>=0.27)
+    "google-api-core>=2.25.0,<3.0.0",       # Google API integration
+    "grpcio-reflection>=1.71.0,<2.0.0",     # Runtime service discovery
+    "protoc-gen-openapiv2>=0.0.1,<1.0.0",   # OpenAPI generation
 ]
 
-# Advanced observability stack (moved from core)
+# Advanced observability (OpenTelemetry stack)
 observability = [
-    "structlog>=23.0.0,<25.0.0",              # Structured logging
     "opentelemetry-api>=1.34.1,<2.0.0",      # Distributed tracing API
     "opentelemetry-sdk>=1.34.1,<2.0.0",      # Observability SDK
     "opentelemetry-exporter-otlp-proto-http>=1.34.1,<2.0.0",  # OTLP export
     "opentelemetry-semantic-conventions>=0.55b1,<1.0.0",       # Standard conventions
     "logfire>=0.1.0,<1.0.0",                 # Pydantic Logfire
-]
-
-# A2A Protocol Integration (heavy dependencies)
-a2a = [
-    "grpcio-reflection>=1.71.0,<2.0.0",      # Runtime service discovery
-    "proto-plus>=1.26.1,<2.0.0",            # Enhanced proto handling
-    "google-api-core>=2.25.0,<3.0.0",       # Google API integration
-    "protoc-gen-openapiv2>=0.0.1,<1.0.0",   # OpenAPI generation
 ]
 
 # LLM provider dependencies (optional)
@@ -157,7 +155,7 @@ llm = [
 
 # All optional dependencies for complete installation
 all = [
-    "postfiat[gui,cli,dev,docs,notebooks,integrations,ai,observability,a2a,llm]"
+    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm]"
 ]
 
 [project.urls]
