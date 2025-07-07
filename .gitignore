@@ -215,6 +215,7 @@ postfiat/v3/*_pb2_grpc.py
 postfiat/types/enums.py
 postfiat/exceptions.py
 postfiat/models/envelope_enums.py
+postfiat/models/common_enums.py
 postfiat/models/generated.py
 postfiat/services/generated.py
 postfiat/api/generated_routes.py
