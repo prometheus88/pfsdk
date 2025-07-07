@@ -18,12 +18,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          submodules: recursive
+
+      - name: Setup A2A dependency
+        run: ./scripts/setup-a2a-dependency.sh
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Lint proto files
         run: |
           cd proto
@@ -46,12 +51,17 @@ jobs:
     needs: proto-validation
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          submodules: recursive
+
+      - name: Setup A2A dependency
+        run: ./scripts/setup-a2a-dependency.sh
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
@@ -99,7 +109,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add -f postfiat/types/enums.py postfiat/exceptions.py postfiat/v3/*_pb2.py postfiat/v3/*_pb2_grpc.py
+          git add -f postfiat/types/enums.py postfiat/exceptions.py postfiat/v3/*_pb2.py postfiat/v3/*_pb2_grpc.py a2a/v1/*_pb2.py a2a/v1/*_pb2_grpc.py
           if ! git diff --staged --quiet; then
             git commit -m "chore: add generated files for main branch [skip ci]"
             git push origin main
@@ -116,12 +126,17 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          submodules: recursive
+
+      - name: Setup A2A dependency
+        run: ./scripts/setup-a2a-dependency.sh
+
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
@@ -157,12 +172,17 @@ jobs:
     needs: [proto-validation, tests]
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          submodules: recursive
+
+      - name: Setup A2A dependency
+        run: ./scripts/setup-a2a-dependency.sh
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
