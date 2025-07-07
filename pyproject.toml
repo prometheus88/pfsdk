@@ -34,30 +34,26 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 
-# Core SDK dependencies - Constrained versions for faster CI
+# Core SDK dependencies - Minimal working set
 dependencies = [
-    # Blockchain & Crypto - Pin major versions
+    # Blockchain & Crypto
     "xrpl-py>=2.0.0,<3.0.0",
     "cryptography>=41.0.7,<43.0.0",
     "pycryptodome>=3.18.0,<4.0.0",
     "pynacl>=1.5.0,<2.0.0",
 
-    # Data & Utilities - Pin major versions
+    # Data & Utilities
     "pandas>=2.0.0,<3.0.0",
     "numpy>=1.24.0,<3.0.0",
     "requests>=2.31.0,<3.0.0",
     "aiofiles>=23.0.0,<25.0.0",
     "python-dotenv-vault",
 
-    # Proto & gRPC Stack - Pin to compatible versions
+    # Core Proto & gRPC Stack (minimal)
     "protobuf>=5.29.5,<7.0.0",
     "grpcio>=1.73.0,<2.0.0",
     "grpcio-tools>=1.71.0,<2.0.0",
-    "grpcio-reflection>=1.71.0,<2.0.0",        # Runtime service discovery
     "googleapis-common-protos>=1.70.0,<2.0.0",
-    "proto-plus>=1.26.1,<2.0.0",              # Enhanced proto handling
-    "google-api-core>=2.25.0,<3.0.0",         # Better Google API integration
-    "protoc-gen-openapiv2>=0.0.1,<1.0.0",
 
     # Type Safety & Validation - Pin major versions
     "pydantic>=2.11.5,<3.0.0",
@@ -65,26 +61,16 @@ dependencies = [
     "sqlmodel>=0.0.24,<1.0.0",
     "alembic>=1.12.1,<2.0.0",
 
-    # API & Server Stack - Pin major versions
+    # API & Server Stack - Compatible with xrpl-py
     "fastapi>=0.115.12,<1.0.0",
     "uvicorn>=0.34.3,<1.0.0",                 # Production ASGI server
     "python-multipart>=0.0.20,<1.0.0",       # File upload support
-    "httpx>=0.28.1,<1.0.0",
+    "httpx>=0.18.1,<0.25.0",                 # Compatible with xrpl-py
     "httpx-sse>=0.4.0,<1.0.0",               # Server-Sent Events
     "sse-starlette>=2.3.6,<3.0.0",           # FastAPI streaming support
 
-    # AI & LLM Integration - Pin major versions
-    "pydantic-ai>=0.3.5,<1.0.0",
-    "openai>=1.93.0,<2.0.0",
-    "mcp>=1.9.3,<2.0.0",                     # Model Context Protocol
-
-    # Observability Stack - Pin major versions
+    # Basic Logging (minimal)
     "loguru>=0.7.0,<1.0.0",                  # Beautiful console logging
-    "structlog>=23.0.0,<25.0.0",              # Structured logging
-    "opentelemetry-api>=1.34.1,<2.0.0",      # Distributed tracing API
-    "opentelemetry-sdk>=1.34.1,<2.0.0",      # Observability SDK
-    "opentelemetry-exporter-otlp-proto-http>=1.34.1,<2.0.0",  # OTLP export
-    "opentelemetry-semantic-conventions>=0.55b1,<1.0.0",       # Standard conventions
 ]
 
 [project.optional-dependencies]
@@ -135,9 +121,29 @@ integrations = [
     "watchdog>=3.0.0,<5.0.0",
 ]
 
-# Advanced observability with Pydantic Logfire
+# AI & LLM Integration (moved from core to reduce dependency bloat)
+ai = [
+    "pydantic-ai>=0.3.5,<1.0.0",
+    "openai>=1.93.0,<2.0.0",
+    "mcp>=1.9.3,<2.0.0",                     # Model Context Protocol
+]
+
+# Advanced observability stack (moved from core)
 observability = [
-    "logfire>=0.1.0,<1.0.0",
+    "structlog>=23.0.0,<25.0.0",              # Structured logging
+    "opentelemetry-api>=1.34.1,<2.0.0",      # Distributed tracing API
+    "opentelemetry-sdk>=1.34.1,<2.0.0",      # Observability SDK
+    "opentelemetry-exporter-otlp-proto-http>=1.34.1,<2.0.0",  # OTLP export
+    "opentelemetry-semantic-conventions>=0.55b1,<1.0.0",       # Standard conventions
+    "logfire>=0.1.0,<1.0.0",                 # Pydantic Logfire
+]
+
+# A2A Protocol Integration (heavy dependencies)
+a2a = [
+    "grpcio-reflection>=1.71.0,<2.0.0",      # Runtime service discovery
+    "proto-plus>=1.26.1,<2.0.0",            # Enhanced proto handling
+    "google-api-core>=2.25.0,<3.0.0",       # Google API integration
+    "protoc-gen-openapiv2>=0.0.1,<1.0.0",   # OpenAPI generation
 ]
 
 # LLM provider dependencies (optional)
@@ -151,7 +157,7 @@ llm = [
 
 # All optional dependencies for complete installation
 all = [
-    "postfiat[gui,cli,dev,docs,notebooks,integrations,observability,llm]"
+    "postfiat[gui,cli,dev,docs,notebooks,integrations,ai,observability,a2a,llm]"
 ]
 
 [project.urls]
