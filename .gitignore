@@ -234,3 +234,13 @@ reference_implementations/
 
 # Old work directory
 agent-is-a-jackass/
+
+# Generated artifacts from third_party
+proto/a2a
+
+# A2A generated Python files
+a2a/v1/*_pb2.py
+a2a/v1/*_pb2_grpc.py
+
+# Buf lock file (commit this)
+# proto/buf.lock
