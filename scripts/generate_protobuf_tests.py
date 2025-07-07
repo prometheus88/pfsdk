@@ -520,8 +520,8 @@ class TestSerializationIntegrity:
                 continue
     
     def test_message_envelope_serialization(self):
-        """Test MessageEnvelope serialization with correct field names."""
-        envelope = messages_pb2.MessageEnvelope()
+        """Test Envelope serialization with correct field names."""
+        envelope = messages_pb2.Envelope()
         
         # Use correct field names from actual protobuf definition
         envelope.version = 1
@@ -535,7 +535,7 @@ class TestSerializationIntegrity:
         serialized = envelope.SerializeToString()
         assert len(serialized) > 0
         
-        deserialized = messages_pb2.MessageEnvelope()
+        deserialized = messages_pb2.Envelope()
         deserialized.ParseFromString(serialized)
         
         assert envelope == deserialized
