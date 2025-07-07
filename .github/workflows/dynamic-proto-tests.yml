@@ -66,8 +66,13 @@ jobs:
     - name: Check if proto test regeneration is needed
       id: check_regen
       run: |
+        # Capture exit code without failing the workflow
+        set +e  # Don't exit on error
         python scripts/ci_test_generation.py --check-only
-        echo "needs_regen=$?" >> $GITHUB_OUTPUT
+        REGEN_NEEDED=$?
+        set -e  # Re-enable exit on error
+        echo "needs_regen=$REGEN_NEEDED" >> $GITHUB_OUTPUT
+        echo "Regeneration needed: $([ $REGEN_NEEDED -eq 1 ] && echo 'true' || echo 'false')"
         
     - name: Generate dynamic proto tests
       if: steps.check_regen.outputs.needs_regen == '1'
