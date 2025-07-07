@@ -90,20 +90,28 @@ pydantic_value = MessageType.from_protobuf(pb_value)
 
 ### 4. Test Generation
 
-**Script:** `scripts/generate_protobuf_tests.py`
-**Purpose:** Generate comprehensive test suites from protobuf contracts
+**🆕 Dynamic Test Generator (Recommended):**
+**Script:** `scripts/generate_dynamic_protobuf_tests.py`
+**Purpose:** Generate comprehensive test suites using runtime proto introspection
 
 **Generates:**
-- `tests/generated/test_contract_validation.py` - Message contract tests
-- `tests/generated/test_serialization_integrity.py` - Round-trip serialization tests
-- `tests/generated/test_persistence_scaffolding.py` - Service integration tests
+- `tests/generated/test_dynamic_serialization.py` - Round-trip serialization tests
+- `tests/generated/test_dynamic_validation.py` - Field and enum validation tests
+- `tests/generated/test_dynamic_services.py` - gRPC service method tests
+- `tests/generated/test_dynamic_evolution.py` - Schema evolution and compatibility tests
+
+**Key Features:**
+- **Runtime Introspection:** Uses actual proto message descriptors (no hardcoded field names)
+- **Auto-Adaptation:** Tests automatically adapt when proto schemas change
+- **Schema Evolution:** Tests backward compatibility and wire format stability
+- **Comprehensive Coverage:** Generates tests for all discovered proto messages
 
 **Test Types:**
-- **Contract Validation:** Ensures messages conform to protobuf schemas
 - **Serialization Integrity:** Validates round-trip serialization
 - **Field Type Validation:** Tests field constraints and types
 - **Enum Validation:** Verifies enum values and conversions
 - **Service Integration:** Tests service method signatures
+- **Schema Evolution:** Tests backward compatibility and field number stability
 
 ## 🔄 Development Workflow
 
@@ -127,7 +135,7 @@ pydantic_value = MessageType.from_protobuf(pb_value)
    python scripts/generate_protobuf.py
    
    # Generate tests
-   python scripts/generate_protobuf_tests.py
+   python scripts/generate_dynamic_protobuf_tests.py
    ```
 
 3. **Test Changes:**
@@ -215,9 +223,13 @@ tests/
 │   ├── test_business_logic.py
 │   └── test_edge_cases.py
 └── generated/                 # Auto-generated tests (ignored)
-    ├── test_contract_validation.py
-    ├── test_serialization_integrity.py
-    └── test_persistence_scaffolding.py
+    ├── test_dynamic_serialization.py    # 🆕 Dynamic serialization tests
+    ├── test_dynamic_validation.py       # 🆕 Dynamic field/enum validation
+    ├── test_dynamic_services.py         # 🆕 Dynamic service tests
+    ├── test_dynamic_evolution.py        # 🆕 Schema evolution tests
+    ├── test_contract_validation.py      # Legacy hardcoded tests
+    ├── test_serialization_integrity.py  # Legacy hardcoded tests
+    └── test_persistence_scaffolding.py  # Legacy hardcoded tests
 ```
 
 ### Test Types
@@ -228,12 +240,13 @@ tests/
 - Edge case handling
 - User workflow testing
 
-**Generated Tests:**
-- Protobuf contract validation
-- Serialization round-trip testing
-- Field constraint validation
-- Enum value verification
+**Generated Tests (Dynamic):**
+- Runtime proto introspection-based testing
+- Serialization round-trip testing with actual field discovery
+- Field constraint validation using proto descriptors
+- Enum value verification from runtime schema
 - Service method signature testing
+- Schema evolution and backward compatibility testing
 
 ## 🔧 Extending the SDK
 
@@ -309,10 +322,13 @@ python scripts/generate_python_types.py
 # ✅ Generated /path/to/postfiat/types/enums.py
 # ✅ Generated /path/to/postfiat/exceptions.py
 
-python scripts/generate_protobuf_tests.py
-# {"event": "Starting protobuf-based test suite generation", "level": "info", "timestamp": "2025-07-04T16:20:01.456Z"}
-# {"message_types_count": 6, "services_count": 0, "modules": ["messages", "errors"], "event": "Discovered protobuf definitions", "level": "info"}
-# ✅ Test generation complete!
+python scripts/generate_dynamic_protobuf_tests.py
+# 🔥 REPLACING BROKEN HARDCODED TEST GENERATOR
+# 🎯 NEW: Dynamic Proto Test Generation with Runtime Introspection
+# {"event": "Discovered 10 proto message classes", "level": "info", "timestamp": "2025-07-07T10:35:16.856532Z"}
+# {"event": "✅ Generated serialization tests: tests/generated/test_dynamic_serialization.py", "level": "info"}
+# {"event": "✅ Generated evolution tests: tests/generated/test_dynamic_evolution.py", "level": "info"}
+# ✅ SUCCESS: Dynamic proto test generation complete!
 
 python scripts/generate_protobuf.py
 # 🚀 Generating comprehensive SDK from protobuf definitions...
@@ -341,9 +357,11 @@ Check GitHub Actions for detailed logs:
 - Ensure all imports available
 
 **Test Failures:**
-- Regenerate tests: `python scripts/generate_protobuf_tests.py`
+- Regenerate dynamic tests: `python scripts/generate_dynamic_protobuf_tests.py`
+- Use CI integration: `python scripts/ci_test_generation.py --force`
 - Check protobuf message compatibility
 - Verify enum values match proto definitions
+- For legacy tests: `python scripts/generate_protobuf_tests.py` *(deprecated)*
 
 ## � Logging Best Practices
 

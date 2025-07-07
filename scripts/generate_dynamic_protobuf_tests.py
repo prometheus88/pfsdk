@@ -31,7 +31,6 @@ from postfiat.logging import get_logger
 
 # Import our new dynamic components
 from scripts.proto_introspection import ProtoIntrospector
-from scripts.test_data_factory import TestDataFactory
 from scripts.serialization_test_generator import SerializationTestGenerator
 from scripts.validation_test_generator import ValidationTestGenerator
 from scripts.service_test_generator import ServiceTestGenerator
@@ -54,10 +53,7 @@ class DynamicProtobufTestGenerator:
         
         # Initialize components
         self.introspector = ProtoIntrospector()
-        self.test_data_factory = TestDataFactory(self.introspector)
-        self.serialization_generator = SerializationTestGenerator(
-            self.introspector, self.test_data_factory
-        )
+        self.serialization_generator = SerializationTestGenerator(self.introspector)
         self.validation_generator = ValidationTestGenerator()
         self.service_generator = ServiceTestGenerator(self.introspector)
         self.evolution_generator = SchemaEvolutionTestGenerator(self.introspector)

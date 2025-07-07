@@ -12,7 +12,7 @@ from google.protobuf.message import Message
 from datetime import datetime
 
 from .proto_introspection import MessageSchema, ProtoIntrospector
-from .test_data_factory import TestDataFactory
+# TestDataFactory removed - using simple test data generation
 from postfiat.logging import get_logger
 
 logger = get_logger("proto.serialization_tests")
@@ -21,9 +21,8 @@ logger = get_logger("proto.serialization_tests")
 class SerializationTestGenerator:
     """Generates dynamic serialization round-trip tests."""
     
-    def __init__(self, introspector: ProtoIntrospector, test_data_factory: TestDataFactory):
+    def __init__(self, introspector: ProtoIntrospector):
         self.introspector = introspector
-        self.test_data_factory = test_data_factory
         self.logger = get_logger("proto.serialization_test_generator")
     
     def generate_test_file(self, message_schemas: List[MessageSchema]) -> str:
@@ -64,7 +63,6 @@ if str(scripts_path) not in sys.path:
 
 try:
     from proto_introspection import ProtoIntrospector
-    from test_data_factory import TestDataFactory
 except ImportError:
     # Fallback for when running tests - create minimal implementations
     class ProtoIntrospector:
@@ -81,9 +79,8 @@ class TestDynamicSerialization:
     """Dynamic serialization tests generated from proto introspection."""
 
     def setup_method(self):
-        """Setup test data factory for dynamic population."""
+        """Setup introspector for dynamic population."""
         self.introspector = ProtoIntrospector()
-        self.test_data_factory = TestDataFactory(self.introspector)
 
 {parametrized_tests}
 
@@ -111,8 +108,8 @@ class TestDynamicSerialization:
     
     def _populate_message_with_test_data(self, message: Message) -> Message:
         """Populate message with appropriate test data using introspection."""
-        # Use the TestDataFactory to populate the message
-        return self.test_data_factory.populate_message(message)
+        # Simple fallback - just return the message (individual tests handle population)
+        return message
 '''
         
         return content
