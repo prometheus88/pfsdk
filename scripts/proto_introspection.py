@@ -360,7 +360,7 @@ class ProtoIntrospector:
         return list(set(dependencies))  # Remove duplicates
 
 
-class ProtoTestDataFactory:
+class _ProtoTestDataFactory:
     """Factory for creating test data for protobuf messages using introspection."""
 
     def __init__(self, introspector: ProtoIntrospector):
@@ -485,3 +485,7 @@ class ProtoTestDataFactory:
                     entry.value = test_value
             except Exception as e2:
                 logger.debug(f"Failed to populate map field {field.name} as repeated: {e2}")
+
+
+# Export alias to avoid pytest collection warnings
+ProtoTestDataFactory = _ProtoTestDataFactory
