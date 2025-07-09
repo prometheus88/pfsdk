@@ -152,7 +152,7 @@ jobs:
              :maxdepth: 2
              :caption: Contents:
           
-             autoapi/index
+             api/index
           
           Indices and tables
           ==================
