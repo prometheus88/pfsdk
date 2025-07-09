@@ -1,0 +1,83 @@
+{
+  "name": "@postfiat/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for PostFiat Wallet Protocol",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.ts",
+    "!**/*.spec.ts"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules",
+    "generate": "buf generate --template ../proto/buf.gen.yaml ../proto",
+    "generate:types": "tsx scripts/generate-typescript-types.ts",
+    "generate:tests": "tsx scripts/generate-typescript-tests.ts",
+    "generate:all": "npm run generate && npm run generate:types && npm run generate:tests"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-web": "^1.4.0"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^1.10.0",
+    "@connectrpc/protoc-gen-connect-es": "^1.4.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^15.0.0",
+    "@types/jest": "^29.5.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "ts-jest": "^29.1.0",
+    "tsup": "^8.0.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5"
+  },
+  "keywords": [
+    "postfiat",
+    "wallet",
+    "protocol",
+    "grpc",
+    "typescript",
+    "sdk"
+  ],
+  "author": "PostFiat",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/postfiat/pfsdk"
+  },
+  "bugs": {
+    "url": "https://github.com/postfiat/pfsdk/issues"
+  },
+  "homepage": "https://github.com/postfiat/pfsdk#readme"
+}

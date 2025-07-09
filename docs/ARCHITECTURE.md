@@ -1,10 +1,18 @@
 # PostFiat SDK Architecture
 
-This document describes the technical architecture and technology stack of the PostFiat SDK, a modern proto-first Python SDK with AI integration capabilities.
+This document describes the technical architecture and technology stack of the PostFiat SDK, a modern proto-first multi-language SDK with AI integration capabilities.
 
 ## 🎯 Architecture Overview
 
-The PostFiat SDK is built on a **proto-first, API-driven architecture** that automatically generates type-safe Python code, REST APIs, and AI-powered integrations from Protocol Buffer definitions.
+The PostFiat SDK is built on a **proto-first, API-driven architecture** that automatically generates type-safe code for multiple languages, REST APIs, and AI-powered integrations from Protocol Buffer definitions.
+
+### Multi-Language Support
+
+The SDK supports multiple programming languages with a shared proto foundation:
+
+- **Python SDK** (`python/`): Full-featured SDK with AI integration, FastAPI servers, and SQLModel ORM
+- **TypeScript SDK** (`typescript/`): Modern web-focused SDK with React hooks, gRPC-Web support, and Jest testing
+- **Shared Proto** (`proto/`): Single source of truth for all language bindings
 
 ```mermaid
 graph TB
@@ -14,42 +22,55 @@ graph TB
     
     subgraph "Code Generation Layer"
         B[Buf CLI<br/>Protobuf → Python]
-        C[Custom Generators<br/>Types & Services]
-        D[OpenAPI Generator<br/>REST API Specs]
+        C[Buf CLI<br/>Protobuf → TypeScript]
+        D[Custom Generators<br/>Types & Services]
+        E[OpenAPI Generator<br/>REST API Specs]
     end
     
-    subgraph "Core SDK Layer"
-        E[Pydantic Models<br/>Type Safety & Validation]
-        F[SQLModel<br/>Database ORM]
-        G[FastAPI<br/>REST API Server]
-        H[gRPC Services<br/>High Performance RPC]
+    subgraph "Python SDK Layer"
+        F[Pydantic Models<br/>Type Safety & Validation]
+        G[SQLModel<br/>Database ORM]
+        H[FastAPI<br/>REST API Server]
+        I[gRPC Services<br/>High Performance RPC]
+    end
+    
+    subgraph "TypeScript SDK Layer"
+        J[Connect-ES<br/>gRPC-Web Client]
+        K[React Hooks<br/>UI Integration]
+        L[Type Definitions<br/>TypeScript Types]
     end
     
     subgraph "AI Integration Layer"
-        I[PydanticAI<br/>AI Agent Framework]
-        J[LLM Integrations<br/>OpenAI, Anthropic, etc.]
+        M[PydanticAI<br/>AI Agent Framework]
+        N[LLM Integrations<br/>OpenAI, Anthropic, etc.]
     end
     
     subgraph "Client Layer"
-        K[Python SDK<br/>Type-safe Client]
-        L[REST API<br/>HTTP/JSON Interface]
-        M[gRPC Client<br/>Binary Protocol]
+        O[Python SDK<br/>Type-safe Client]
+        P[TypeScript SDK<br/>Web Client]
+        Q[REST API<br/>HTTP/JSON Interface]
+        R[gRPC Client<br/>Binary Protocol]
     end
     
     A --> B
     A --> C
     A --> D
-    B --> E
-    C --> E
-    C --> F
-    E --> G
-    E --> H
-    E --> I
-    F --> G
-    I --> J
-    E --> K
-    G --> L
-    H --> M
+    A --> E
+    B --> F
+    C --> L
+    D --> F
+    D --> G
+    F --> H
+    F --> I
+    F --> M
+    G --> H
+    M --> N
+    F --> O
+    L --> P
+    J --> P
+    K --> P
+    H --> Q
+    I --> R
 ```
 
 ## 🛠️ Technology Stack
@@ -217,7 +238,7 @@ class Wallet(SQLModel, table=True):
 classDiagram
     class User {
         +str id
-        +str email
+        +str email  
         +str name
         +datetime created_at
         +bool is_active
@@ -275,14 +296,6 @@ classDiagram
         +EncryptionMode encryption
     }
 
-    %% Relationships
-    User ||--o{ Wallet : owns
-    Wallet ||--o{ Transaction : contains
-    User ||--o{ AIConversation : participates
-    AIAgent ||--o{ AIConversation : handles
-    AIConversation ||--o{ Message : contains
-
-    %% Enums
     class MessageType {
         <<enumeration>>
         CONTEXTUAL_MESSAGE
@@ -298,8 +311,14 @@ classDiagram
         NACL_BOX
     }
 
-    Message --> MessageType
-    Message --> EncryptionMode
+    %% Relationships
+    User --> Wallet : owns
+    Wallet --> Transaction : contains
+    User --> AIConversation : participates
+    AIAgent --> AIConversation : handles
+    AIConversation --> Message : contains
+    Message --> MessageType : uses
+    Message --> EncryptionMode : uses
 ```
 
 ### 7. Observability Stack (structlog + loguru + OpenTelemetry)

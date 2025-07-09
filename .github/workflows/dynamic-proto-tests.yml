@@ -5,19 +5,19 @@ on:
     branches: [ main, dev ]
     paths:
       - 'postfiat/v3/*.proto'
-      - 'scripts/generate_dynamic_protobuf_tests.py'
-      - 'scripts/proto_introspection.py'
+      - 'python/scripts/generate_dynamic_protobuf_tests.py'
+      - 'python/scripts/proto_introspection.py'
 
-      - 'scripts/*_test_generator.py'
+      - 'python/scripts/*_test_generator.py'
       - '.github/workflows/dynamic-proto-tests.yml'
   pull_request:
     branches: [ main, dev ]
     paths:
       - 'postfiat/v3/*.proto'
-      - 'scripts/generate_dynamic_protobuf_tests.py'
-      - 'scripts/proto_introspection.py'
+      - 'python/scripts/generate_dynamic_protobuf_tests.py'
+      - 'python/scripts/proto_introspection.py'
 
-      - 'scripts/*_test_generator.py'
+      - 'python/scripts/*_test_generator.py'
       - '.github/workflows/dynamic-proto-tests.yml'
 
 jobs:
@@ -43,6 +43,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: typescript/package-lock.json
+
     - name: Setup Buf
       uses: bufbuild/buf-setup-action@v1
       with:
@@ -54,8 +61,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyyaml protobuf grpcio-tools pytest
         pip install -e .
+        pip install -e python/
+        pip install pytest
+
+    - name: Install TypeScript dependencies
+      run: |
+        cd typescript
+        npm ci
 
     - name: Generate protobuf code
       run: |
@@ -68,7 +81,7 @@ jobs:
       run: |
         # Capture exit code without failing the workflow
         set +e  # Don't exit on error
-        python scripts/ci_test_generation.py --check-only
+        python python/scripts/ci_test_generation.py --check-only
         REGEN_NEEDED=$?
         set -e  # Re-enable exit on error
         echo "needs_regen=$REGEN_NEEDED" >> $GITHUB_OUTPUT
@@ -78,14 +91,14 @@ jobs:
       if: steps.check_regen.outputs.needs_regen == '1'
       run: |
         echo "🔄 Proto files changed - regenerating dynamic tests"
-        python scripts/ci_test_generation.py --force
+        python python/scripts/ci_test_generation.py --force
         
     - name: Validate generated tests
       run: |
         echo "✅ Validating generated test syntax"
         # Only validate if tests exist
-        if [ -d "tests/generated" ] && [ "$(ls -A tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
-          python scripts/ci_test_generation.py --validate-only
+        if [ -d "python/tests/generated" ] && [ "$(ls -A python/tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
+          python python/scripts/ci_test_generation.py --validate-only
         else
           echo "⚠️ No generated tests to validate - will be created in next step"
         fi
@@ -94,8 +107,9 @@ jobs:
       run: |
         echo "🧪 Running dynamic proto tests"
         # Check if generated tests exist
-        if [ -d "tests/generated" ] && [ "$(ls -A tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
+        if [ -d "python/tests/generated" ] && [ "$(ls -A python/tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
           echo "✅ Found generated tests, running them..."
+          cd python
           python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
         else
           echo "⚠️ No generated tests found - this is expected on first run"
@@ -105,11 +119,11 @@ jobs:
     - name: Check for test changes (PR only)
       if: github.event_name == 'pull_request'
       run: |
-        if git diff --quiet tests/generated/; then
+        if git diff --quiet python/tests/generated/; then
           echo "✅ No changes to generated tests"
         else
           echo "⚠️ Generated tests have changed - this is expected if proto files changed"
-          git diff --name-only tests/generated/
+          git diff --name-only python/tests/generated/
         fi
         
     - name: Auto-commit generated tests (main/dev branch only)
@@ -118,9 +132,9 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
-        if ! git diff --quiet tests/generated/; then
+        if ! git diff --quiet python/tests/generated/; then
           echo "📝 Committing updated generated tests"
-          git add tests/generated/
+          git add python/tests/generated/
           git commit -m "chore: regenerate dynamic proto tests
           
           - Auto-generated from proto schema changes
@@ -155,6 +169,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: typescript/package-lock.json
+
     - name: Setup Buf
       uses: bufbuild/buf-setup-action@v1
       with:
@@ -166,8 +187,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyyaml protobuf grpcio-tools pytest
         pip install -e .
+        pip install -e python/
+        pip install pytest
+
+    - name: Install TypeScript dependencies
+      run: |
+        cd typescript
+        npm ci
 
     - name: Generate protobuf code
       run: |
@@ -179,6 +206,7 @@ jobs:
       run: |
         echo "🔍 Testing legacy hardcoded tests (expected to fail)"
         # This will likely fail due to hardcoded field names
+        cd python
         python -m pytest tests/generated/test_serialization_integrity.py -v || true
         echo "ℹ️ Legacy test results above - failures expected due to hardcoded field names"
 
@@ -205,6 +233,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: typescript/package-lock.json
+
     - name: Setup Buf
       uses: bufbuild/buf-setup-action@v1
       with:
@@ -216,8 +251,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyyaml protobuf grpcio-tools pytest
         pip install -e .
+        pip install -e python/
+        pip install pytest
+
+    - name: Install TypeScript dependencies
+      run: |
+        cd typescript
+        npm ci
 
     - name: Generate protobuf code
       run: |
@@ -230,6 +271,7 @@ jobs:
         echo "🧪 Testing dynamic generator components"
         
         # Test proto introspection
+        cd python
         python -c "
         import sys
         from pathlib import Path
@@ -272,5 +314,6 @@ jobs:
         "
         
         # Test full generator
-        python scripts/generate_dynamic_protobuf_tests.py
+        cd ..
+        python python/scripts/generate_dynamic_protobuf_tests.py
         echo "✅ Dynamic generator completed successfully"

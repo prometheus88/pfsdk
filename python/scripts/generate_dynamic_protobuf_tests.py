@@ -46,7 +46,17 @@ class DynamicProtobufTestGenerator:
     Replaces the broken hardcoded approach with proper runtime introspection.
     """
     
-    def __init__(self, output_base: str = "tests"):
+    def __init__(self, output_base: str = None):
+        # Auto-detect the correct output path based on current working directory
+        if output_base is None:
+            cwd = Path.cwd()
+            if cwd.name == "python":
+                # Running from python/ directory (likely CI)
+                output_base = "tests"
+            else:
+                # Running from root directory
+                output_base = "python/tests"
+        
         self.output_base = Path(output_base)
         self.timestamp = datetime.now().isoformat()
         self.logger = get_logger("proto.dynamic_generator")

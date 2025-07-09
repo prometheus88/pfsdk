@@ -208,24 +208,24 @@ __marimo__/
 
 # PostFiat SDK - Generated files (do not commit)
 # Generated protobuf Python files
-postfiat/v3/*_pb2.py
-postfiat/v3/*_pb2_grpc.py
+python/postfiat/v3/*_pb2.py
+python/postfiat/v3/*_pb2_grpc.py
 
 # Generated Python types from protobuf
-postfiat/types/enums.py
-postfiat/exceptions.py
-postfiat/models/envelope_enums.py
-postfiat/models/common_enums.py
-postfiat/models/generated.py
-postfiat/services/generated.py
-postfiat/api/generated_routes.py
-postfiat/managers/
-postfiat/services/
-postfiat/clients/
-postfiat/integrations/
+python/postfiat/types/enums.py
+python/postfiat/exceptions.py
+python/postfiat/models/envelope_enums.py
+python/postfiat/models/common_enums.py
+python/postfiat/models/generated.py
+python/postfiat/services/generated.py
+python/postfiat/api/generated_routes.py
+python/postfiat/managers/
+python/postfiat/services/
+python/postfiat/clients/
+python/postfiat/integrations/
 
 # Generated tests from protobuf
-tests/generated/
+python/tests/generated/
 
 # Generated API documentation
 api/
@@ -240,8 +240,29 @@ agent-is-a-jackass/
 proto/a2a
 
 # A2A generated Python files
-a2a/v1/*_pb2.py
-a2a/v1/*_pb2_grpc.py
+python/a2a/v1/*_pb2.py
+python/a2a/v1/*_pb2_grpc.py
+
+# TypeScript generated files
+typescript/src/generated/
+typescript/node_modules/
+typescript/dist/
+typescript/tests/generated/
+typescript/src/types/enums.ts
+typescript/src/types/exceptions.ts
+typescript/src/client/base.ts
+typescript/src/hooks/index.ts
+typescript/src/index.ts
+typescript/coverage/
+
+# Generated files in root (legacy paths)
+a2a/
+postfiat/
+
+# Third party examples and experimental code
+third_party/a2a_llama_index_file_chat/
+xrpl-devnet/
+xrpl-private-network/
 
 # Buf lock file (commit this)
 # proto/buf.lock

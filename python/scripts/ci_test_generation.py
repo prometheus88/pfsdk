@@ -39,7 +39,7 @@ class CITestGenerator:
             self.logger = logging.getLogger("ci.test_generator")
         
         # Paths
-        self.proto_dir = self.project_root / "proto" / "postfiat" / "v3"
+        self.proto_dir = self.project_root.parent / "proto" / "postfiat" / "v3"
         self.scripts_dir = self.project_root / "scripts"
         self.tests_dir = self.project_root / "tests" / "generated"
         
