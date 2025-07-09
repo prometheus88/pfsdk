@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { PostFiatClient } from '../sdk/client';
 import type { ClientOptions } from '../sdk/config';
 
