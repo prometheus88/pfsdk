@@ -51,7 +51,7 @@ fi
 # Update buf dependencies
 echo "📋 Updating buf dependencies..."
 cd "$REPO_ROOT/proto"
-buf mod update
+buf dep update
 
 echo "✅ A2A dependency setup complete!"
 echo ""
