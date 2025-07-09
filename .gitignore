@@ -247,6 +247,13 @@ python/a2a/v1/*_pb2_grpc.py
 typescript/src/generated/
 typescript/node_modules/
 typescript/dist/
+typescript/tests/generated/
+typescript/src/types/enums.ts
+typescript/src/types/exceptions.ts
+typescript/src/client/base.ts
+typescript/src/hooks/index.ts
+typescript/src/index.ts
+typescript/coverage/
 
 # Generated files in root (legacy paths)
 a2a/
