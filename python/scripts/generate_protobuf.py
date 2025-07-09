@@ -78,6 +78,7 @@ class ProtobufBuilder:
     
     def __init__(self):
         self.project_root = project_root
+        self.repo_root = repo_root
         self.proto_dir = PROTO_DIR
         self.models_dir = MODELS_DIR
         self.managers_dir = MANAGERS_DIR
@@ -123,7 +124,7 @@ class ProtobufBuilder:
         
         print(f"📁 Found {len(proto_files)} .proto files:")
         for proto_file in proto_files:
-            print(f"   {proto_file.relative_to(self.project_root)}")
+            print(f"   {proto_file.relative_to(self.repo_root)}")
         
         return proto_files
     
