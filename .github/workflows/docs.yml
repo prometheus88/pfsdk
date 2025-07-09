@@ -76,7 +76,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e python/
-          pip install mkdocs mkdocs-material mkdocs-swagger-ui-tag
+          pip install mkdocs mkdocs-material mkdocs-swagger-ui-tag mkdocs-mermaid2-plugin
           pip install sphinx sphinx-rtd-theme sphinx-autoapi myst-parser
 
       - name: Install TypeScript dependencies

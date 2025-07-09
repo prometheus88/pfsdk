@@ -37,6 +37,7 @@ theme:
 plugins:
   - search
   - swagger-ui-tag
+  - mermaid2
 
 nav:
   - Home: index.md
