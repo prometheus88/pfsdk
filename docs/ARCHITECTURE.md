@@ -238,7 +238,7 @@ class Wallet(SQLModel, table=True):
 classDiagram
     class User {
         +str id
-        +str email
+        +str email  
         +str name
         +datetime created_at
         +bool is_active
@@ -296,14 +296,6 @@ classDiagram
         +EncryptionMode encryption
     }
 
-    %% Relationships
-    User ||--o{ Wallet : owns
-    Wallet ||--o{ Transaction : contains
-    User ||--o{ AIConversation : participates
-    AIAgent ||--o{ AIConversation : handles
-    AIConversation ||--o{ Message : contains
-
-    %% Enums
     class MessageType {
         <<enumeration>>
         CONTEXTUAL_MESSAGE
@@ -319,8 +311,14 @@ classDiagram
         NACL_BOX
     }
 
-    Message --> MessageType
-    Message --> EncryptionMode
+    %% Relationships
+    User --> Wallet : owns
+    Wallet --> Transaction : contains
+    User --> AIConversation : participates
+    AIAgent --> AIConversation : handles
+    AIConversation --> Message : contains
+    Message --> MessageType : uses
+    Message --> EncryptionMode : uses
 ```
 
 ### 7. Observability Stack (structlog + loguru + OpenTelemetry)
