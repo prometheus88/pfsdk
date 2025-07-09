@@ -4,11 +4,27 @@ managed:
 plugins:
   # Python protobuf generation
   - plugin: buf.build/protocolbuffers/python
-    out: ..
+    out: ../python
   
   # Python gRPC generation  
   - plugin: buf.build/grpc/python
-    out: ..
+    out: ../python
+  
+  # TypeScript/JavaScript protobuf generation using Protobuf-ES
+  - plugin: es
+    path: ../typescript/node_modules/.bin/protoc-gen-es
+    out: ../typescript/src/generated
+    opt:
+      - target=ts
+      - import_extension=none
+  
+  # TypeScript/JavaScript gRPC-Web generation using Connect-ES  
+  - plugin: connect-es
+    path: ../typescript/node_modules/.bin/protoc-gen-connect-es
+    out: ../typescript/src/generated
+    opt:
+      - target=ts
+      - import_extension=none
   
   # OpenAPI v2 generation with comprehensive options
   - plugin: buf.build/grpc-ecosystem/openapiv2
