@@ -40,6 +40,10 @@ plugins:
   - mermaid2:
       version: 10.4.0
       javascript: https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js
+      arguments:
+        theme: base
+        themeVariables:
+          primaryColor: "#ff0000"
 
 nav:
   - Home: index.md
