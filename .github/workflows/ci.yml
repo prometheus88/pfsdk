@@ -67,6 +67,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
@@ -81,6 +88,11 @@ jobs:
           pip install -e .
           pip install -e python/
           pip install pytest
+      
+      - name: Install TypeScript dependencies
+        run: |
+          cd typescript
+          npm ci
       
       - name: Generate protobuf code
         run: |
@@ -152,6 +164,13 @@ jobs:
             ${{ runner.os }}-pip-${{ matrix.python-version }}-
             ${{ runner.os }}-pip-
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
@@ -166,6 +185,11 @@ jobs:
           pip install -e .
           pip install -e python/
           pip install pytest
+      
+      - name: Install TypeScript dependencies
+        run: |
+          cd typescript
+          npm ci
       
       - name: Generate protobuf code
         run: |
