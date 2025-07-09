@@ -5,19 +5,19 @@ on:
     branches: [ main, dev ]
     paths:
       - 'postfiat/v3/*.proto'
-      - 'scripts/generate_dynamic_protobuf_tests.py'
-      - 'scripts/proto_introspection.py'
+      - 'python/scripts/generate_dynamic_protobuf_tests.py'
+      - 'python/scripts/proto_introspection.py'
 
-      - 'scripts/*_test_generator.py'
+      - 'python/scripts/*_test_generator.py'
       - '.github/workflows/dynamic-proto-tests.yml'
   pull_request:
     branches: [ main, dev ]
     paths:
       - 'postfiat/v3/*.proto'
-      - 'scripts/generate_dynamic_protobuf_tests.py'
-      - 'scripts/proto_introspection.py'
+      - 'python/scripts/generate_dynamic_protobuf_tests.py'
+      - 'python/scripts/proto_introspection.py'
 
-      - 'scripts/*_test_generator.py'
+      - 'python/scripts/*_test_generator.py'
       - '.github/workflows/dynamic-proto-tests.yml'
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
       run: |
         # Capture exit code without failing the workflow
         set +e  # Don't exit on error
-        python scripts/ci_test_generation.py --check-only
+        python python/scripts/ci_test_generation.py --check-only
         REGEN_NEEDED=$?
         set -e  # Re-enable exit on error
         echo "needs_regen=$REGEN_NEEDED" >> $GITHUB_OUTPUT
@@ -78,14 +78,14 @@ jobs:
       if: steps.check_regen.outputs.needs_regen == '1'
       run: |
         echo "🔄 Proto files changed - regenerating dynamic tests"
-        python scripts/ci_test_generation.py --force
+        python python/scripts/ci_test_generation.py --force
         
     - name: Validate generated tests
       run: |
         echo "✅ Validating generated test syntax"
         # Only validate if tests exist
         if [ -d "tests/generated" ] && [ "$(ls -A tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
-          python scripts/ci_test_generation.py --validate-only
+          python python/scripts/ci_test_generation.py --validate-only
         else
           echo "⚠️ No generated tests to validate - will be created in next step"
         fi
@@ -235,7 +235,7 @@ jobs:
         from pathlib import Path
 
         # Add scripts to path
-        scripts_path = Path('.') / 'scripts'
+        scripts_path = Path('.') / 'python' / 'scripts'
         if str(scripts_path) not in sys.path:
             sys.path.insert(0, str(scripts_path))
 
@@ -256,7 +256,7 @@ jobs:
         from pathlib import Path
 
         # Add scripts to path
-        scripts_path = Path('.') / 'scripts'
+        scripts_path = Path('.') / 'python' / 'scripts'
         if str(scripts_path) not in sys.path:
             sys.path.insert(0, str(scripts_path))
 
@@ -272,5 +272,5 @@ jobs:
         "
         
         # Test full generator
-        python scripts/generate_dynamic_protobuf_tests.py
+        python python/scripts/generate_dynamic_protobuf_tests.py
         echo "✅ Dynamic generator completed successfully"

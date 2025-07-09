@@ -40,7 +40,7 @@ jobs:
           buf generate --template buf.gen.yaml
 
       - name: Generate Python types from protobuf
-        run: python scripts/generate_python_types.py
+        run: python python/scripts/generate_python_types.py
       
       - name: Verify all generated files exist
         run: |

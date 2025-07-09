@@ -97,10 +97,10 @@ jobs:
           "
 
       - name: Generate Python types from protobuf
-        run: python scripts/generate_python_types.py
+        run: python python/scripts/generate_python_types.py
 
       - name: Generate dynamic protobuf tests
-        run: python scripts/generate_dynamic_protobuf_tests.py
+        run: python python/scripts/generate_dynamic_protobuf_tests.py
 
       - name: Run tests
         run: |
@@ -109,7 +109,7 @@ jobs:
 
       - name: Generate and run dynamic protobuf tests
         run: |
-          python scripts/generate_dynamic_protobuf_tests.py
+          python python/scripts/generate_dynamic_protobuf_tests.py
           python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
 
       - name: Commit generated files to main branch
@@ -176,7 +176,7 @@ jobs:
           python -c "import postfiat; print(f'PostFiat SDK v{postfiat.__version__} installed successfully')"
 
       - name: Generate dynamic protobuf tests
-        run: python scripts/generate_dynamic_protobuf_tests.py
+        run: python python/scripts/generate_dynamic_protobuf_tests.py
 
       - name: Run test suite
         run: |
