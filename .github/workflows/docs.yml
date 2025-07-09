@@ -47,6 +47,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
       - name: Setup A2A dependency
         run: |
           chmod +x scripts/setup-a2a-dependency.sh
