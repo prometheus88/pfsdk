@@ -129,8 +129,11 @@ jobs:
           autoapi_dirs = ['../postfiat']
           autoapi_type = 'python'
           autoapi_file_patterns = ['*.py']
-          autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members']
+          autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary']
           autoapi_add_toctree_entry = False
+          autoapi_keep_files = True
+          autoapi_root = 'api'
+          autoapi_python_use_implicit_namespaces = True
           
           html_theme = 'sphinx_rtd_theme'
           html_static_path = []
@@ -159,9 +162,18 @@ jobs:
           * :ref:\`search\`
           EOF
           
-          # Build Python docs
+          # Build Python docs with better error handling
           cd docs
-          sphinx-build -b html . _build/html
+          export PYTHONPATH="/home/runner/work/pfsdk/pfsdk/python:$PYTHONPATH"
+          sphinx-build -b html . _build/html || {
+              echo "Sphinx build failed, trying with autodoc mock imports"
+              cat >> conf.py << 'EOF'
+          
+          # Mock imports for generated modules that might have import issues
+          autodoc_mock_imports = ['grpc', 'google.protobuf', 'a2a']
+          EOF
+              sphinx-build -b html . _build/html
+          }
           cp -r _build/html/* ../../docs/generated/python/
           cd ../..
           
