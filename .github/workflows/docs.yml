@@ -241,7 +241,6 @@ jobs:
             - API Reference:
               - OpenAPI Specification: api/openapi.md
               - Python SDK: generated/python/index.html
-              - TypeScript SDK: generated/typescript/README.md
               - Protocol Buffers: generated/proto/index.md
             - Research:
               - Key Management: research/KEY-MANAGEMENT.md
@@ -320,7 +319,6 @@ jobs:
           ## API Documentation
           
           - **[Python SDK API](generated/python/index.html)** - Complete Python API reference with Sphinx
-          - **[TypeScript SDK API](generated/typescript/README.md)** - TypeScript API documentation with TypeDoc
           - **[OpenAPI Specification](api/openapi.md)** - Interactive REST API documentation
           - **[Protocol Buffers](generated/proto/index.md)** - Proto message definitions
           
@@ -336,8 +334,6 @@ jobs:
           # Create version badge in header
           mkdir -p overrides/partials
           cat > overrides/partials/header.html << 'EOF'
-          {% extends "base.html" %}
-          
           {% block announce %}
             <div class="md-announce">
               <div class="md-announce__inner">
