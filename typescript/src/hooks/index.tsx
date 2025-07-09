@@ -88,7 +88,6 @@ export function useAsyncOperation<T>(): [
  * Hook for wallet operations
  */
 export function useWallet() {
-  const client = usePostFiatClient();
   const [walletState, executeWalletOperation] = useAsyncOperation<any>();
 
   const createWallet = useCallback(async (request: any) => {
@@ -118,7 +117,6 @@ export function useWallet() {
  * Hook for message operations
  */
 export function useMessages() {
-  const client = usePostFiatClient();
   const [messageState, executeMessageOperation] = useAsyncOperation<any>();
 
   const sendMessage = useCallback(async (message: any) => {
