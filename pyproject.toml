@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "postfiat-pfsdk"
+version = "3.0.0"
+description = "PostFiat SDK - Multi-language proto-first SDK"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "PostFiat", email = "info@postfiat.org"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: TypeScript",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Communications",
+]
+dependencies = [
+    # Minimal dependencies for the overall project
+    "pyyaml>=6.0",
+    "protobuf>=4.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "buf>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/postfiat/pfsdk"
+Repository = "https://github.com/postfiat/pfsdk"
+Documentation = "https://docs.postfiat.org"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scripts*"]
+exclude = ["python*", "typescript*", "proto*", "docs*", "tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.yaml", "*.yml", "*.proto"]
