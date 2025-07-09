@@ -29,6 +29,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup A2A dependency
+        run: |
+          chmod +x scripts/setup-a2a-dependency.sh
+          ./scripts/setup-a2a-dependency.sh
 
       - name: Setup Python
         uses: actions/setup-python@v4
