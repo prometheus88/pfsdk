@@ -494,8 +494,7 @@ export class PostFiatClient {
     this.config = config;
     this.transport = createConnectTransport({
       baseUrl: config.baseUrl,
-      httpVersion: '2',
-      ...config
+      interceptors: config.interceptors
     });
   }
 
@@ -769,6 +768,39 @@ export function useSubscription<T>(
 }
 
 /**
+ * Generate generated/index.ts file for protobuf re-exports
+ */
+function generateGeneratedIndex(): boolean {
+  console.log('🔍 Generating generated/index.ts file...');
+
+  const generatedIndexCode = `// Auto-generated exports for protobuf files
+// Re-export with aliases to avoid conflicts with our custom enums
+export {
+  MessageType as ProtoMessageType,
+  EncryptionMode as ProtoEncryptionMode,
+} from './postfiat/v3/messages_pb';
+export {
+  ErrorCode as ProtoErrorCode,
+  ErrorSeverity as ProtoErrorSeverity,
+  ErrorCategory as ProtoErrorCategory,
+} from './postfiat/v3/errors_pb';
+export * from './a2a/v1/a2a_pb';
+export * from './a2a/v1/a2a_connect';
+`;
+
+  // Write the generated/index.ts file
+  const generatedDir = path.join(__dirname, '..', 'src', 'generated');
+  if (!fs.existsSync(generatedDir)) {
+    fs.mkdirSync(generatedDir, { recursive: true });
+  }
+  
+  const outputPath = path.join(generatedDir, 'index.ts');
+  fs.writeFileSync(outputPath, generatedIndexCode);
+  console.log(`✅ Generated ${outputPath}`);
+  return true;
+}
+
+/**
  * Generate main index file
  */
 function generateIndex(): boolean {
@@ -789,8 +821,8 @@ export * from './types/exceptions';
 // Client utilities
 export * from './client/base';
 
-// React hooks (optional peer dependency)
-export * from './hooks';
+// React hooks (optional peer dependency) - commented out due to JSX build issues
+// export * from './hooks';
 
 // Generated protobuf types and services
 export * from './generated';
@@ -821,6 +853,7 @@ function main(): void {
   success = generateExceptions() && success;
   success = generateClientUtilities() && success;
   success = generateReactHooks() && success;
+  success = generateGeneratedIndex() && success;
   success = generateIndex() && success;
 
   if (success) {
