@@ -27,7 +27,7 @@ function generateEnumTests(): boolean {
  * Run 'npm run generate:tests' to regenerate.
  */
 
-import { describe, it, expect } from 'vitest';
+// Jest provides describe, it, and expect as globals
 import { MessageType, EncryptionMode, ErrorCode } from '../../src/types/enums';
 
 describe('MessageType', () => {
@@ -201,7 +201,7 @@ function generateExceptionTests(): boolean {
  * Run 'npm run generate:tests' to regenerate.
  */
 
-import { describe, it, expect } from 'vitest';
+// Jest provides describe, it, and expect as globals
 import {
   PostFiatError,
   ClientError,
@@ -533,7 +533,7 @@ function generateClientTests(): boolean {
  * Run 'npm run generate:tests' to regenerate.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// Jest provides describe, it, expect, and beforeEach as globals
 import { PostFiatClient, createPostFiatClient, defaultClientConfig } from '../../src/client/base';
 
 describe('PostFiatClient', () => {
@@ -632,7 +632,7 @@ function generateHooksTests(): boolean {
  * Run 'npm run generate:tests' to regenerate.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// Jest provides describe, it, expect, and beforeEach as globals
 import { renderHook, act } from '@testing-library/react';
 import { PostFiatClientProvider, usePostFiatClient, useAsyncOperation } from '../../src/hooks';
 import { PostFiatError } from '../../src/types/exceptions';
@@ -795,7 +795,7 @@ function generateIntegrationTests(): boolean {
  * Run 'npm run generate:tests' to regenerate.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+// Jest provides describe, it, expect, and beforeEach as globals
 import { createPostFiatClient } from '../../src/client/base';
 import { PostFiatError } from '../../src/types/exceptions';
 import { ErrorCode, MessageType, EncryptionMode } from '../../src/types/enums';
