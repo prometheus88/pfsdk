@@ -12,7 +12,22 @@ from pathlib import Path
 def run_command(cmd, cwd=None):
     """Run a command and return the result"""
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    
+    # Update PATH to include Go binary paths
+    env = os.environ.copy()
+    go_bin_paths = [
+        os.path.expanduser("~/go/bin"),
+        "/usr/local/go/bin",
+        "$(go env GOPATH)/bin"
+    ]
+    
+    current_path = env.get("PATH", "")
+    for path in go_bin_paths:
+        if os.path.exists(path):
+            env["PATH"] = f"{path}:{current_path}"
+            break
+    
+    result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
     if result.returncode != 0:
         print(f"Error running command: {result.stderr}")
         return False
@@ -27,12 +42,33 @@ def generate_protobuf_docs():
     docs_dir = Path("docs/generated/proto")
     docs_dir.mkdir(parents=True, exist_ok=True)
     
-    # Use buf to generate docs if available
+    # Use protoc-gen-doc directly for better documentation
     proto_dir = Path("proto")
     if proto_dir.exists():
-        if not run_command(["buf", "generate", "--template", "buf.gen.docs.yaml"], cwd=proto_dir):
-            print("⚠️  buf documentation generation failed, creating basic docs")
-            create_basic_proto_docs()
+        # Try to use protoc-gen-doc for comprehensive documentation
+        protoc_cmd = [
+            "protoc",
+            "--doc_out=../docs/generated/proto",
+            "--doc_opt=markdown,index.md",
+            "postfiat/v3/errors.proto",
+            "postfiat/v3/messages.proto",
+            "-I.",
+            "-I../third_party/a2a/specification/grpc",
+            "-I../third_party/googleapis",
+            "--experimental_allow_proto3_optional"
+        ]
+        
+        if run_command(protoc_cmd, cwd=proto_dir):
+            print("✅ Generated comprehensive protobuf documentation")
+            return
+        else:
+            print("⚠️  protoc-gen-doc failed, trying buf generate")
+            if run_command(["buf", "generate", "--template", "buf.gen.docs.yaml"], cwd=proto_dir):
+                print("✅ Generated protobuf documentation with buf")
+                return
+            else:
+                print("⚠️  buf documentation generation failed, creating basic docs")
+                create_basic_proto_docs()
     else:
         create_basic_proto_docs()
 
