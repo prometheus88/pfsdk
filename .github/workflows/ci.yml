@@ -127,18 +127,6 @@ jobs:
           cd python
           python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
 
-      - name: Commit generated files to main branch
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -f python/postfiat/types/enums.py python/postfiat/exceptions.py python/postfiat/v3/*_pb2.py python/postfiat/v3/*_pb2_grpc.py python/a2a/v1/*_pb2.py python/a2a/v1/*_pb2_grpc.py
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: add generated files for main branch [skip ci]"
-            git push origin main
-          else
-            echo "No changes to commit"
-          fi
 
   tests:
     name: Tests
