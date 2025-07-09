@@ -266,8 +266,7 @@ jobs:
           
           ## OpenAPI Specification
           
-          !!! swagger-ui "OpenAPI v2 Specification"
-              swagger: "../generated/api/openapi_v2_generated.swagger.json"
+          <swagger-ui src="../generated/api/openapi_v2_generated.swagger.json"/>
           
           ## Protocol Buffer Definitions
           
