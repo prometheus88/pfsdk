@@ -86,28 +86,82 @@ jobs:
           cd typescript
           npm run generate:all
 
+      - name: Get latest release info
+        id: latest_release
+        run: |
+          # Get latest release info from GitHub API
+          LATEST_RELEASE=$(gh api repos/${{ github.repository }}/releases/latest --jq '.tag_name' 2>/dev/null || echo "v0.1.0-dev")
+          RELEASE_URL=$(gh api repos/${{ github.repository }}/releases/latest --jq '.html_url' 2>/dev/null || echo "")
+          RELEASE_DATE=$(gh api repos/${{ github.repository }}/releases/latest --jq '.published_at' 2>/dev/null || echo "")
+          
+          echo "latest_tag=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+          echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          echo "release_date=$RELEASE_DATE" >> $GITHUB_OUTPUT
+          echo "version=${LATEST_RELEASE#v}" >> $GITHUB_OUTPUT
+          
+          echo "📦 Latest release: $LATEST_RELEASE"
+          echo "🔗 Release URL: $RELEASE_URL"
+
       - name: Generate API documentation
         run: |
           # Generate Python API documentation with Sphinx
           mkdir -p docs/generated/python
           cd python
-          sphinx-quickstart --quiet --project "PostFiat Python SDK" --author "PostFiat" --version "1.0" --release "1.0" --language en --suffix .rst --master index --ext-autodoc --ext-viewcode --makefile --no-batchfile docs/
           
-          # Configure Sphinx for autoapi
-          cat >> docs/conf.py << 'EOF'
-          extensions.append('autoapi.extension')
+          # Create Sphinx docs directory and config manually
+          mkdir -p docs
+          cat > docs/conf.py << EOF
+          import os
+          import sys
+          sys.path.insert(0, os.path.abspath('..'))
+          
+          project = 'PostFiat Python SDK'
+          author = 'PostFiat'
+          version = '${{ steps.latest_release.outputs.version }}'
+          release = '${{ steps.latest_release.outputs.latest_tag }}'
+          
+          extensions = [
+              'sphinx.ext.autodoc',
+              'sphinx.ext.viewcode',
+              'autoapi.extension',
+          ]
+          
           autoapi_dirs = ['../postfiat']
           autoapi_type = 'python'
           autoapi_file_patterns = ['*.py']
           autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members']
-          autoapi_template_dir = '_templates/autoapi'
           autoapi_add_toctree_entry = False
+          
           html_theme = 'sphinx_rtd_theme'
+          html_static_path = []
+          
+          master_doc = 'index'
+          EOF
+          
+          # Create index file
+          cat > docs/index.rst << EOF
+          PostFiat Python SDK Documentation
+          =================================
+          
+          Welcome to the PostFiat Python SDK documentation.
+          
+          .. toctree::
+             :maxdepth: 2
+             :caption: Contents:
+          
+             autoapi/index
+          
+          Indices and tables
+          ==================
+          
+          * :ref:\`genindex\`
+          * :ref:\`modindex\`
+          * :ref:\`search\`
           EOF
           
           # Build Python docs
           cd docs
-          make html
+          sphinx-build -b html . _build/html
           cp -r _build/html/* ../../docs/generated/python/
           cd ../..
           
@@ -130,15 +184,22 @@ jobs:
       - name: Build documentation site
         run: |
           # Create MkDocs configuration
-          cat > mkdocs.yml << 'EOF'
+          cat > mkdocs.yml << EOF
           site_name: PostFiat SDK Documentation
           site_description: Proto-first multi-language SDK with Python and TypeScript support
           site_url: https://allenday.github.io/pfsdk
           repo_url: https://github.com/allenday/pfsdk
           repo_name: allenday/pfsdk
           
+          extra:
+            version: ${{ steps.latest_release.outputs.version }}
+            release_tag: ${{ steps.latest_release.outputs.latest_tag }}
+            release_url: ${{ steps.latest_release.outputs.release_url }}
+            release_date: ${{ steps.latest_release.outputs.release_date }}
+          
           theme:
             name: material
+            custom_dir: overrides
             palette:
               - scheme: default
                 primary: indigo
@@ -206,23 +267,39 @@ jobs:
           See the [Protocol Buffer documentation](../generated/proto/index.md) for detailed type definitions.
           EOF
           
-          # Create main index
-          cat > docs/index.md << 'EOF'
+          # Create main index with dynamic version info
+          cat > docs/index.md << EOF
           # PostFiat SDK Documentation
           
           Welcome to the PostFiat SDK documentation. This is a proto-first, multi-language SDK with Python and TypeScript support.
           
+          ## Latest Release: ${{ steps.latest_release.outputs.latest_tag }}
+          
+          {% if config.extra.release_url %}
+          **[📦 Download Release](${{ steps.latest_release.outputs.release_url }})** | **Released:** ${{ steps.latest_release.outputs.release_date }}
+          {% endif %}
+          
           ## Quick Start
           
           ### Python
-          ```bash
-          pip install postfiat-sdk
-          ```
+          \`\`\`bash
+          # Install from PyPI (when published)
+          pip install postfiat-sdk==${{ steps.latest_release.outputs.version }}
+          
+          # Or download from GitHub releases
+          wget ${{ steps.latest_release.outputs.release_url }}/download/postfiat-sdk-${{ steps.latest_release.outputs.version }}.whl
+          pip install postfiat-sdk-${{ steps.latest_release.outputs.version }}.whl
+          \`\`\`
           
           ### TypeScript
-          ```bash
-          npm install @postfiat/sdk
-          ```
+          \`\`\`bash
+          # Install from npm (when published)
+          npm install @postfiat/sdk@${{ steps.latest_release.outputs.version }}
+          
+          # Or download from GitHub releases
+          wget ${{ steps.latest_release.outputs.release_url }}/download/postfiat-sdk-${{ steps.latest_release.outputs.version }}.tgz
+          npm install postfiat-sdk-${{ steps.latest_release.outputs.version }}.tgz
+          \`\`\`
           
           ## Features
           
@@ -246,6 +323,22 @@ jobs:
           ## Development
           
           See the [Development Guide](DEVELOPMENT.md) for information on contributing to the SDK.
+          EOF
+          
+          # Create version badge in header
+          mkdir -p overrides/partials
+          cat > overrides/partials/header.html << 'EOF'
+          {% extends "base.html" %}
+          
+          {% block announce %}
+            <div class="md-announce">
+              <div class="md-announce__inner">
+                <a href="{{ config.extra.release_url }}" class="md-announce__link">
+                  🎉 Latest Release: {{ config.extra.release_tag }} - Download Now!
+                </a>
+              </div>
+            </div>
+          {% endblock %}
           EOF
           
           # Build the documentation
