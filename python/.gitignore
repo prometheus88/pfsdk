@@ -1,0 +1,23 @@
+# Generated protobuf Python files
+postfiat/v3/*_pb2.py
+postfiat/v3/*_pb2_grpc.py
+
+# Generated Python types from protobuf
+postfiat/types/enums.py
+postfiat/exceptions.py
+postfiat/models/envelope_enums.py
+postfiat/models/common_enums.py
+postfiat/models/generated.py
+postfiat/services/generated.py
+postfiat/api/generated_routes.py
+postfiat/managers/
+postfiat/services/
+postfiat/clients/
+postfiat/integrations/
+
+# Generated tests from protobuf
+tests/generated/
+
+# A2A generated Python files
+a2a/v1/*_pb2.py
+a2a/v1/*_pb2_grpc.py
