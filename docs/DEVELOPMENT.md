@@ -4,23 +4,46 @@ This document describes the code generation architecture and development process
 
 ## 🎯 Architecture Overview
 
-The PostFiat SDK follows a **proto-first architecture** where Protocol Buffer definitions are the single source of truth for all generated code.
+The PostFiat SDK follows a **proto-first architecture** where Protocol Buffer definitions are the single source of truth for all generated code across multiple languages and platforms.
+
+### Multi-Language Support
+
+The SDK now supports multiple programming languages with a shared proto definition:
+
+```
+pfsdk/
+├── proto/                    # Shared protocol buffer definitions
+│   ├── buf.gen.yaml         # Multi-language generation config
+│   └── postfiat/v3/         # Proto schema definitions
+├── python/                   # Python SDK
+│   ├── postfiat/            # Python package
+│   ├── scripts/             # Python-specific generators
+│   └── tests/               # Python test suites
+├── typescript/              # TypeScript SDK (Future)
+│   ├── src/                 # TypeScript source code
+│   └── tests/               # TypeScript test suites
+└── docs/                    # Shared documentation
+```
 
 ```mermaid
 graph TD
     A[Proto Files] --> B[Buf Generate]
-    B --> C[Protobuf Classes]
-    A --> D[Python Type Generator]
-    D --> E[Pydantic Enums]
-    D --> F[Exception Classes]
-    A --> G[Comprehensive Generator]
-    G --> H[SDK Managers]
-    G --> I[Client Stubs]
-    G --> J[OpenAPI Specs]
-    A --> K[Test Generator]
-    K --> L[Contract Tests]
-    K --> M[Serialization Tests]
-    K --> N[Integration Tests]
+    B --> C[Python Protobuf Classes]
+    B --> D[TypeScript Protobuf Classes]
+    A --> E[Python Type Generator]
+    E --> F[Pydantic Enums]
+    E --> G[Exception Classes]
+    A --> H[Comprehensive Generator]
+    H --> I[SDK Managers]
+    H --> J[Client Stubs]
+    H --> K[OpenAPI Specs]
+    A --> L[Test Generator]
+    L --> M[Contract Tests]
+    L --> N[Serialization Tests]
+    L --> O[Integration Tests]
+    D --> P[TypeScript SDK]
+    P --> Q[React Hooks]
+    P --> R[Web Client]
 ```
 
 ## 🔧 Code Generation Pipeline
@@ -32,8 +55,8 @@ graph TD
 **Command:** `buf generate --template buf.gen.yaml`
 
 **Generates:**
-- `postfiat/v3/*_pb2.py` - Message classes
-- `postfiat/v3/*_pb2_grpc.py` - gRPC service stubs
+- `python/postfiat/v3/*_pb2.py` - Message classes
+- `python/postfiat/v3/*_pb2_grpc.py` - gRPC service stubs
 
 **Example:**
 ```bash
@@ -43,12 +66,12 @@ buf generate --template buf.gen.yaml
 
 ### 2. Python Type Generation
 
-**Script:** `scripts/generate_python_types.py`
+**Script:** `python/scripts/generate_python_types.py`
 **Purpose:** Generate Pydantic-compatible types from protobuf enums
 
 **Generates:**
-- `postfiat/types/enums.py` - Pydantic enum classes
-- `postfiat/exceptions.py` - SDK exception hierarchy
+- `python/postfiat/types/enums.py` - Pydantic enum classes
+- `python/postfiat/exceptions.py` - SDK exception hierarchy
 
 **Features:**
 - Automatic enum extraction from protobuf
@@ -70,15 +93,15 @@ pydantic_value = MessageType.from_protobuf(pb_value)
 
 ### 3. Comprehensive SDK Generation
 
-**Script:** `scripts/generate_protobuf.py`
+**Script:** `python/scripts/generate_protobuf.py`
 **Purpose:** Generate complete SDK components from protobuf definitions
 
 **Generates:**
-- `postfiat/models/envelope_enums.py` - Message envelope enums
-- `postfiat/managers/` - Service manager classes
-- `postfiat/services/` - Service implementation stubs
-- `postfiat/clients/` - Client wrapper classes
-- `postfiat/integrations/discord/` - Discord command mappers
+- `python/postfiat/models/envelope_enums.py` - Message envelope enums
+- `python/postfiat/managers/` - Service manager classes
+- `python/postfiat/services/` - Service implementation stubs
+- `python/postfiat/clients/` - Client wrapper classes
+- `python/postfiat/integrations/discord/` - Discord command mappers
 - `api/` - OpenAPI/Swagger specifications
 
 **Features:**
@@ -91,14 +114,14 @@ pydantic_value = MessageType.from_protobuf(pb_value)
 ### 4. Test Generation
 
 **🆕 Dynamic Test Generator (Recommended):**
-**Script:** `scripts/generate_dynamic_protobuf_tests.py`
+**Script:** `python/scripts/generate_dynamic_protobuf_tests.py`
 **Purpose:** Generate comprehensive test suites using runtime proto introspection
 
 **Generates:**
-- `tests/generated/test_dynamic_serialization.py` - Round-trip serialization tests
-- `tests/generated/test_dynamic_validation.py` - Field and enum validation tests
-- `tests/generated/test_dynamic_services.py` - gRPC service method tests
-- `tests/generated/test_dynamic_evolution.py` - Schema evolution and compatibility tests
+- `python/tests/generated/test_dynamic_serialization.py` - Round-trip serialization tests
+- `python/tests/generated/test_dynamic_validation.py` - Field and enum validation tests
+- `python/tests/generated/test_dynamic_services.py` - gRPC service method tests
+- `python/tests/generated/test_dynamic_evolution.py` - Schema evolution and compatibility tests
 
 **Key Features:**
 - **Runtime Introspection:** Uses actual proto message descriptors (no hardcoded field names)
@@ -129,7 +152,7 @@ pydantic_value = MessageType.from_protobuf(pb_value)
    cd proto && buf generate --template buf.gen.yaml && cd ..
    
    # Generate Python types
-   python scripts/generate_python_types.py
+   cd python && python scripts/generate_python_types.py
    
    # Generate comprehensive SDK (optional)
    python scripts/generate_protobuf.py
@@ -141,7 +164,7 @@ pydantic_value = MessageType.from_protobuf(pb_value)
 3. **Test Changes:**
    ```bash
    # Run all tests
-   pytest tests/ -v
+   cd python && pytest tests/ -v
    
    # Test specific components
    python -c "from postfiat.v3 import messages_pb2; print('✅ Protobuf import works')"
@@ -172,22 +195,22 @@ The CI automatically handles code generation:
 **Ignored (Generated) Files:**
 ```gitignore
 # Generated protobuf Python files
-postfiat/v3/*_pb2.py
-postfiat/v3/*_pb2_grpc.py
+python/postfiat/v3/*_pb2.py
+python/postfiat/v3/*_pb2_grpc.py
 
 # Generated Python types
-postfiat/types/enums.py
-postfiat/exceptions.py
-postfiat/models/envelope_enums.py
+python/postfiat/types/enums.py
+python/postfiat/exceptions.py
+python/postfiat/models/envelope_enums.py
 
 # Generated SDK components
-postfiat/managers/
-postfiat/services/
-postfiat/clients/
-postfiat/integrations/
+python/postfiat/managers/
+python/postfiat/services/
+python/postfiat/clients/
+python/postfiat/integrations/
 
 # Generated tests
-tests/generated/
+python/tests/generated/
 
 # Generated API documentation
 api/
@@ -195,10 +218,10 @@ api/
 
 **Committed (Source) Files:**
 - `proto/` - Protocol buffer definitions
-- `scripts/` - Generation scripts
-- `postfiat/__init__.py` - Package root
-- `postfiat/client/base.py` - Base client infrastructure
-- `tests/manual/` - Manual tests
+- `python/scripts/` - Generation scripts
+- `python/postfiat/__init__.py` - Package root
+- `python/postfiat/client/base.py` - Base client infrastructure
+- `python/tests/manual/` - Manual tests
 
 ### Branch-Specific Behavior
 
@@ -217,7 +240,7 @@ api/
 ### Test Organization
 
 ```
-tests/
+python/tests/
 ├── manual/                    # Manual tests (committed)
 │   ├── test_client_integration.py
 │   ├── test_business_logic.py
@@ -357,11 +380,11 @@ Check GitHub Actions for detailed logs:
 - Ensure all imports available
 
 **Test Failures:**
-- Regenerate dynamic tests: `python scripts/generate_dynamic_protobuf_tests.py`
-- Use CI integration: `python scripts/ci_test_generation.py --force`
+- Regenerate dynamic tests: `cd python && python scripts/generate_dynamic_protobuf_tests.py`
+- Use CI integration: `cd python && python scripts/ci_test_generation.py --force`
 - Check protobuf message compatibility
 - Verify enum values match proto definitions
-- For legacy tests: `python scripts/generate_protobuf_tests.py` *(deprecated)*
+- For legacy tests: `cd python && python scripts/generate_protobuf_tests.py` *(deprecated)*
 
 ## � Logging Best Practices
 
