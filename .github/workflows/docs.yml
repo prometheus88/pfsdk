@@ -130,7 +130,7 @@ jobs:
           autoapi_type = 'python'
           autoapi_file_patterns = ['*.py']
           autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary']
-          autoapi_add_toctree_entry = False
+          autoapi_add_toctree_entry = True
           autoapi_keep_files = True
           autoapi_root = 'api'
           autoapi_python_use_implicit_namespaces = True
@@ -141,18 +141,12 @@ jobs:
           master_doc = 'index'
           EOF
           
-          # Create index file
+          # Create index file - autoapi will add itself to toctree
           cat > docs/index.rst << EOF
           PostFiat Python SDK Documentation
           =================================
           
           Welcome to the PostFiat Python SDK documentation.
-          
-          .. toctree::
-             :maxdepth: 2
-             :caption: Contents:
-          
-             api/index
           
           Indices and tables
           ==================
