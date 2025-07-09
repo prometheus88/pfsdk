@@ -107,23 +107,61 @@ jobs:
           # Generate Python API documentation with Sphinx
           mkdir -p docs/generated/python
           cd python
-          sphinx-quickstart --quiet --project "PostFiat Python SDK" --author "PostFiat" --version "${{ steps.latest_release.outputs.version }}" --release "${{ steps.latest_release.outputs.latest_tag }}" --language en --suffix .rst --master index --ext-autodoc --ext-viewcode --makefile --no-batchfile docs/
           
-          # Configure Sphinx for autoapi
-          cat >> docs/conf.py << 'EOF'
-          extensions.append('autoapi.extension')
+          # Create Sphinx docs directory and config manually
+          mkdir -p docs
+          cat > docs/conf.py << EOF
+          import os
+          import sys
+          sys.path.insert(0, os.path.abspath('..'))
+          
+          project = 'PostFiat Python SDK'
+          author = 'PostFiat'
+          version = '${{ steps.latest_release.outputs.version }}'
+          release = '${{ steps.latest_release.outputs.latest_tag }}'
+          
+          extensions = [
+              'sphinx.ext.autodoc',
+              'sphinx.ext.viewcode',
+              'autoapi.extension',
+          ]
+          
           autoapi_dirs = ['../postfiat']
           autoapi_type = 'python'
           autoapi_file_patterns = ['*.py']
           autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members']
-          autoapi_template_dir = '_templates/autoapi'
           autoapi_add_toctree_entry = False
+          
           html_theme = 'sphinx_rtd_theme'
+          html_static_path = []
+          
+          master_doc = 'index'
+          EOF
+          
+          # Create index file
+          cat > docs/index.rst << EOF
+          PostFiat Python SDK Documentation
+          =================================
+          
+          Welcome to the PostFiat Python SDK documentation.
+          
+          .. toctree::
+             :maxdepth: 2
+             :caption: Contents:
+          
+             autoapi/index
+          
+          Indices and tables
+          ==================
+          
+          * :ref:\`genindex\`
+          * :ref:\`modindex\`
+          * :ref:\`search\`
           EOF
           
           # Build Python docs
           cd docs
-          make html
+          sphinx-build -b html . _build/html
           cp -r _build/html/* ../../docs/generated/python/
           cd ../..
           
