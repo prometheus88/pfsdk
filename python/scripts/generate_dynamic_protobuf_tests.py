@@ -46,7 +46,7 @@ class DynamicProtobufTestGenerator:
     Replaces the broken hardcoded approach with proper runtime introspection.
     """
     
-    def __init__(self, output_base: str = "tests"):
+    def __init__(self, output_base: str = "python/tests"):
         self.output_base = Path(output_base)
         self.timestamp = datetime.now().isoformat()
         self.logger = get_logger("proto.dynamic_generator")
