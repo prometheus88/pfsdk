@@ -31,7 +31,9 @@ jobs:
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build twine pyyaml protobuf grpcio-tools
+          pip install build twine
+          pip install -e .
+          pip install -e python/
 
       - name: Generate protobuf code
         run: |
@@ -45,14 +47,16 @@ jobs:
       - name: Verify all generated files exist
         run: |
           echo "Checking generated files..."
-          ls -la postfiat/v3/*_pb2.py postfiat/types/enums.py postfiat/exceptions.py
+          ls -la python/postfiat/v3/*_pb2.py python/postfiat/types/enums.py python/postfiat/exceptions.py
           echo "✅ All generated files present"
 
       - name: Build package
-        run: python -m build
+        run: |
+          cd python
+          python -m build
 
       - name: Check package
-        run: twine check dist/*
+        run: twine check python/dist/*
       
       - name: Extract tag name
         id: tag

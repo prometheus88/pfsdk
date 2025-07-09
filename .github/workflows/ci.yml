@@ -78,8 +78,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyyaml protobuf grpcio-tools pytest
           pip install -e .
+          pip install -e python/
+          pip install pytest
       
       - name: Generate protobuf code
         run: |
@@ -91,7 +92,7 @@ jobs:
         run: |
           python -c "
           import sys
-          sys.path.insert(0, '.')
+          sys.path.insert(0, 'python')
           from postfiat.v3 import messages_pb2
           print('✅ Generated code imports successfully')
           "
@@ -117,7 +118,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add -f postfiat/types/enums.py postfiat/exceptions.py postfiat/v3/*_pb2.py postfiat/v3/*_pb2_grpc.py a2a/v1/*_pb2.py a2a/v1/*_pb2_grpc.py
+          git add -f python/postfiat/types/enums.py python/postfiat/exceptions.py python/postfiat/v3/*_pb2.py python/postfiat/v3/*_pb2_grpc.py python/a2a/v1/*_pb2.py python/a2a/v1/*_pb2_grpc.py
           if ! git diff --staged --quiet; then
             git commit -m "chore: add generated files for main branch [skip ci]"
             git push origin main
@@ -163,6 +164,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
+          pip install -e python/
           pip install pytest
       
       - name: Generate protobuf code
