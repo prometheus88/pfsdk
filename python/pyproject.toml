@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "postfiat-sdk"
 version = "3.0.0"
 description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
-readme = "README.md"
+readme = "../README.md"
 license = {text = "MIT"}
 authors = [
     { name = "PostFiat Team", email = "team@postfiat.org" }
