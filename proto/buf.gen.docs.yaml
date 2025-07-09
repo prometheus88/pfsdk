@@ -1,0 +1,15 @@
+version: v1
+plugins:
+  # Generate HTML documentation
+  - plugin: buf.build/bufbuild/connect-web:v0.11.0
+    out: ../docs/generated/proto
+    opt:
+      - target=ts
+      - import_extension=none
+  
+  # Generate Markdown documentation
+  - plugin: buf.build/pseudomuto/protoc-gen-doc:v1.5.1
+    out: ../docs/generated/proto
+    opt:
+      - index.md,postfiat/v3/*.proto
+      - html,index.html:postfiat/v3/*.proto

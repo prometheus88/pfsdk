@@ -217,6 +217,10 @@ python/tests/generated/
 # Generated API documentation
 api/
 
+# Generated documentation
+docs/generated/
+site/
+
 # Generated reference implementations (if auto-generated)
 reference_implementations/
 

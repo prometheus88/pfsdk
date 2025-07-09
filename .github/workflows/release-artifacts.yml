@@ -105,6 +105,9 @@ jobs:
             npm install postfiat-sdk-*.tgz
             ```
             
+            ### 📚 Documentation
+            API documentation is available at [https://allenday.github.io/pfsdk](https://allenday.github.io/pfsdk)
+            
             ### 🔧 From Source
             To build from source, see the [Development Guide](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/DEVELOPMENT.md).
         env:
