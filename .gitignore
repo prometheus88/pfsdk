@@ -227,6 +227,15 @@ python/postfiat/integrations/
 # Generated tests from protobuf
 python/tests/generated/
 
+# Generated TypeScript files
+typescript/src/generated/
+typescript/src/client/
+typescript/src/types/
+typescript/src/index.ts
+typescript/tests/generated/
+typescript/dist/
+typescript/node_modules/
+
 # Generated API documentation
 api/
 

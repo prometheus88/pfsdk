@@ -234,22 +234,21 @@ const tsValue = MessageType.fromProtobuf(pbValue);
 
 ### CI/CD Pipeline
 
-The CI automatically handles code generation:
+The CI automatically handles code generation and releases:
 
 **Code Generation Job:**
 1. Install dependencies (buf, python packages, node.js)
-2. Generate protobuf classes for both Python and TypeScript
+2. Generate protobuf classes for Python and TypeScript
 3. Generate Python types and tests
-4. Generate TypeScript SDK and tests
-5. Run complete test suites for both languages
-6. Auto-commit generated files (main branch only)
+4. Generate TypeScript types and React hooks
+5. Run complete test suite
 
-**Test Matrix Job:**
-1. Test across Python 3.10, 3.11, 3.12
-2. Test across Node.js 16, 18, 20
-3. Verify package installation for both languages
-4. Generate and run tests for both SDKs
-5. Validate SDK functionality
+**Release Job (release-* tags):**
+1. Generate all code from protobuf definitions
+2. Build Python packages (.whl and .tar.gz)
+3. Build TypeScript packages (.tgz)
+4. Create GitHub release with attached artifacts
+5. No automatic publishing to npm/PyPI (manual control)
 
 ## 📁 Generated File Management
 
@@ -272,6 +271,14 @@ python/postfiat/services/
 python/postfiat/clients/
 python/postfiat/integrations/
 
+# Generated TypeScript files
+typescript/src/generated/
+typescript/src/client/
+typescript/src/types/
+typescript/src/index.ts
+typescript/tests/generated/
+typescript/dist/
+
 # Generated tests
 python/tests/generated/
 
@@ -281,22 +288,25 @@ api/
 
 **Committed (Source) Files:**
 - `proto/` - Protocol buffer definitions
-- `python/scripts/` - Generation scripts
-- `python/postfiat/__init__.py` - Package root
-- `python/postfiat/client/base.py` - Base client infrastructure
-- `python/tests/manual/` - Manual tests
+- `scripts/` - Generation scripts
+- `python/postfiat/__init__.py` - Python package root
+- `python/postfiat/client/base.py` - Python base client infrastructure
+- `typescript/src/hooks/` - TypeScript React hooks (non-generated)
+- `typescript/package.json` - TypeScript package configuration
+- `tests/manual/` - Manual tests
 
 ### Branch-Specific Behavior
 
 **Dev Branch:**
-- Generated files ignored
+- Generated files ignored via .gitignore
 - Clean source-only development
 - Developers run generation locally
 
-**Main Branch:**
-- Generated files auto-committed by CI
-- Browsable generated code on GitHub
-- Ready for distribution
+**Release Strategy:**
+- Use git tags with "release-" prefix (e.g., release-3.0.0-rc1)
+- CI automatically builds and attaches Python/TypeScript packages
+- No automatic publishing to npm/PyPI registries
+- GitHub releases contain downloadable artifacts
 
 ## 🧪 Testing Architecture
 

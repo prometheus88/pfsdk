@@ -31,7 +31,7 @@ pfsdk/
 
 ### Branch Strategy
 
-- **`main`** - Production-ready code with generated files
+- **`main`** - Stable releases, managed via PR from dev
 - **`dev`** - Development branch with clean source code only
 
 ### Branch Protection Rules
@@ -50,25 +50,27 @@ Both branches are protected with the following rules:
 - ✅ Requires CI checks to pass
 - ✅ More permissive for development
 
-### Generated Files Strategy
+### Release Strategy
 
-We use a **hybrid approach** for generated files:
+We use **git tags with artifacts** for releases:
 
-**Dev Branch:**
-- Generated files are **ignored** by git (clean development)
+**Development:**
+- Generated files are **ignored** by .gitignore
 - Developers run generation scripts locally
 - Focus on source code changes
 
-**Main Branch:**
-- Generated files are **auto-committed** by CI
-- Provides browsable generated code on GitHub
-- Ready for distribution and releases
+**Releases:**
+- Create tags with "release-" prefix (e.g., `release-3.0.0-rc1`)
+- CI automatically builds Python (.whl/.tar.gz) and TypeScript (.tgz) packages
+- Artifacts attached to GitHub releases for download
+- No automatic publishing to npm/PyPI registries
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Python 3.10+ 
+- Node.js 18+ (for TypeScript SDK)
 - [Buf CLI](https://buf.build/docs/installation)
 - Git
 
@@ -90,6 +92,9 @@ We use a **hybrid approach** for generated files:
    
    # Generate Python types
    python scripts/generate_python_types.py
+   
+   # Generate TypeScript SDK
+   cd typescript && npm ci && npm run generate:types && cd ..
    
    # Generate comprehensive build (optional)
    python scripts/generate_protobuf.py
