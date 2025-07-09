@@ -1,13 +1,13 @@
 site_name: PostFiat SDK Documentation
 site_description: Proto-first multi-language SDK with Python and TypeScript support
-site_url: https://allendy.github.io/pfsdk
-repo_url: https://github.com/allendy/pfsdk
-repo_name: allendy/pfsdk
+site_url: https://allenday.github.io/pfsdk
+repo_url: https://github.com/allenday/pfsdk
+repo_name: allenday/pfsdk
 
 extra:
   version: 0.1.0-rc1
   release_tag: release-0.1.0-rc1
-  release_url: "https://github.com/allendy/pfsdk/releases/tag/release-0.1.0-rc1"
+  release_url: "https://github.com/allenday/pfsdk/releases/tag/release-0.1.0-rc1"
   release_date: "2025-07-09"
 
 theme:
