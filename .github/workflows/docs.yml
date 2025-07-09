@@ -32,11 +32,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup A2A dependency
-        run: |
-          chmod +x scripts/setup-a2a-dependency.sh
-          ./scripts/setup-a2a-dependency.sh
-
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -51,6 +46,11 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup A2A dependency
+        run: |
+          chmod +x scripts/setup-a2a-dependency.sh
+          ./scripts/setup-a2a-dependency.sh
 
       - name: Install Python dependencies
         run: |
