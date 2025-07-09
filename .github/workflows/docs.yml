@@ -86,14 +86,15 @@ jobs:
 
       - name: Generate API documentation
         run: |
-          # Generate protobuf documentation
-          cd proto
-          buf generate --template buf.gen.docs.yaml --output ../docs/generated/
-          
           # Copy generated OpenAPI specs
           mkdir -p docs/generated/api
-          cp api/*.json docs/generated/api/
-          cp api/*.yaml docs/generated/api/
+          if [ -d "api" ]; then
+            cp api/*.json docs/generated/api/ 2>/dev/null || echo "No JSON files found"
+            cp api/*.yaml docs/generated/api/ 2>/dev/null || echo "No YAML files found"
+          fi
+          
+          # Generate basic protobuf documentation
+          python scripts/generate_docs.py
 
       - name: Build documentation site
         run: |
