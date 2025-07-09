@@ -51,6 +51,11 @@ jobs:
           chmod +x scripts/setup-a2a-dependency.sh
           ./scripts/setup-a2a-dependency.sh
 
+      - name: Install Python package dependencies
+        run: |
+          cd python
+          pip install -e .
+
       - name: Install TypeScript dependencies
         run: |
           cd typescript
