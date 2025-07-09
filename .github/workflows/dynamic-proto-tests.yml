@@ -271,12 +271,13 @@ jobs:
         echo "🧪 Testing dynamic generator components"
         
         # Test proto introspection
+        cd python
         python -c "
         import sys
         from pathlib import Path
 
         # Add scripts to path
-        scripts_path = Path('.') / 'python' / 'scripts'
+        scripts_path = Path('.') / 'scripts'
         if str(scripts_path) not in sys.path:
             sys.path.insert(0, str(scripts_path))
 
@@ -297,7 +298,7 @@ jobs:
         from pathlib import Path
 
         # Add scripts to path
-        scripts_path = Path('.') / 'python' / 'scripts'
+        scripts_path = Path('.') / 'scripts'
         if str(scripts_path) not in sys.path:
             sys.path.insert(0, str(scripts_path))
 
@@ -313,5 +314,6 @@ jobs:
         "
         
         # Test full generator
+        cd ..
         python python/scripts/generate_dynamic_protobuf_tests.py
         echo "✅ Dynamic generator completed successfully"
