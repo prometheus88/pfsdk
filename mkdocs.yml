@@ -37,7 +37,9 @@ theme:
 plugins:
   - search
   - swagger-ui-tag
-  - mermaid2
+  - mermaid2:
+      version: 10.4.0
+      javascript: https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js
 
 nav:
   - Home: index.md
