@@ -21,3 +21,5 @@ tests/generated/
 # A2A generated Python files
 a2a/v1/*_pb2.py
 a2a/v1/*_pb2_grpc.py
+
+/docs
