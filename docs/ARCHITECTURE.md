@@ -11,7 +11,7 @@ The PostFiat SDK is built on a **proto-first, API-driven architecture** that aut
 The SDK supports multiple programming languages with a shared proto foundation:
 
 - **Python SDK** (`python/`): Full-featured SDK with AI integration, FastAPI servers, and SQLModel ORM
-- **TypeScript SDK** (`typescript/`): Modern web-focused SDK with React hooks and gRPC-Web support
+- **TypeScript SDK** (`typescript/`): Modern web-focused SDK with React hooks, gRPC-Web support, and Jest testing
 - **Shared Proto** (`proto/`): Single source of truth for all language bindings
 
 ```mermaid
