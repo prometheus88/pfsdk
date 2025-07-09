@@ -36,14 +36,16 @@ from dataclasses import dataclass
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-PROTO_DIR = project_root / "proto"
+# Repository root is one level up from python/
+repo_root = project_root.parent
+PROTO_DIR = repo_root / "proto"
 POSTFIAT_PROTO_DIR = PROTO_DIR / "postfiat" / "v3"
 MODELS_DIR = project_root / "postfiat" / "models"
 MANAGERS_DIR = project_root / "postfiat" / "managers"
 SERVICES_DIR = project_root / "postfiat" / "services"
 CLIENTS_DIR = project_root / "postfiat" / "clients"
 DISCORD_DIR = project_root / "postfiat" / "integrations" / "discord"
-API_DIR = project_root / "api"
+API_DIR = repo_root / "api"
 
 @dataclass
 class EnumInfo:
