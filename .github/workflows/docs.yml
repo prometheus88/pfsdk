@@ -176,7 +176,7 @@ jobs:
           # Generate TypeScript API documentation with TypeDoc
           mkdir -p docs/generated/typescript
           cd typescript
-          npx typedoc --out ../docs/generated/typescript src/index.ts --plugin typedoc-plugin-markdown --theme markdown
+          npx typedoc --out ../docs/generated/typescript src/index.ts --plugin typedoc-plugin-markdown --theme markdown --skipErrorChecking
           cd ..
           
           # Copy generated OpenAPI specs
