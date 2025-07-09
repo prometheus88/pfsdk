@@ -276,11 +276,11 @@ classDiagram
     }
 
     %% Relationships
-    User ||--o{ Wallet : owns
-    Wallet ||--o{ Transaction : contains
-    User ||--o{ AIConversation : participates
-    AIAgent ||--o{ AIConversation : handles
-    AIConversation ||--o{ Message : contains
+    User --> Wallet : owns
+    Wallet --> Transaction : contains
+    User --> AIConversation : participates
+    AIAgent --> AIConversation : handles
+    AIConversation --> Message : contains
 
     %% Enums
     class MessageType {
