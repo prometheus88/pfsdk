@@ -28,13 +28,15 @@ if [ ! -d "$A2A_SUBMODULE_PATH" ]; then
         git submodule update --init --recursive
     fi
 else
-    echo "✅ A2A submodule already exists, updating..."
-    cd "$REPO_ROOT"
-    git submodule update --init --recursive
-    cd "$A2A_SUBMODULE_PATH"
-    git fetch origin
-    git checkout main
-    git pull origin main
+    echo "✅ A2A submodule already exists"
+    # In CI, submodule is already checked out, so just verify it's there
+    if [ -f "$A2A_SUBMODULE_PATH/specification/grpc/a2a.proto" ]; then
+        echo "✅ A2A proto file found"
+    else
+        echo "⚠️ A2A proto file missing, updating submodule..."
+        cd "$REPO_ROOT"
+        git submodule update --init --recursive
+    fi
 fi
 
 # Create directory structure for A2A proto imports
