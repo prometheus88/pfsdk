@@ -19,8 +19,9 @@ pfsdk/
 │   ├── postfiat/            # Python package
 │   ├── scripts/             # Python-specific generators
 │   └── tests/               # Python test suites
-├── typescript/              # TypeScript SDK (Future)
+├── typescript/              # TypeScript SDK
 │   ├── src/                 # TypeScript source code
+│   ├── scripts/             # TypeScript generation scripts
 │   └── tests/               # TypeScript test suites
 └── docs/                    # Shared documentation
 ```
@@ -41,9 +42,13 @@ graph TD
     L --> M[Contract Tests]
     L --> N[Serialization Tests]
     L --> O[Integration Tests]
-    D --> P[TypeScript SDK]
-    P --> Q[React Hooks]
-    P --> R[Web Client]
+    A --> P[TypeScript Type Generator]
+    P --> Q[TypeScript Enums]
+    P --> R[Exception Classes]
+    P --> S[Client SDK]
+    D --> T[TypeScript SDK]
+    T --> U[React Hooks]
+    T --> V[Web Client]
 ```
 
 ## 🔧 Code Generation Pipeline
@@ -55,8 +60,10 @@ graph TD
 **Command:** `buf generate --template buf.gen.yaml`
 
 **Generates:**
-- `python/postfiat/v3/*_pb2.py` - Message classes
-- `python/postfiat/v3/*_pb2_grpc.py` - gRPC service stubs
+- `python/postfiat/v3/*_pb2.py` - Python message classes
+- `python/postfiat/v3/*_pb2_grpc.py` - Python gRPC service stubs
+- `typescript/src/generated/*_pb.ts` - TypeScript message classes
+- `typescript/src/generated/*_connect.ts` - TypeScript gRPC-Web service stubs
 
 **Example:**
 ```bash
@@ -91,7 +98,39 @@ pb_value = msg_type.to_protobuf()
 pydantic_value = MessageType.from_protobuf(pb_value)
 ```
 
-### 3. Comprehensive SDK Generation
+### 3. TypeScript Type Generation
+
+**Script:** `typescript/scripts/generate-typescript-types.ts`
+**Purpose:** Generate TypeScript types and SDK components from protobuf definitions
+
+**Generates:**
+- `typescript/src/types/enums.ts` - TypeScript enum classes with conversion utilities
+- `typescript/src/types/exceptions.ts` - SDK exception hierarchy
+- `typescript/src/client/base.ts` - Base client infrastructure
+- `typescript/src/hooks/index.ts` - React hooks for web integration
+- `typescript/src/index.ts` - Main SDK export file
+
+**Features:**
+- Automatic enum extraction from protobuf
+- gRPC-Web client support via Connect-ES
+- React hooks for modern web development
+- Type-safe error handling
+- Conversion utilities between proto and TypeScript types
+
+**Example:**
+```typescript
+// Generated enum usage
+import { MessageType, EncryptionMode } from '@postfiat/sdk';
+
+const msgType = MessageType.CONTEXTUAL_MESSAGE;
+const encryption = EncryptionMode.NACL_SECRETBOX;
+
+// Convert to/from protobuf
+const pbValue = MessageType.toProtobuf(msgType);
+const tsValue = MessageType.fromProtobuf(pbValue);
+```
+
+### 4. Comprehensive SDK Generation
 
 **Script:** `python/scripts/generate_protobuf.py`
 **Purpose:** Generate complete SDK components from protobuf definitions
@@ -111,7 +150,27 @@ pydantic_value = MessageType.from_protobuf(pb_value)
 - OpenAPI generation for REST endpoints
 - Discord integration for command handling
 
-### 4. Test Generation
+### 5. TypeScript Test Generation
+
+**Script:** `typescript/scripts/generate-typescript-tests.ts`
+**Purpose:** Generate comprehensive TypeScript test suites from protobuf definitions
+
+**Generates:**
+- `typescript/tests/generated/enums.test.ts` - Enum conversion and validation tests
+- `typescript/tests/generated/exceptions.test.ts` - Exception handling tests
+- `typescript/tests/generated/client.test.ts` - Client SDK tests
+- `typescript/tests/generated/hooks.test.ts` - React hooks tests
+- `typescript/tests/generated/integration.test.ts` - Integration test suite
+
+**Features:**
+- Jest-based testing framework
+- Comprehensive enum testing (conversion, validation, edge cases)
+- Exception hierarchy testing
+- Client SDK integration testing
+- React hooks testing with modern patterns
+- Auto-generated test data and scenarios
+
+### 6. Test Generation
 
 **🆕 Dynamic Test Generator (Recommended):**
 **Script:** `python/scripts/generate_dynamic_protobuf_tests.py`
@@ -151,20 +210,22 @@ pydantic_value = MessageType.from_protobuf(pb_value)
    # Generate protobuf classes
    cd proto && buf generate --template buf.gen.yaml && cd ..
    
-   # Generate Python types
+   # Generate Python types and tests
    cd python && python scripts/generate_python_types.py
-   
-   # Generate comprehensive SDK (optional)
    python scripts/generate_protobuf.py
+   python scripts/generate_dynamic_protobuf_tests.py && cd ..
    
-   # Generate tests
-   python scripts/generate_dynamic_protobuf_tests.py
+   # Generate TypeScript SDK
+   cd typescript && npm run generate:all && cd ..
    ```
 
 3. **Test Changes:**
    ```bash
-   # Run all tests
-   cd python && pytest tests/ -v
+   # Run Python tests
+   cd python && pytest tests/ -v && cd ..
+   
+   # Run TypeScript tests
+   cd typescript && npm test && cd ..
    
    # Test specific components
    python -c "from postfiat.v3 import messages_pb2; print('✅ Protobuf import works')"
@@ -176,17 +237,19 @@ pydantic_value = MessageType.from_protobuf(pb_value)
 The CI automatically handles code generation:
 
 **Code Generation Job:**
-1. Install dependencies (buf, python packages)
-2. Generate protobuf classes
+1. Install dependencies (buf, python packages, node.js)
+2. Generate protobuf classes for both Python and TypeScript
 3. Generate Python types and tests
-4. Run complete test suite
-5. Auto-commit generated files (main branch only)
+4. Generate TypeScript SDK and tests
+5. Run complete test suites for both languages
+6. Auto-commit generated files (main branch only)
 
 **Test Matrix Job:**
 1. Test across Python 3.10, 3.11, 3.12
-2. Verify package installation
-3. Generate and run tests
-4. Validate SDK functionality
+2. Test across Node.js 16, 18, 20
+3. Verify package installation for both languages
+4. Generate and run tests for both SDKs
+5. Validate SDK functionality
 
 ## 📁 Generated File Management
 
