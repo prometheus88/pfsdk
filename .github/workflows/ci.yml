@@ -201,6 +201,7 @@ jobs:
       
       - name: Test package installation
         run: |
+          cd python
           python -c "import postfiat; print(f'PostFiat SDK v{postfiat.__version__} installed successfully')"
 
       - name: Generate dynamic protobuf tests
