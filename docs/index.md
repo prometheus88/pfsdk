@@ -2,7 +2,7 @@
 
 Welcome to the PostFiat SDK documentation. This is a proto-first, multi-language SDK with Python and TypeScript support.
 
-## Latest Release: v0.1.0-dev
+## Latest Release: release-0.1.0-rc1
 
 ## Quick Start
 
