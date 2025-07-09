@@ -8,6 +8,7 @@ on:
       - 'docs/**'
       - 'python/scripts/**'
       - 'typescript/scripts/**'
+      - 'typescript/src/**'
       - '.github/workflows/docs.yml'
   pull_request:
     branches: [ main ]
@@ -16,6 +17,7 @@ on:
       - 'docs/**'
       - 'python/scripts/**'
       - 'typescript/scripts/**'
+      - 'typescript/src/**'
       - '.github/workflows/docs.yml'
 
 # Allow one concurrent deployment
