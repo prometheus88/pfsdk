@@ -1,0 +1,10 @@
+# Generated TypeScript files
+src/generated/
+src/client/
+src/types/
+src/index.ts
+tests/generated/
+dist/
+
+# Node.js
+node_modules/

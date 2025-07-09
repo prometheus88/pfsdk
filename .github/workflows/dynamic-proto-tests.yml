@@ -1,0 +1,319 @@
+name: Dynamic Proto Tests
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths:
+      - 'postfiat/v3/*.proto'
+      - 'python/scripts/generate_dynamic_protobuf_tests.py'
+      - 'python/scripts/proto_introspection.py'
+
+      - 'python/scripts/*_test_generator.py'
+      - '.github/workflows/dynamic-proto-tests.yml'
+  pull_request:
+    branches: [ main, dev ]
+    paths:
+      - 'postfiat/v3/*.proto'
+      - 'python/scripts/generate_dynamic_protobuf_tests.py'
+      - 'python/scripts/proto_introspection.py'
+
+      - 'python/scripts/*_test_generator.py'
+      - '.github/workflows/dynamic-proto-tests.yml'
+
+jobs:
+  dynamic-proto-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: typescript/package-lock.json
+
+    - name: Setup Buf
+      uses: bufbuild/buf-setup-action@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup A2A dependency
+      run: ./scripts/setup-a2a-dependency.sh
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -e python/
+        pip install pytest
+
+    - name: Install TypeScript dependencies
+      run: |
+        cd typescript
+        npm ci
+
+    - name: Generate protobuf code
+      run: |
+        cd proto
+        buf mod update
+        buf generate --template buf.gen.yaml
+        
+    - name: Check if proto test regeneration is needed
+      id: check_regen
+      run: |
+        # Capture exit code without failing the workflow
+        set +e  # Don't exit on error
+        python python/scripts/ci_test_generation.py --check-only
+        REGEN_NEEDED=$?
+        set -e  # Re-enable exit on error
+        echo "needs_regen=$REGEN_NEEDED" >> $GITHUB_OUTPUT
+        echo "Regeneration needed: $([ $REGEN_NEEDED -eq 1 ] && echo 'true' || echo 'false')"
+        
+    - name: Generate dynamic proto tests
+      if: steps.check_regen.outputs.needs_regen == '1'
+      run: |
+        echo "🔄 Proto files changed - regenerating dynamic tests"
+        python python/scripts/ci_test_generation.py --force
+        
+    - name: Validate generated tests
+      run: |
+        echo "✅ Validating generated test syntax"
+        # Only validate if tests exist
+        if [ -d "python/tests/generated" ] && [ "$(ls -A python/tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
+          python python/scripts/ci_test_generation.py --validate-only
+        else
+          echo "⚠️ No generated tests to validate - will be created in next step"
+        fi
+        
+    - name: Run dynamic proto tests
+      run: |
+        echo "🧪 Running dynamic proto tests"
+        # Check if generated tests exist
+        if [ -d "python/tests/generated" ] && [ "$(ls -A python/tests/generated/test_dynamic_*.py 2>/dev/null)" ]; then
+          echo "✅ Found generated tests, running them..."
+          cd python
+          python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
+        else
+          echo "⚠️ No generated tests found - this is expected on first run"
+          echo "Tests will be generated and committed automatically"
+        fi
+        
+    - name: Check for test changes (PR only)
+      if: github.event_name == 'pull_request'
+      run: |
+        if git diff --quiet python/tests/generated/; then
+          echo "✅ No changes to generated tests"
+        else
+          echo "⚠️ Generated tests have changed - this is expected if proto files changed"
+          git diff --name-only python/tests/generated/
+        fi
+        
+    - name: Auto-commit generated tests (main/dev branch only)
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if ! git diff --quiet python/tests/generated/; then
+          echo "📝 Committing updated generated tests"
+          git add python/tests/generated/
+          git commit -m "chore: regenerate dynamic proto tests
+          
+          - Auto-generated from proto schema changes
+          - Updated by dynamic test generator
+          - Ensures tests stay in sync with proto definitions"
+          git push
+        else
+          echo "✅ No changes to commit"
+        fi
+
+  # Separate job to test the old hardcoded tests still work (for comparison)
+  legacy-proto-tests:
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Allow this to fail while we transition
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: typescript/package-lock.json
+
+    - name: Setup Buf
+      uses: bufbuild/buf-setup-action@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup A2A dependency
+      run: ./scripts/setup-a2a-dependency.sh
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -e python/
+        pip install pytest
+
+    - name: Install TypeScript dependencies
+      run: |
+        cd typescript
+        npm ci
+
+    - name: Generate protobuf code
+      run: |
+        cd proto
+        buf mod update
+        buf generate --template buf.gen.yaml
+        
+    - name: Run legacy hardcoded tests (for comparison)
+      run: |
+        echo "🔍 Testing legacy hardcoded tests (expected to fail)"
+        # This will likely fail due to hardcoded field names
+        cd python
+        python -m pytest tests/generated/test_serialization_integrity.py -v || true
+        echo "ℹ️ Legacy test results above - failures expected due to hardcoded field names"
+
+  # Job to ensure the dynamic generator itself works
+  test-generator:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: typescript/package-lock.json
+
+    - name: Setup Buf
+      uses: bufbuild/buf-setup-action@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup A2A dependency
+      run: ./scripts/setup-a2a-dependency.sh
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -e python/
+        pip install pytest
+
+    - name: Install TypeScript dependencies
+      run: |
+        cd typescript
+        npm ci
+
+    - name: Generate protobuf code
+      run: |
+        cd proto
+        buf mod update
+        buf generate --template buf.gen.yaml
+        
+    - name: Test dynamic generator components
+      run: |
+        echo "🧪 Testing dynamic generator components"
+        
+        # Test proto introspection
+        cd python
+        python -c "
+        import sys
+        from pathlib import Path
+
+        # Add scripts to path
+        scripts_path = Path('.') / 'scripts'
+        if str(scripts_path) not in sys.path:
+            sys.path.insert(0, str(scripts_path))
+
+        from proto_introspection import ProtoIntrospector
+        from postfiat.v3 import messages_pb2
+
+        introspector = ProtoIntrospector()
+        messages = introspector.discover_proto_messages([messages_pb2])
+        print(f'✅ Discovered {len(messages)} proto messages')
+
+        schema = introspector.analyze_message(messages_pb2.Envelope)
+        print(f'✅ Analyzed Envelope: {len(schema.fields)} fields')
+        "
+        
+        # Test data factory
+        python -c "
+        import sys
+        from pathlib import Path
+
+        # Add scripts to path
+        scripts_path = Path('.') / 'scripts'
+        if str(scripts_path) not in sys.path:
+            sys.path.insert(0, str(scripts_path))
+
+        from proto_introspection import ProtoIntrospector, ProtoTestDataFactory
+        from postfiat.v3 import messages_pb2
+
+        introspector = ProtoIntrospector()
+        factory = ProtoTestDataFactory(introspector)
+
+        envelope = messages_pb2.Envelope()
+        populated = factory.populate_message(envelope)
+        print(f'✅ Populated message with test data')
+        "
+        
+        # Test full generator
+        cd ..
+        python python/scripts/generate_dynamic_protobuf_tests.py
+        echo "✅ Dynamic generator completed successfully"

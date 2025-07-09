@@ -36,14 +36,16 @@ from dataclasses import dataclass
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-PROTO_DIR = project_root / "proto"
+# Repository root is one level up from python/
+repo_root = project_root.parent
+PROTO_DIR = repo_root / "proto"
 POSTFIAT_PROTO_DIR = PROTO_DIR / "postfiat" / "v3"
 MODELS_DIR = project_root / "postfiat" / "models"
 MANAGERS_DIR = project_root / "postfiat" / "managers"
 SERVICES_DIR = project_root / "postfiat" / "services"
 CLIENTS_DIR = project_root / "postfiat" / "clients"
 DISCORD_DIR = project_root / "postfiat" / "integrations" / "discord"
-API_DIR = project_root / "api"
+API_DIR = repo_root / "api"
 
 @dataclass
 class EnumInfo:
@@ -76,6 +78,7 @@ class ProtobufBuilder:
     
     def __init__(self):
         self.project_root = project_root
+        self.repo_root = repo_root
         self.proto_dir = PROTO_DIR
         self.models_dir = MODELS_DIR
         self.managers_dir = MANAGERS_DIR
@@ -121,7 +124,7 @@ class ProtobufBuilder:
         
         print(f"📁 Found {len(proto_files)} .proto files:")
         for proto_file in proto_files:
-            print(f"   {proto_file.relative_to(self.project_root)}")
+            print(f"   {proto_file.relative_to(self.repo_root)}")
         
         return proto_files
     

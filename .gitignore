@@ -207,24 +207,66 @@ marimo/_lsp/
 __marimo__/
 
 # PostFiat SDK - Generated files (do not commit)
-# Generated protobuf Python files
+# Generated protobuf Python files (root level)
 postfiat/v3/*_pb2.py
 postfiat/v3/*_pb2_grpc.py
+# Generated tests from protobuf
+python/tests/generated/
 
-# Generated Python types from protobuf
-postfiat/types/enums.py
-postfiat/exceptions.py
-postfiat/models/envelope_enums.py
-postfiat/managers/
-postfiat/services/
-postfiat/clients/
-postfiat/integrations/
 
 # Generated API documentation
 api/
+
+# Generated documentation
+docs/generated/
+site/
 
 # Generated reference implementations (if auto-generated)
 reference_implementations/
 
 # Old work directory
 agent-is-a-jackass/
+
+# Generated artifacts from third_party
+proto/a2a
+python/third_party/a2a
+
+# A2A generated Python files
+python/a2a/v1/*_pb2.py
+python/a2a/v1/*_pb2_grpc.py
+
+# TypeScript generated files
+typescript/src/generated/
+typescript/node_modules/
+typescript/dist/
+typescript/tests/generated/
+typescript/src/types/enums.ts
+typescript/src/types/exceptions.ts
+typescript/src/client/base.ts
+typescript/src/hooks/index.ts
+typescript/src/index.ts
+typescript/coverage/
+
+# Generated files in root (legacy paths)
+a2a/
+postfiat/
+
+# Third party examples and experimental code
+third_party/a2a_llama_index_file_chat/
+xrpl-devnet/
+xrpl-private-network/
+
+# Third-party development artifacts
+third_party/a2a_llama_index_file_chat/
+
+# Buf lock file (commit this)
+# proto/buf.lock
+
+# OS and IDE files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

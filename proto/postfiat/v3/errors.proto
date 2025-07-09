@@ -1,0 +1,218 @@
+syntax = "proto3";
+
+package postfiat.v3;
+
+option go_package = "postfiat/v3;postfiatv3";
+option java_package = "com.postfiat.v3";
+option java_multiple_files = true;
+option csharp_namespace = "PostFiat.V3";
+
+// Error severity levels
+enum ErrorSeverity {
+  // Informational - not really an error
+  INFO = 0;
+  
+  // Warning - something unexpected but recoverable
+  WARNING = 1;
+  
+  // Error - operation failed but system is stable
+  ERROR = 2;
+  
+  // Critical - system stability may be compromised
+  CRITICAL = 3;
+  
+  // Fatal - system cannot continue
+  FATAL = 4;
+}
+
+// Error categories for classification
+enum ErrorCategory {
+  // Unknown or unclassified error
+  UNKNOWN = 0;
+  
+  // Client-side errors (4xx equivalent)
+  CLIENT = 1;
+  
+  // Server-side errors (5xx equivalent)
+  SERVER = 2;
+  
+  // Network/communication errors
+  NETWORK = 3;
+  
+  // Authentication/authorization errors
+  AUTH = 4;
+  
+  // Data validation errors
+  VALIDATION = 5;
+  
+  // Configuration errors
+  CONFIGURATION = 6;
+  
+  // Business logic errors
+  BUSINESS = 7;
+  
+  // External service errors
+  EXTERNAL = 8;
+}
+
+// Specific error codes for detailed error identification
+enum ErrorCode {
+  // Generic success (not an error)
+  SUCCESS = 0;
+  
+  // Generic unknown error
+  UNKNOWN_ERROR = 1000;
+  
+  // Client errors (1xxx)
+  BAD_REQUEST = 1001;
+  INVALID_INPUT = 1002;
+  MISSING_PARAMETER = 1003;
+  INVALID_PARAMETER = 1004;
+  MALFORMED_REQUEST = 1005;
+  UNSUPPORTED_OPERATION = 1006;
+  RESOURCE_NOT_FOUND = 1007;
+  DUPLICATE_RESOURCE = 1008;
+  PRECONDITION_FAILED = 1009;
+  REQUEST_TOO_LARGE = 1010;
+  
+  // Authentication errors (2xxx)
+  AUTHENTICATION_REQUIRED = 2001;
+  AUTHENTICATION_FAILED = 2002;
+  INVALID_CREDENTIALS = 2003;
+  TOKEN_EXPIRED = 2004;
+  TOKEN_INVALID = 2005;
+  SESSION_EXPIRED = 2006;
+  ACCOUNT_LOCKED = 2007;
+  ACCOUNT_DISABLED = 2008;
+  
+  // Authorization errors (3xxx)
+  AUTHORIZATION_FAILED = 3001;
+  INSUFFICIENT_PERMISSIONS = 3002;
+  ACCESS_DENIED = 3003;
+  RESOURCE_FORBIDDEN = 3004;
+  OPERATION_NOT_ALLOWED = 3005;
+  
+  // Validation errors (4xxx)
+  VALIDATION_FAILED = 4001;
+  SCHEMA_VALIDATION_FAILED = 4002;
+  TYPE_MISMATCH = 4003;
+  VALUE_OUT_OF_RANGE = 4004;
+  INVALID_FORMAT = 4005;
+  CONSTRAINT_VIOLATION = 4006;
+  REQUIRED_FIELD_MISSING = 4007;
+  
+  // Server errors (5xxx)
+  INTERNAL_SERVER_ERROR = 5001;
+  SERVICE_UNAVAILABLE = 5002;
+  DATABASE_ERROR = 5003;
+  CONFIGURATION_ERROR = 5004;
+  DEPENDENCY_FAILURE = 5005;
+  RESOURCE_EXHAUSTED = 5006;
+  TIMEOUT = 5007;
+  DEADLOCK = 5008;
+  
+  // Network errors (6xxx)
+  NETWORK_ERROR = 6001;
+  CONNECTION_FAILED = 6002;
+  CONNECTION_TIMEOUT = 6003;
+  CONNECTION_REFUSED = 6004;
+  DNS_RESOLUTION_FAILED = 6005;
+  SSL_ERROR = 6006;
+  PROTOCOL_ERROR = 6007;
+  
+  // Business logic errors (7xxx)
+  BUSINESS_RULE_VIOLATION = 7001;
+  
+  // External service errors (8xxx)
+  EXTERNAL_SERVICE_ERROR = 8001;
+  EXTERNAL_SERVICE_UNAVAILABLE = 8002;
+  EXTERNAL_SERVICE_TIMEOUT = 8003;
+  EXTERNAL_API_ERROR = 8004;
+  THIRD_PARTY_FAILURE = 8005;
+  
+  // Rate limiting errors (9xxx)
+  RATE_LIMIT_EXCEEDED = 9001;
+  QUOTA_EXCEEDED = 9002;
+  THROTTLED = 9003;
+}
+
+// Structured error information
+message ErrorInfo {
+  // Error code for programmatic handling
+  ErrorCode code = 1;
+  
+  // Error category for classification
+  ErrorCategory category = 2;
+  
+  // Error severity level
+  ErrorSeverity severity = 3;
+  
+  // Human-readable error message
+  string message = 4;
+  
+  // Detailed error description
+  string details = 5;
+  
+  // Field that caused the error (for validation errors)
+  string field = 6;
+  
+  // Additional context information
+  map<string, string> context = 7;
+  
+  // Timestamp when error occurred
+  int64 timestamp = 8;
+  
+  // Unique error ID for tracking
+  string error_id = 9;
+  
+  // Stack trace or debug information (development only)
+  string debug_info = 10;
+  
+  // Suggested remediation steps
+  repeated string remediation = 11;
+  
+  // Related error codes or references
+  repeated string related_errors = 12;
+}
+
+// Error response wrapper for API responses
+message ErrorResponse {
+  // Primary error information
+  ErrorInfo error = 1;
+  
+  // Additional errors (for batch operations)
+  repeated ErrorInfo additional_errors = 2;
+  
+  // Request ID for correlation
+  string request_id = 3;
+  
+  // API version that generated this error
+  string api_version = 4;
+}
+
+// Exception hierarchy definitions for code generation
+message ExceptionDefinition {
+  // Exception class name
+  string class_name = 1;
+  
+  // Parent exception class (empty for base exceptions)
+  string parent_class = 2;
+  
+  // Error codes that map to this exception
+  repeated ErrorCode error_codes = 3;
+  
+  // Error category this exception represents
+  ErrorCategory category = 4;
+  
+  // Default severity for this exception type
+  ErrorSeverity default_severity = 5;
+  
+  // Documentation string for the exception
+  string documentation = 6;
+  
+  // Whether this exception should include retry logic
+  bool retryable = 7;
+  
+  // Default HTTP status code for REST APIs
+  int32 http_status_code = 8;
+}
