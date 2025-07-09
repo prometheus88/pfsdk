@@ -260,7 +260,7 @@ a2a/
 postfiat/
 
 # Third party examples and experimental code
-third_party/
+third_party/a2a_llama_index_file_chat/
 xrpl-devnet/
 xrpl-private-network/
 
