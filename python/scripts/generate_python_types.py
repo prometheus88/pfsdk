@@ -552,8 +552,19 @@ def generate_init_files():
     """Generate comprehensive __init__.py files for all modules."""
     print("🔍 Generating __init__.py files...")
     
-    # Generate main postfiat/__init__.py
-    main_init_code = '''"""PostFiat Wallet SDK - Python SDK for PostFiat Wallet Protocol.
+    # Read existing __init__.py to preserve version
+    init_path = Path(__file__).parent.parent / "postfiat" / "__init__.py"
+    version = "3.0.0"  # default
+    if init_path.exists():
+        with open(init_path, 'r') as f:
+            content = f.read()
+            import re
+            match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
+            if match:
+                version = match.group(1)
+    
+    # Generate enhanced postfiat/__init__.py with all imports
+    main_init_code = f'''"""PostFiat Wallet SDK - Python SDK for PostFiat Wallet Protocol.
 
 This SDK provides a complete implementation for interacting with PostFiat services,
 including wallet management, messaging, and cryptographic operations.
@@ -563,7 +574,7 @@ DO NOT EDIT - This file is auto-generated from proto files.
 Run 'python scripts/generate_python_types.py' to regenerate.
 """
 
-__version__ = "3.0.0"
+__version__ = "{version}"
 
 # Core functionality imports
 from . import exceptions
