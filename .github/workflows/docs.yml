@@ -298,9 +298,7 @@ jobs:
           
           ## Latest Release: ${{ steps.latest_release.outputs.latest_tag }}
           
-          {% if config.extra.release_url %}
           **[📦 Download Release](${{ steps.latest_release.outputs.release_url }})** | **Released:** ${{ steps.latest_release.outputs.release_date }}
-          {% endif %}
           
           ## Quick Start
           
