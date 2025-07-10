@@ -535,6 +535,10 @@ import json
         models_code += f'        )\n\n'
         models_code += f'        return pb_message\n\n\n'
 
+    # Add __all__ export at the end
+    model_class_names = [name for name in message_types.keys() if name not in ['ExceptionDefinition']]
+    models_code += f'\n# Export all generated models\n__all__ = {model_class_names}\n'
+
     # Write the generated file
     output_path = Path(__file__).parent.parent / "postfiat" / "models" / "generated.py"
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -546,6 +550,256 @@ import json
     return True
 
 
+def generate_init_files():
+    """Generate comprehensive __init__.py files for all modules."""
+    print("🔍 Generating __init__.py files...")
+    
+    # Generate main postfiat/__init__.py
+    main_init_code = '''"""PostFiat Wallet SDK - Python SDK for PostFiat Wallet Protocol.
+
+This SDK provides a complete implementation for interacting with PostFiat services,
+including wallet management, messaging, and cryptographic operations.
+
+Auto-generated from protobuf definitions.
+DO NOT EDIT - This file is auto-generated from proto files.
+Run 'python scripts/generate_python_types.py' to regenerate.
+"""
+
+__version__ = "3.0.0"
+
+# Core functionality imports
+from . import exceptions
+from . import types
+from . import client
+from . import models
+from . import v3
+
+# Import commonly used exceptions
+from .exceptions import (
+    PostFiatError,
+    ClientError,
+    ServerError,
+    NetworkError,
+    AuthError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    ResourceNotFoundError,
+    InternalServerError,
+    ServiceUnavailableError,
+    RateLimitError,
+    TimeoutError,
+    ConnectionError,
+    ConfigurationError,
+    BusinessError,
+    ExternalError,
+    ValidationFailedError,
+    ErrorCode,
+    ErrorCategory,
+    ErrorSeverity,
+    create_exception_from_error_code,
+    create_exception_from_error_info,
+)
+
+# Import commonly used types
+from .types import (
+    MessageType,
+    EncryptionMode,
+)
+
+# Import client functionality
+from .client.base import (
+    BaseClient,
+    ClientConfig,
+)
+
+# Import all v3 protobuf messages and enums
+from .v3 import (
+    messages_pb2,
+    errors_pb2,
+)
+
+# Export all for easy access
+__all__ = [
+    # Version
+    "__version__",
+    
+    # Modules
+    "exceptions",
+    "types", 
+    "client",
+    "models",
+    "v3",
+    
+    # Exceptions
+    "PostFiatError",
+    "ClientError",
+    "ServerError", 
+    "NetworkError",
+    "AuthError",
+    "ValidationError",
+    "AuthenticationError",
+    "AuthorizationError",
+    "ResourceNotFoundError",
+    "InternalServerError",
+    "ServiceUnavailableError",
+    "RateLimitError",
+    "TimeoutError",
+    "ConnectionError",
+    "ConfigurationError",
+    "BusinessError",
+    "ExternalError",
+    "ValidationFailedError",
+    
+    # Error enums
+    "ErrorCode",
+    "ErrorCategory", 
+    "ErrorSeverity",
+    
+    # Exception factories
+    "create_exception_from_error_code",
+    "create_exception_from_error_info",
+    
+    # Types
+    "MessageType",
+    "EncryptionMode",
+    
+    # Client
+    "BaseClient",
+    "ClientConfig",
+    
+    # Protobuf modules
+    "messages_pb2",
+    "errors_pb2",
+]
+
+# Re-export common classes at package level for convenience
+# Use try/except to handle cases where protobuf generation might not have created all classes yet
+try:
+    from .v3.messages_pb2 import Envelope
+    __all__.append("Envelope")
+except (ImportError, AttributeError):
+    pass
+
+try:
+    from .v3.messages_pb2 import ContextReference
+    __all__.append("ContextReference")
+except (ImportError, AttributeError):
+    pass
+
+try:
+    from .v3.messages_pb2 import PostFiatEnvelopePayload
+    __all__.append("PostFiatEnvelopePayload")
+except (ImportError, AttributeError):
+    pass
+
+try:
+    from .v3.errors_pb2 import ErrorInfo
+    __all__.append("ErrorInfo")
+except (ImportError, AttributeError):
+    pass
+'''
+    
+    output_path = Path(__file__).parent.parent / "postfiat" / "__init__.py"
+    with open(output_path, 'w') as f:
+        f.write(main_init_code)
+    print(f"✅ Generated {output_path}")
+    
+    # Generate types/__init__.py with comprehensive exports
+    types_init_code = '''"""PostFiat SDK - Type definitions package.
+
+This package contains auto-generated type definitions from protobuf files.
+
+DO NOT EDIT - This file is auto-generated from proto files.
+Run 'python scripts/generate_python_types.py' to regenerate.
+"""
+
+# Import all enum types
+from .enums import *
+
+# Re-export everything from enums
+from .enums import __all__ as _enums_all
+
+# Build comprehensive __all__ list
+__all__ = []
+if _enums_all:
+    __all__.extend(_enums_all)
+'''
+    
+    output_path = Path(__file__).parent.parent / "postfiat" / "types" / "__init__.py"
+    with open(output_path, 'w') as f:
+        f.write(types_init_code)
+    print(f"✅ Generated {output_path}")
+    
+    # Update the enums.py file to include __all__
+    enums_path = Path(__file__).parent.parent / "postfiat" / "types" / "enums.py"
+    if enums_path.exists():
+        with open(enums_path, 'r') as f:
+            enums_content = f.read()
+        
+        # Extract all class names
+        import re
+        class_names = re.findall(r'^class (\w+)\(IntEnum\):', enums_content, re.MULTILINE)
+        
+        # Add __all__ at the end if not present
+        if '__all__' not in enums_content:
+            all_export = f"\n\n# Export all enum types\n__all__ = {class_names}\n"
+            enums_content += all_export
+            
+            with open(enums_path, 'w') as f:
+                f.write(enums_content)
+            print(f"✅ Updated {enums_path} with __all__ export")
+    
+    # Generate client/__init__.py
+    client_init_code = '''"""PostFiat SDK - Client functionality.
+
+This module provides client classes for interacting with PostFiat services.
+
+DO NOT EDIT - This file is auto-generated from proto files.
+Run 'python scripts/generate_python_types.py' to regenerate.
+"""
+
+from .base import BaseClient, ClientConfig
+
+__all__ = [
+    "BaseClient",
+    "ClientConfig",
+]
+'''
+    
+    output_path = Path(__file__).parent.parent / "postfiat" / "client" / "__init__.py"
+    with open(output_path, 'w') as f:
+        f.write(client_init_code)
+    print(f"✅ Generated {output_path}")
+    
+    # Generate models/__init__.py
+    models_init_code = '''"""PostFiat SDK - Database models.
+
+This module contains SQLModel database models generated from protobuf definitions.
+
+DO NOT EDIT - This file is auto-generated from proto files.
+Run 'python scripts/generate_python_types.py' to regenerate.
+"""
+
+# Import all generated models
+try:
+    from .generated import *
+    from .generated import __all__ as _generated_all
+    __all__ = _generated_all if _generated_all else []
+except ImportError:
+    # Models not generated yet
+    __all__ = []
+'''
+    
+    output_path = Path(__file__).parent.parent / "postfiat" / "models" / "__init__.py"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'w') as f:
+        f.write(models_init_code)
+    print(f"✅ Generated {output_path}")
+    
+    return True
+
+
 def main():
     """Generate all Python types from protobuf definitions."""
     print("🔄 Generating Python types from protobuf definitions...")
@@ -554,6 +808,7 @@ def main():
     success &= generate_enums_from_proto()
     success &= generate_exceptions()
     success &= generate_sqlmodel_models()
+    success &= generate_init_files()
 
     if success:
         print("✅ All Python types generated successfully!")
