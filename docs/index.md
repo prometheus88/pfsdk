@@ -9,21 +9,21 @@ Welcome to the PostFiat SDK documentation. This is a proto-first, multi-language
 ### Python
 ```bash
 # Install from PyPI (when published)
-pip install postfiat-sdk==0.1.0-dev
+pip install postfiat-sdk==0.1.0-rc1
 
 # Or download from GitHub releases
-# wget https://github.com/allendy/pfsdk/releases/download/v0.1.0-dev/postfiat-sdk-0.1.0-dev.whl
-# pip install postfiat-sdk-0.1.0-dev.whl
+# wget https://github.com/allenday/pfsdk/releases/download/release-0.1.0-rc1/postfiat-sdk-0.1.0-rc1.whl
+# pip install postfiat-sdk-0.1.0-rc1.whl
 ```
 
 ### TypeScript
 ```bash
 # Install from npm (when published)
-npm install @postfiat/sdk@0.1.0-dev
+npm install @postfiat/sdk@0.1.0-rc1
 
 # Or download from GitHub releases
-# wget https://github.com/allendy/pfsdk/releases/download/v0.1.0-dev/postfiat-sdk-0.1.0-dev.tgz
-# npm install postfiat-sdk-0.1.0-dev.tgz
+# wget https://github.com/allenday/pfsdk/releases/download/release-0.1.0-rc1/postfiat-sdk-0.1.0-rc1.tgz
+# npm install postfiat-sdk-0.1.0-rc1.tgz
 ```
 
 ## Features

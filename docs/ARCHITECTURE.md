@@ -472,18 +472,18 @@ graph TB
 
 ### 2. Layered Architecture
 **Layers:**
-1. **Data Layer:** SQLModel + Database
-2. **Service Layer:** Business logic and gRPC services
-3. **API Layer:** FastAPI REST endpoints
-4. **Client Layer:** Generated SDK clients
+- **Data Layer:** SQLModel + Database
+- **Service Layer:** Business logic and gRPC services
+- **API Layer:** FastAPI REST endpoints
+- **Client Layer:** Generated SDK clients
 
 ### 3. Code Generation Pipeline
 **Process:**
-1. Define schemas in `.proto` files
-2. Generate Python classes with Buf
-3. Generate Pydantic models and FastAPI routes
-4. Generate SQLModel database models
-5. Generate client SDKs and documentation
+- Define schemas in `.proto` files
+- Generate Python classes with Buf
+- Generate Pydantic models and FastAPI routes
+- Generate SQLModel database models
+- Generate client SDKs and documentation
 
 ### 4. AI-First Integration
 **Pattern:** AI capabilities built into core SDK functionality

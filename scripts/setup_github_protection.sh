@@ -4,7 +4,7 @@
 
 set -e
 
-REPO="allendy/pfsdk"
+REPO="allenday/pfsdk"
 
 echo "🔒 Setting up branch protection for PostFiat SDK..."
 
