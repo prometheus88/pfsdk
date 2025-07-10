@@ -649,7 +649,6 @@ export function useAsyncOperation<T>(): [
  * Hook for wallet operations
  */
 export function useWallet() {
-  const client = usePostFiatClient();
   const [walletState, executeWalletOperation] = useAsyncOperation<any>();
 
   const createWallet = useCallback(async (request: any) => {
@@ -679,7 +678,6 @@ export function useWallet() {
  * Hook for message operations
  */
 export function useMessages() {
-  const client = usePostFiatClient();
   const [messageState, executeMessageOperation] = useAsyncOperation<any>();
 
   const sendMessage = useCallback(async (message: any) => {
@@ -755,7 +753,7 @@ export function useSubscription<T>(
 `;
 
   // Write the generated file
-  const outputPath = path.join(__dirname, '..', 'src', 'hooks', 'index.ts');
+  const outputPath = path.join(__dirname, '..', 'src', 'hooks', 'index.tsx');
   const outputDir = path.dirname(outputPath);
   
   if (!fs.existsSync(outputDir)) {
@@ -821,8 +819,8 @@ export * from './types/exceptions';
 // Client utilities
 export * from './client/base';
 
-// React hooks (optional peer dependency) - commented out due to JSX build issues
-// export * from './hooks';
+// React hooks (optional peer dependency)
+export * from './hooks';
 
 // Generated protobuf types and services
 export * from './generated';

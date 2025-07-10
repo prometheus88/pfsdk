@@ -12,7 +12,7 @@ import { PostFiatError } from '../types/exceptions';
 /**
  * PostFiat client context
  */
-export const PostFiatClientContext = createContext<PostFiatClient | null>(null);
+const PostFiatClientContext = createContext<PostFiatClient | null>(null);
 
 /**
  * PostFiat client provider props
