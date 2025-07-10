@@ -51,6 +51,11 @@ jobs:
           chmod +x scripts/setup-a2a-dependency.sh
           ./scripts/setup-a2a-dependency.sh
 
+      - name: Install TypeScript dependencies
+        run: |
+          cd typescript
+          npm ci
+
       - name: Generate protobuf code
         run: |
           cd proto
@@ -64,11 +69,6 @@ jobs:
           cd python
           python -m build
           python -m twine check dist/*
-
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
 
       - name: Generate TypeScript types from protobuf
         run: |
