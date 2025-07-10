@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "postfiat-sdk"
 version = "0.1.0"
 description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
-readme = "../README.md"
+readme = "README.md"
 license = {text = "MIT"}
 authors = [
     { name = "PostFiat Team", email = "team@postfiat.org" }
