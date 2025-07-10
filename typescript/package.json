@@ -12,7 +12,7 @@
     "!**/*.spec.ts"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build": "tsup",
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "jest",
     "test:coverage": "jest --coverage",
