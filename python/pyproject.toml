@@ -181,10 +181,11 @@ default = "postfiat.crypto.encryption:DefaultEncryption"
 packages = ["postfiat", "reference_implementations"]
 
 # Force include generated files that are created during CI build
+# Note: These files are generated during the CI build process
 [tool.hatch.build.targets.wheel.force-include]
-"postfiat/exceptions.py" = "postfiat/exceptions.py"
-"postfiat/types/enums.py" = "postfiat/types/enums.py"  
-"postfiat/models/generated.py" = "postfiat/models/generated.py"
+"./postfiat/exceptions.py" = "postfiat/exceptions.py"
+"./postfiat/types/enums.py" = "postfiat/types/enums.py"  
+"./postfiat/models/generated.py" = "postfiat/models/generated.py"
 
 # Development tools configuration
 [tool.black]
