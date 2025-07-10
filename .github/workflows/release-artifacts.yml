@@ -72,7 +72,7 @@ jobs:
       - name: Build Python package
         run: |
           cd python
-          python -m build
+          python -m build --wheel --no-isolation
           python -m twine check dist/*
 
       - name: Generate TypeScript types from protobuf
