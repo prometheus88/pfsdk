@@ -9,6 +9,7 @@ on:
       - 'python/scripts/**'
       - 'typescript/scripts/**'
       - 'typescript/src/**'
+      - 'overrides/**'
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
   pull_request:
@@ -19,6 +20,7 @@ on:
       - 'python/scripts/**'
       - 'typescript/scripts/**'
       - 'typescript/src/**'
+      - 'overrides/**'
       - 'mkdocs.yml'
       - '.github/workflows/docs.yml'
 
