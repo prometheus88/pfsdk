@@ -58,6 +58,7 @@ graph TB
 **Role:** Single source of truth for all data structures and service definitions
 
 **Why Protocol Buffers:**
+
 - **Language agnostic:** Generate code for multiple languages
 - **Schema evolution:** Backward/forward compatibility
 - **Performance:** Efficient binary serialization
@@ -90,6 +91,7 @@ service WalletService {
 **Role:** REST API specification and documentation generation
 
 **Why OpenAPI:**
+
 - **API-first design:** Design APIs before implementation
 - **Auto-documentation:** Interactive API docs with Swagger UI
 - **Client generation:** Generate clients for multiple languages
@@ -97,6 +99,7 @@ service WalletService {
 - **Tooling ecosystem:** Rich ecosystem of tools and integrations
 
 **Generated from Proto:**
+
 - REST endpoints for each gRPC service method
 - JSON schemas for all message types
 - Interactive documentation
@@ -106,6 +109,7 @@ service WalletService {
 **Role:** High-performance REST API server framework
 
 **Why FastAPI:**
+
 - **Performance:** One of the fastest Python frameworks
 - **Type hints:** Native Python type hint support
 - **Auto-validation:** Automatic request/response validation
@@ -130,6 +134,7 @@ async def create_wallet(request: CreateWalletRequest):
 **Role:** Data validation, serialization, and type safety
 
 **Why Pydantic:**
+
 - **Type safety:** Runtime type checking and validation
 - **Performance:** Fast validation with Rust core
 - **JSON Schema:** Automatic JSON schema generation
@@ -162,6 +167,7 @@ class WalletModel(BaseModel):
 **Role:** AI agent framework for intelligent automation
 
 **Why PydanticAI:**
+
 - **Type safety:** Type-safe AI interactions with Pydantic models
 - **Multi-LLM:** Support for OpenAI, Anthropic, Google, etc.
 - **Structured output:** Guaranteed structured responses
@@ -191,6 +197,7 @@ async def analyze_wallet(transactions: list[TransactionData]) -> WalletAnalysis:
 **Role:** Database ORM with type safety and async support
 
 **Why SQLModel:**
+
 - **Type safety:** SQLAlchemy with Pydantic validation
 - **Async support:** Native async database operations
 - **FastAPI integration:** Seamless integration with FastAPI
@@ -306,6 +313,7 @@ classDiagram
 **Role:** Production-ready observability, logging, and distributed tracing
 
 **Why this triple stack:**
+
 - **structlog:** Structured logging with rich context and JSON output
 - **loguru:** Beautiful console output and developer-friendly formatting
 - **OpenTelemetry:** Distributed tracing, metrics, and standardized observability
@@ -346,6 +354,7 @@ with tracer.start_as_current_span("user_authentication") as span:
 ```
 
 **Observability Strategy:**
+
 - **Structured logging:** structlog for rich context, loguru for beautiful output
 - **Distributed tracing:** OpenTelemetry spans across gRPC/REST calls
 - **Metrics collection:** Proto-native performance and business metrics
@@ -465,6 +474,7 @@ graph TB
 **Pattern:** All data structures and services defined in Protocol Buffers first
 
 **Benefits:**
+
 - Single source of truth
 - Automatic code generation
 - Cross-language compatibility
@@ -472,6 +482,7 @@ graph TB
 
 ### Layered Architecture
 **Layers:**
+
 - **Data Layer:** SQLModel + Database
 - **Service Layer:** Business logic and gRPC services
 - **API Layer:** FastAPI REST endpoints
@@ -479,6 +490,7 @@ graph TB
 
 ### Code Generation Pipeline
 **Process:**
+
 - Define schemas in `.proto` files
 - Generate Python classes with Buf
 - Generate Pydantic models and FastAPI routes
@@ -489,6 +501,7 @@ graph TB
 **Pattern:** AI capabilities built into core SDK functionality
 
 **Implementation:**
+
 - PydanticAI agents for intelligent automation
 - Type-safe AI interactions
 - Structured AI responses with validation
@@ -734,12 +747,14 @@ graph TB
 ### Observability & Logging
 
 **Technology Stack:**
+
 - **[structlog](https://www.structlog.org/):** Structured logging with rich context
 - **[loguru](https://loguru.readthedocs.io/):** Beautiful console output and formatting
 - **[OpenTelemetry](https://opentelemetry.io/):** Distributed tracing, metrics, and observability
 - **Integration:** All three work together for comprehensive observability
 
 **Implementation:**
+
 - **Structured logging:** JSON logs with correlation IDs and rich context (structlog)
 - **Beautiful development:** Human-readable console logs with colors (loguru)
 - **Distributed tracing:** Request tracing across gRPC/REST services (OpenTelemetry)
@@ -750,6 +765,7 @@ graph TB
 - **Audit trails:** User action logging with structured metadata and spans
 
 **Observability Locations:**
+
 - **API Layer:** Request/response logging + tracing via FastAPI middleware
 - **gRPC Services:** Automatic method tracing with OpenTelemetry gRPC instrumentation
 - **Exception System:** Factory function logging for error creation and processing
