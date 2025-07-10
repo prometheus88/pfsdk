@@ -54,7 +54,7 @@ graph TB
 
 ## 🛠️ Technology Stack
 
-### 1. Protocol Buffers (Proto3)
+### Protocol Buffers (Proto3)
 **Role:** Single source of truth for all data structures and service definitions
 
 **Why Protocol Buffers:**
@@ -86,7 +86,7 @@ service WalletService {
 }
 ```
 
-### 2. OpenAPI 3.0
+### OpenAPI 3.0
 **Role:** REST API specification and documentation generation
 
 **Why OpenAPI:**
@@ -102,7 +102,7 @@ service WalletService {
 - Interactive documentation
 - Client SDKs for web/mobile
 
-### 3. FastAPI
+### FastAPI
 **Role:** High-performance REST API server framework
 
 **Why FastAPI:**
@@ -126,7 +126,7 @@ async def create_wallet(request: CreateWalletRequest):
     return await wallet_service.create_wallet(request)
 ```
 
-### 4. Pydantic v2
+### Pydantic v2
 **Role:** Data validation, serialization, and type safety
 
 **Why Pydantic:**
@@ -158,7 +158,7 @@ class WalletModel(BaseModel):
         }
 ```
 
-### 5. PydanticAI
+### PydanticAI
 **Role:** AI agent framework for intelligent automation
 
 **Why PydanticAI:**
@@ -187,7 +187,7 @@ async def analyze_wallet(transactions: list[TransactionData]) -> WalletAnalysis:
     return result.data  # Type-safe WalletAnalysis object
 ```
 
-### 6. SQLModel
+### SQLModel
 **Role:** Database ORM with type safety and async support
 
 **Why SQLModel:**
@@ -302,7 +302,7 @@ classDiagram
     Message --> EncryptionMode
 ```
 
-### 7. Observability Stack (structlog + loguru + OpenTelemetry)
+### Observability Stack (structlog + loguru + OpenTelemetry)
 **Role:** Production-ready observability, logging, and distributed tracing
 
 **Why this triple stack:**
@@ -461,7 +461,7 @@ graph TB
 
 ## 🏗️ Architectural Patterns
 
-### 1. Proto-First Development
+### Proto-First Development
 **Pattern:** All data structures and services defined in Protocol Buffers first
 
 **Benefits:**
@@ -470,14 +470,14 @@ graph TB
 - Cross-language compatibility
 - Schema evolution support
 
-### 2. Layered Architecture
+### Layered Architecture
 **Layers:**
 - **Data Layer:** SQLModel + Database
 - **Service Layer:** Business logic and gRPC services
 - **API Layer:** FastAPI REST endpoints
 - **Client Layer:** Generated SDK clients
 
-### 3. Code Generation Pipeline
+### Code Generation Pipeline
 **Process:**
 - Define schemas in `.proto` files
 - Generate Python classes with Buf
@@ -485,7 +485,7 @@ graph TB
 - Generate SQLModel database models
 - Generate client SDKs and documentation
 
-### 4. AI-First Integration
+### AI-First Integration
 **Pattern:** AI capabilities built into core SDK functionality
 
 **Implementation:**
