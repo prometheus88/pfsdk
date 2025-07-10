@@ -8,7 +8,6 @@ import importlib.util
 
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from postfiat.logging import get_logger
 
 def generate_enums_from_proto():
     """Generate postfiat/types/enums.py from protobuf enums."""

@@ -122,7 +122,7 @@ service WalletService {
 from fastapi import FastAPI
 from postfiat.models import CreateWalletRequest, CreateWalletResponse
 
-app = FastAPI(title="PostFiat API", version="3.0.0")
+app = FastAPI(title="PostFiat API", version="0.1.0")
 
 @app.post("/wallets", response_model=CreateWalletResponse)
 async def create_wallet(request: CreateWalletRequest):

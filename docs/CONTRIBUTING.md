@@ -60,7 +60,7 @@ We use **git tags with artifacts** for releases:
 - Focus on source code changes
 
 **Releases:**
-- Create tags with "release-" prefix (e.g., `release-3.0.0-rc1`)
+- Create tags with "release-" prefix (e.g., `release-0.1.0-rc1`)
 - CI automatically builds Python (.whl/.tar.gz) and TypeScript (.tgz) packages
 - Artifacts attached to GitHub releases for download
 - No automatic publishing to npm/PyPI registries

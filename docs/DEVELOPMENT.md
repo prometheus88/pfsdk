@@ -303,7 +303,7 @@ api/
 - Developers run generation locally
 
 **Release Strategy:**
-- Use git tags with "release-" prefix (e.g., release-3.0.0-rc1)
+- Use git tags with "release-" prefix (e.g., release-0.1.0-rc1)
 - CI automatically builds and attaches Python/TypeScript packages
 - No automatic publishing to npm/PyPI registries
 - GitHub releases contain downloadable artifacts
