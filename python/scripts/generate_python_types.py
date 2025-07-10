@@ -258,16 +258,13 @@ from enum import IntEnum
 '''
 
     # Add utility functions with logging
-    exceptions_code += '''# Import logging for factory functions
-from postfiat.logging import get_logger
-
-
-def create_exception_from_error_code(
+    exceptions_code += '''def create_exception_from_error_code(
     error_code: Union[int, ErrorCode],
     message: str,
     **kwargs
 ) -> PostFiatError:
     """Create appropriate exception instance based on error code."""
+    from postfiat.logging import get_logger
     logger = get_logger("exceptions.factory")
 
     if isinstance(error_code, int):
@@ -311,6 +308,7 @@ def create_exception_from_error_code(
 
 def create_exception_from_error_info(error_info_dict: Dict[str, Any]) -> PostFiatError:
     """Create exception from ErrorInfo protobuf message dictionary."""
+    from postfiat.logging import get_logger
     logger = get_logger("exceptions.error_info")
 
     # Log ErrorInfo processing
