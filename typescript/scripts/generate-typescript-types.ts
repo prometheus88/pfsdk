@@ -784,6 +784,28 @@ export {
 } from './postfiat/v3/errors_pb';
 export * from './a2a/v1/a2a_pb';
 export * from './a2a/v1/a2a_connect';
+
+// Runtime class exports for PostFiat types
+export {
+  Envelope,
+  ContextReference,
+  MultiPartMessagePart,
+  CoreMessage,
+  PostFiatAgentCapabilities,
+  PostFiatEnvelopePayload,
+  PostFiatA2AMessage,
+} from './postfiat/v3/messages_pb';
+
+// Type-only exports for additional type safety
+export type {
+  Envelope as EnvelopeType,
+  ContextReference as ContextReferenceType,
+  MultiPartMessagePart as MultiPartMessagePartType,
+  CoreMessage as CoreMessageType,
+  PostFiatAgentCapabilities as PostFiatAgentCapabilitiesType,
+  PostFiatEnvelopePayload as PostFiatEnvelopePayloadType,
+  PostFiatA2AMessage as PostFiatA2AMessageType,
+} from './postfiat/v3/messages_pb';
 `;
 
   // Write the generated/index.ts file
