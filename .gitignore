@@ -258,6 +258,7 @@ xrpl-private-network/
 
 # Third-party development artifacts
 third_party/a2a_llama_index_file_chat/
+third_party/googleapis/
 
 # Buf lock file (commit this)
 # proto/buf.lock
