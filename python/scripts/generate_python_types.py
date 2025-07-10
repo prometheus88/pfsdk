@@ -554,7 +554,7 @@ def generate_init_files():
     
     # Read existing __init__.py to preserve version
     init_path = Path(__file__).parent.parent / "postfiat" / "__init__.py"
-    version = "3.0.0"  # default
+    version = "0.1.0"  # default
     if init_path.exists():
         with open(init_path, 'r') as f:
             content = f.read()
