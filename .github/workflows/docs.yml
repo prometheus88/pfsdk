@@ -283,14 +283,24 @@ jobs:
           
           # Create API documentation page
           mkdir -p docs/api
-          cat > docs/api/openapi.md << 'EOF'
+          
+          # Determine the correct path based on build environment
+          if [ "$GITHUB_PAGES" = "true" ] || [ -n "$GITHUB_REPOSITORY" ]; then
+            # GitHub Pages build - use absolute path
+            SWAGGER_PATH="/pfsdk/generated/api/openapi_v2_generated.swagger.json"
+          else
+            # Local build - use relative path
+            SWAGGER_PATH="../../generated/api/openapi_v2_generated.swagger.json"
+          fi
+          
+          cat > docs/api/openapi.md << EOF
           # API Reference
           
           The PostFiat SDK provides both gRPC and REST APIs generated from Protocol Buffer definitions.
           
           ## OpenAPI Specification
           
-          <swagger-ui src="../../generated/api/openapi_v2_generated.swagger.json"/>
+          <swagger-ui src="$SWAGGER_PATH"/>
           
           ## Protocol Buffer Definitions
           
