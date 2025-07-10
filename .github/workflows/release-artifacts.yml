@@ -72,7 +72,8 @@ jobs:
       - name: Build Python package
         run: |
           cd python
-          python -m build --wheel --no-isolation
+          mkdir -p dist
+          pip wheel . -w dist --no-deps
           python -m twine check dist/*
 
       - name: Generate TypeScript types from protobuf
