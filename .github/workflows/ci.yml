@@ -82,7 +82,7 @@ jobs:
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
       
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
@@ -115,21 +115,21 @@ jobs:
       - name: Generate dynamic protobuf tests
         run: python python/scripts/generate_dynamic_protobuf_tests.py
 
-      - name: Run tests
+      - name: Run Python tests
         run: |
           # Run both manual and generated tests
           cd python
           python -m pytest tests/ -v --tb=short
 
-      - name: Generate and run dynamic protobuf tests
+      - name: Generate and run dynamic protobuf Python tests
         run: |
           python python/scripts/generate_dynamic_protobuf_tests.py
           cd python
           python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
 
 
-  tests:
-    name: Tests
+  python-tests:
+    name: Python Tests
     runs-on: ubuntu-latest
     needs: code-generation
     strategy:
@@ -169,7 +169,7 @@ jobs:
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
       
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
@@ -187,24 +187,24 @@ jobs:
           buf mod update
           buf generate --template buf.gen.yaml
       
-      - name: Test package installation
+      - name: Test Python package installation
         run: |
           cd python
           python -c "import postfiat; print(f'PostFiat SDK v{postfiat.__version__} installed successfully')"
 
-      - name: Generate dynamic protobuf tests
+      - name: Generate dynamic protobuf Python tests
         run: python python/scripts/generate_dynamic_protobuf_tests.py
 
-      - name: Run test suite
+      - name: Run Python test suite
         run: |
           # Run both manual and generated tests
           cd python
           python -m pytest tests/ -v --tb=short
 
   build:
-    name: Build Package
+    name: Build Python Package
     runs-on: ubuntu-latest
-    needs: [proto-validation, tests]
+    needs: [proto-validation, python-tests]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -254,15 +254,15 @@ jobs:
           buf mod update
           buf generate --template buf.gen.yaml
       
-      - name: Build package
+      - name: Build Python package
         run: |
           cd python
           python -m build
       
-      - name: Check package
+      - name: Check Python package
         run: twine check python/dist/*
       
-      - name: Upload build artifacts
+      - name: Upload Python build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: python-dist
