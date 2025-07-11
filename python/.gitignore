@@ -24,3 +24,5 @@ a2a/v1/*_pb2_grpc.py
 
 # Generated documentation
 docs/
+
+*.pyc
