@@ -121,9 +121,8 @@ jobs:
           cd python
           python -m pytest tests/ -v --tb=short
 
-      - name: Generate and run dynamic protobuf Python tests
+      - name: Run generated dynamic tests
         run: |
-          python python/scripts/generate_dynamic_protobuf_tests.py
           cd python
           python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
 
