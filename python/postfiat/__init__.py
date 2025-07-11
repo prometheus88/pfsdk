@@ -10,57 +10,88 @@ Run 'python scripts/generate_python_types.py' to regenerate.
 
 __version__ = "0.2.0-rc2"
 
-# Core functionality imports
-from . import exceptions
-from . import types
-from . import client
-from . import models
-from . import v3
+# Core functionality imports - handle missing modules during generation
+try:
+    from . import exceptions
+except ImportError:
+    pass
+try:
+    from . import types
+except ImportError:
+    pass
+try:
+    from . import client
+except ImportError:
+    pass
+try:
+    from . import models
+except ImportError:
+    pass
+try:
+    from . import v3
+except ImportError:
+    pass
 
-# Import commonly used exceptions
-from .exceptions import (
-    PostFiatError,
-    ClientError,
-    ServerError,
-    NetworkError,
-    AuthError,
-    ValidationError,
-    AuthenticationError,
-    AuthorizationError,
-    ResourceNotFoundError,
-    InternalServerError,
-    ServiceUnavailableError,
-    RateLimitError,
-    TimeoutError,
-    ConnectionError,
-    ConfigurationError,
-    BusinessError,
-    ExternalError,
-    ValidationFailedError,
-    ErrorCode,
-    ErrorCategory,
-    ErrorSeverity,
-    create_exception_from_error_code,
-    create_exception_from_error_info,
-)
+# Import commonly used exceptions - handle missing modules during generation
+try:
+    from .exceptions import (
+        PostFiatError,
+        ClientError,
+        ServerError,
+        NetworkError,
+        AuthError,
+        ValidationError,
+        AuthenticationError,
+        AuthorizationError,
+        ResourceNotFoundError,
+        InternalServerError,
+        ServiceUnavailableError,
+        RateLimitError,
+        TimeoutError,
+        ConnectionError,
+        ConfigurationError,
+        BusinessError,
+        ExternalError,
+        ValidationFailedError,
+        ErrorCode,
+        ErrorCategory,
+        ErrorSeverity,
+        create_exception_from_error_code,
+        create_exception_from_error_info,
+    )
+except ImportError:
+    # exceptions module not available during generation
+    pass
 
-# Import commonly used types
-from .types import (
-    MessageType,
-    EncryptionMode,
-)
+# Import commonly used types - handle missing modules during generation
+try:
+    from .types import (
+        MessageType,
+        EncryptionMode,
+    )
+except ImportError:
+    # types module not available during generation
+    pass
 
-# Import client functionality
-from .client.base import (
-    BaseClient,
-    ClientConfig,
-)
+# Import client functionality - handle missing modules during generation
+try:
+    from .client.base import (
+        BaseClient,
+        ClientConfig,
+    )
+except ImportError:
+    # client module not available during generation
+    pass
 
-# Import all v3 protobuf messages and enums
-from .v3 import (
-    messages_pb2,
-    errors_pb2,
-)
+# Import all v3 protobuf messages and enums - handle missing modules during generation
+try:
+    from .v3 import (
+        messages_pb2,
+        errors_pb2,
+    )
+except ImportError:
+    # v3 module not available during generation
+    pass
 
 # Export all for easy access
 __all__ = [

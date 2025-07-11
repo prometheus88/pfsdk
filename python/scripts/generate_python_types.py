@@ -12,11 +12,22 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 def generate_enums_from_proto():
     """Generate postfiat/types/enums.py from protobuf enums."""
 
-    # Import the generated protobuf module
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-
     try:
-        from postfiat.v3 import messages_pb2, errors_pb2
+        # Import protobuf modules directly to avoid package initialization issues
+        import sys
+        from pathlib import Path
+        
+        # Add the postfiat/v3 directory to sys.path temporarily
+        v3_path = Path(__file__).parent.parent / "postfiat" / "v3"
+        sys.path.insert(0, str(v3_path))
+        
+        try:
+            import messages_pb2
+            import errors_pb2
+        finally:
+            # Remove the temporary path
+            sys.path.pop(0)
+            
     except ImportError as e:
         print(f"Error: Could not import generated protobuf files: {e}")
         print("Make sure to run 'buf generate' first")
@@ -103,11 +114,21 @@ from typing import Union
 def generate_exceptions():
     """Generate postfiat/exceptions.py from protobuf error definitions."""
 
-    # Import the generated protobuf module
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-
     try:
-        from postfiat.v3 import errors_pb2
+        # Import protobuf modules directly to avoid package initialization issues
+        import sys
+        from pathlib import Path
+        
+        # Add the postfiat/v3 directory to sys.path temporarily
+        v3_path = Path(__file__).parent.parent / "postfiat" / "v3"
+        sys.path.insert(0, str(v3_path))
+        
+        try:
+            import errors_pb2
+        finally:
+            # Remove the temporary path
+            sys.path.pop(0)
+            
     except ImportError as e:
         print(f"Error: Could not import errors_pb2: {e}")
         print("Make sure to run 'buf generate' first")
@@ -344,11 +365,22 @@ def create_exception_from_error_info(error_info_dict: Dict[str, Any]) -> PostFia
 def generate_sqlmodel_models():
     """Generate SQLModel database models from protobuf message definitions."""
 
-    # Import the generated protobuf module
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-
     try:
-        from postfiat.v3 import messages_pb2, errors_pb2
+        # Import protobuf modules directly to avoid package initialization issues
+        import sys
+        from pathlib import Path
+        
+        # Add the postfiat/v3 directory to sys.path temporarily
+        v3_path = Path(__file__).parent.parent / "postfiat" / "v3"
+        sys.path.insert(0, str(v3_path))
+        
+        try:
+            import messages_pb2
+            import errors_pb2
+        finally:
+            # Remove the temporary path
+            sys.path.pop(0)
+            
     except ImportError as e:
         print(f"Error: Could not import generated protobuf files: {e}")
         print("Make sure to run 'buf generate' first")
@@ -581,57 +613,88 @@ Run 'python scripts/generate_python_types.py' to regenerate.
 
 __version__ = "{version}"
 
-# Core functionality imports
-from . import exceptions
-from . import types
-from . import client
-from . import models
-from . import v3
+# Core functionality imports - handle missing modules during generation
+try:
+    from . import exceptions
+except ImportError:
+    pass
+try:
+    from . import types
+except ImportError:
+    pass
+try:
+    from . import client
+except ImportError:
+    pass
+try:
+    from . import models
+except ImportError:
+    pass
+try:
+    from . import v3
+except ImportError:
+    pass
 
-# Import commonly used exceptions
-from .exceptions import (
-    PostFiatError,
-    ClientError,
-    ServerError,
-    NetworkError,
-    AuthError,
-    ValidationError,
-    AuthenticationError,
-    AuthorizationError,
-    ResourceNotFoundError,
-    InternalServerError,
-    ServiceUnavailableError,
-    RateLimitError,
-    TimeoutError,
-    ConnectionError,
-    ConfigurationError,
-    BusinessError,
-    ExternalError,
-    ValidationFailedError,
-    ErrorCode,
-    ErrorCategory,
-    ErrorSeverity,
-    create_exception_from_error_code,
-    create_exception_from_error_info,
-)
+# Import commonly used exceptions - handle missing modules during generation
+try:
+    from .exceptions import (
+        PostFiatError,
+        ClientError,
+        ServerError,
+        NetworkError,
+        AuthError,
+        ValidationError,
+        AuthenticationError,
+        AuthorizationError,
+        ResourceNotFoundError,
+        InternalServerError,
+        ServiceUnavailableError,
+        RateLimitError,
+        TimeoutError,
+        ConnectionError,
+        ConfigurationError,
+        BusinessError,
+        ExternalError,
+        ValidationFailedError,
+        ErrorCode,
+        ErrorCategory,
+        ErrorSeverity,
+        create_exception_from_error_code,
+        create_exception_from_error_info,
+    )
+except ImportError:
+    # exceptions module not available during generation
+    pass
 
-# Import commonly used types
-from .types import (
-    MessageType,
-    EncryptionMode,
-)
+# Import commonly used types - handle missing modules during generation
+try:
+    from .types import (
+        MessageType,
+        EncryptionMode,
+    )
+except ImportError:
+    # types module not available during generation
+    pass
 
-# Import client functionality
-from .client.base import (
-    BaseClient,
-    ClientConfig,
-)
+# Import client functionality - handle missing modules during generation
+try:
+    from .client.base import (
+        BaseClient,
+        ClientConfig,
+    )
+except ImportError:
+    # client module not available during generation
+    pass
 
-# Import all v3 protobuf messages and enums
-from .v3 import (
-    messages_pb2,
-    errors_pb2,
-)
+# Import all v3 protobuf messages and enums - handle missing modules during generation
+try:
+    from .v3 import (
+        messages_pb2,
+        errors_pb2,
+    )
+except ImportError:
+    # v3 module not available during generation
+    pass
 
 # Export all for easy access
 __all__ = [
