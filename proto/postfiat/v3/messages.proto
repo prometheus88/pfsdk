@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package postfiat.v3;
 
-// Import A2A proto definitions for extension compatibility
 import "a2a/v1/a2a.proto";
 
 option go_package = "postfiat/v3;postfiatv3";
@@ -11,123 +10,97 @@ option java_multiple_files = true;
 option csharp_namespace = "PostFiat.V3";
 
 // Top-level envelope - stored unencrypted in XRPL memo
-// Easily detectable as protobuf, version field provides future-proofing
 message Envelope {
-  // Version for future envelope schema changes
   uint32 version = 1;
-
-  // Hash of the message content for integrity verification
-  string content_hash = 2;
-
-  // Type of message content (determines how to parse message field)
+  bytes content_hash = 2;
   MessageType message_type = 3;
-
-  // How this message is encrypted
   EncryptionMode encryption = 4;
-
-  // Message this is replying to (for threading)
   string reply_to = 5;
 
-  // Public references - always visible for discovery
-  // These enable collaboration discovery without revealing private connections
+  // Public references, visible for discovery. These have no key material.
   repeated ContextReference public_references = 6;
 
+  // Encrypted key material required to decrypt the main message payload
+  // and any private context references it contains.
+  repeated AccessGrant access_grants = 7;
+
   // Actual message content (may be encrypted based on encryption mode)
-  // When encrypted, may contain additional private references
-  bytes message = 7;
+  bytes message = 8;
 
-  // Optional metadata for routing, filtering, etc.
-  map<string, string> metadata = 8;
+  map<string, string> metadata = 9;
 }
 
-// Context reference for selective disclosure
-// Supports both public references (hash only) and protected sharing (hash + key)
+// A reference to another piece of content. It contains no key material.
+// It links content to an access control group.
 message ContextReference {
-  // Content hash - always present for integrity verification
-  string content_hash = 1;
+  // Content hash of the referenced document.
+  bytes content_hash = 1;
 
-  // Optional decryption key for protected access
-  // When present, enables decryption of the referenced content
-  // When absent, reference is public but content remains encrypted
-  optional string decryption_key = 2;
+  // Identifier for the access control group this content belongs to.
+  // Tells the client which group_key is needed to decrypt this content's CEK.
+  string group_id = 2;
 }
 
-// Remove ContextReferenceType enum - use presence/absence of decryption_key instead
-
-// Multi-part message part for large content
-message MultiPartMessagePart {
-  // Unique ID for this multi-part message (shared across all parts)
-  string message_id = 1;
-
-  // Current part number (1-based)
-  uint32 part_number = 2;
-
-  // Total number of parts
-  uint32 total_parts = 3;
-
-  // Content of this part
-  bytes content = 4;
-
-  // Hash of the complete assembled message for verification
-  string complete_message_hash = 5;
+// The type of key being granted in an AccessGrant.
+enum KeyType {
+  RESERVED = 0;
+  // The encrypted_key_material contains a Content Encryption Key (CEK),
+  // itself encrypted by a group_key.
+  CONTENT_KEY = 1;
+  // The encrypted_key_material contains a Group Key,
+  // itself encrypted by a user's public key.
+  GROUP_KEY = 2;
 }
 
-// Core message for agent-to-agent communication
-// Supports bidirectional sharing of context, queries, and responses
-// Note: "Message" might be reserved in some protobuf implementations,
-// so using "CoreMessage" to avoid conflicts
+// Message to handle all key distribution.
+// This separates access control from the data structure.
+message AccessGrant {
+  KeyType key_type = 1;
+
+  // For CONTENT_KEY, this is the hash of the content it decrypts.
+  // For GROUP_KEY, this is the ID of the group the key belongs to.
+  string target_id = 2;
+
+  // The actual encrypted key material (a CEK or a Group Key).
+  bytes encrypted_key_material = 3;
+}
+
+// Core message for agent-to-agent communication.
+// This message is what gets encrypted and placed in Envelope.message.
 message CoreMessage {
-  // Message content (query, response, or simple text)
   string content = 1;
 
-  // Context references with protected sharing support
-  // Enables both public discovery and selective access
+  // Private context references, revealed only after decrypting this CoreMessage.
   repeated ContextReference context_references = 2;
 
-  // Optional metadata (processing info, confidence, etc.)
   map<string, string> metadata = 3;
 }
 
-// Supported message types - extensible enum
+// Multi-part message part for large content. Unchanged.
+message MultiPartMessagePart {
+  string message_id = 1;
+  uint32 part_number = 2;
+  uint32 total_parts = 3;
+  bytes content = 4;
+  string complete_message_hash = 5;
+}
+
+// Supported message types. Unchanged.
 enum MessageType {
-  // Universal message type - handles all communication
   CORE_MESSAGE = 0;
-
-  // Special case for large content chunking
   MULTIPART_MESSAGE_PART = 1;
-
-  // Reserved for future specialized types when truly needed
   RESERVED_100 = 100;
 }
 
-// Encryption modes supported
+// Encryption modes supported. Unchanged.
 enum EncryptionMode {
-  // No encryption - plaintext (public disclosure)
   NONE = 0;
-
-  // Content-addressable encryption with derived keys
-  // Supports both individual and group access through key sharing
   PROTECTED = 1;
-
-  // Traditional public key encryption
-  // For direct encrypted communication between known parties
   PUBLIC_KEY = 2;
 }
 
-// PostFiat extension for A2A gRPC integration
-// Extension URI: https://postfiat.org/extensions/envelope/v1
-//
-// PostFiat extends A2A (Agent-to-Agent) gRPC protocol with selective disclosure.
-// These types are designed to be embedded in A2A Message.content as DataPart structures.
-// A2A proto definitions are available via git submodule at third_party/a2a/
-//
-// Integration pattern:
-// - PostFiatEnvelopePayload embeds in A2A Message.content[DataPart]
-// - PostFiatAgentCapabilities declares in A2A AgentCapabilities.extensions
-// - A2A handles service discovery, routing, task management
-// - PostFiat adds selective disclosure and ledger persistence
-
-// PostFiat agent capabilities extension for A2A AgentCard
+// A2A Integration messages are structurally sound and do not require changes.
+// Their behavior is determined by how the above messages are used.
 message PostFiatAgentCapabilities {
   // Supports PostFiat envelope processing
   bool envelope_processing = 1;
@@ -143,33 +116,25 @@ message PostFiatAgentCapabilities {
 
   // Supported encryption modes
   repeated EncryptionMode supported_encryption_modes = 5;
+
+  // ADDED: The user's public key for encryption (e.g., a Curve25519 key for libsodium).
+  // This is the key others will use to encrypt messages and group_keys for this user.
+  bytes public_encryption_key = 6;
+
+  // ADDED: The algorithm used for the public_encryption_key.
+  // E.g., "curve25519"
+  string public_key_algorithm = 7;
 }
 
-// PostFiat envelope payload for A2A Message DataPart
-// This is embedded in A2A Message.content as DataPart.data
 message PostFiatEnvelopePayload {
-  // PostFiat envelope containing selective disclosure content
   Envelope envelope = 1;
-
-  // Optional XRPL transaction hash for ledger persistence
   string xrpl_transaction_hash = 2;
-
-  // Content address for content-addressable retrieval
   string content_address = 3;
-
-  // Metadata for PostFiat-specific processing
   map<string, string> postfiat_metadata = 4;
 }
 
-// Helper message for creating A2A Messages with PostFiat envelopes
-// Shows the integration pattern between A2A and PostFiat
 message PostFiatA2AMessage {
-  // Standard A2A Message structure
   a2a.v1.Message a2a_message = 1;
-
-  // PostFiat envelope payload (also embedded in a2a_message.content)
   PostFiatEnvelopePayload postfiat_payload = 2;
-
-  // Integration metadata
   map<string, string> integration_metadata = 3;
 }

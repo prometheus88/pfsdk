@@ -161,7 +161,7 @@ class TestSchemaEvolution:
         
         # Set only required/core fields
         envelope.version = 1
-        envelope.content_hash = "test_hash"
+        envelope.content_hash = b"test_hash"
         
         # Serialize minimal message
         minimal_serialized = envelope.SerializeToString()
@@ -172,7 +172,7 @@ class TestSchemaEvolution:
         
         # Core fields should be preserved
         assert deserialized.version == 1
-        assert deserialized.content_hash == "test_hash"
+        assert deserialized.content_hash == b"test_hash"
         
         # Optional fields should have default values
         assert deserialized.reply_to == ""  # Default string value'''
@@ -244,7 +244,7 @@ class TestSchemaEvolution:
         # Create a message with known field values
         envelope = messages_pb2.Envelope()
         envelope.version = 42
-        envelope.content_hash = "stable_hash_value"
+        envelope.content_hash = b"stable_hash_value"
         
         # Serialize to bytes
         wire_data = envelope.SerializeToString()
@@ -258,7 +258,7 @@ class TestSchemaEvolution:
         deserialized.ParseFromString(wire_data)
         
         assert deserialized.version == 42
-        assert deserialized.content_hash == "stable_hash_value"'''
+        assert deserialized.content_hash == b"stable_hash_value"'''
     
     def _generate_field_number_test(self, message_schemas: List[MessageSchema]) -> str:
         """Generate test for field number stability."""

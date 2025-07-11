@@ -303,7 +303,7 @@ api/
 - Developers run generation locally
 
 **Release Strategy:**
-- Use git tags with "release-" prefix (e.g., release-3.0.0-rc1)
+- Use git tags with "release-" prefix (e.g., release-0.1.0-rc1)
 - CI automatically builds and attaches Python/TypeScript packages
 - No automatic publishing to npm/PyPI registries
 - GitHub releases contain downloadable artifacts
@@ -419,7 +419,6 @@ python scripts/generate_python_types.py
 # ✅ Generated /path/to/postfiat/exceptions.py
 
 python scripts/generate_dynamic_protobuf_tests.py
-# 🔥 REPLACING BROKEN HARDCODED TEST GENERATOR
 # 🎯 NEW: Dynamic Proto Test Generation with Runtime Introspection
 # {"event": "Discovered 10 proto message classes", "level": "info", "timestamp": "2025-07-07T10:35:16.856532Z"}
 # {"event": "✅ Generated serialization tests: tests/generated/test_dynamic_serialization.py", "level": "info"}

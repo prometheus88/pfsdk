@@ -1,12 +1,12 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "postfiat-sdk"
-version = "3.0.0"
+version = "0.1.0"
 description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
-readme = "../README.md"
+readme = "README.md"
 license = {text = "MIT"}
 authors = [
     { name = "PostFiat Team", email = "team@postfiat.org" }
@@ -177,10 +177,13 @@ memory = "postfiat.storage.memory:MemoryStorage"
 [project.entry-points."postfiat.encryption"]
 default = "postfiat.crypto.encryption:DefaultEncryption"
 
-[tool.hatch.build.targets.wheel]
-packages = ["postfiat", "reference_implementations"]
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["src"] by default)
+include = ["postfiat*", "reference_implementations*"]  # package names should match these glob patterns (["*"] by default)
+exclude = ["tests*"]  # exclude packages matching these glob patterns (empty by default)
 
-# No forced includes needed for now
+[tool.setuptools.package-data]
+postfiat = ["*.py", "**/*.py", "exceptions.py", "types/enums.py", "models/generated.py"]
 
 # Development tools configuration
 [tool.black]

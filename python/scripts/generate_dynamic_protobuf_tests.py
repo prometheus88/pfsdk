@@ -253,9 +253,6 @@ Tests will automatically adapt to any proto schema changes! 🎯
 
 def main():
     """Main entry point for dynamic test generation."""
-    print("🔥 REPLACING BROKEN HARDCODED TEST GENERATOR")
-    print("🎯 NEW: Dynamic Proto Test Generation with Runtime Introspection")
-    print()
     
     generator = DynamicProtobufTestGenerator()
     

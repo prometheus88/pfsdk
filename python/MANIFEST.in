@@ -1,0 +1,14 @@
+# Include generated files in source distribution
+include postfiat/exceptions.py
+include postfiat/types/enums.py
+include postfiat/models/generated.py
+
+# Include all Python files in postfiat package recursively
+recursive-include postfiat *.py
+
+# Include all protobuf files
+recursive-include postfiat/v3 *.py
+
+# Exclude cache files
+global-exclude __pycache__
+global-exclude *.py[co]

@@ -722,7 +722,7 @@ class ProtobufBuilder:
         """Merge Swagger 2.0 generated spec into existing OpenAPI 3.0 spec."""
         merged = existing_openapi3.copy() if existing_openapi3 else {
             'openapi': '3.0.3',
-            'info': {'title': 'PostFiat Wallet API', 'version': '3.0.0'},
+            'info': {'title': 'PostFiat Wallet API', 'version': '0.1.0'},
             'paths': {},
             'components': {'schemas': {}}
         }
@@ -830,7 +830,7 @@ class ProtobufBuilder:
             # Preserve existing info but update version if needed
             merged['info'].update({
                 'title': existing.get('info', {}).get('title', 'PostFiat Wallet API'),
-                'version': existing.get('info', {}).get('version', '3.0.0'),
+                'version': existing.get('info', {}).get('version', '0.1.0'),
                 'description': existing.get('info', {}).get('description', 
                                  generated['info'].get('description', ''))
             })
