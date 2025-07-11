@@ -99,6 +99,11 @@ jobs:
           cd proto
           buf mod update
           buf generate --template buf.gen.yaml
+
+      - name: Generate Python types from protobuf
+        run: |
+          cd python
+          python scripts/generate_python_types.py
       
       - name: Verify generated code
         run: |
@@ -108,9 +113,6 @@ jobs:
           from postfiat.v3 import messages_pb2
           print('✅ Generated code imports successfully')
           "
-
-      - name: Generate Python types from protobuf
-        run: python python/scripts/generate_python_types.py
 
       - name: Generate dynamic protobuf tests
         run: python python/scripts/generate_dynamic_protobuf_tests.py
