@@ -195,6 +195,77 @@ const tsValue = MessageType.fromProtobuf(pbValue);
 - **Service Integration:** Tests service method signatures
 - **Schema Evolution:** Tests backward compatibility and field number stability
 
+## 📦 Version Management
+
+### Centralized Version System
+
+The PostFiat SDK uses a **centralized version management** system to ensure consistency across all packages and artifacts.
+
+**Central Source of Truth:**
+```
+VERSION                           # Single source of truth for all version numbers
+```
+
+**Version Flow:**
+```mermaid
+graph TD
+    A[VERSION file] --> B[Python Generator]
+    A --> C[TypeScript Update Script]
+    B --> D[python/pyproject.toml - dynamic]
+    B --> E[python/postfiat/__init__.py]
+    C --> F[typescript/package.json]
+    C --> G[typescript/src/index.ts]
+    C --> H[typescript/src/client/base.ts User-Agent]
+```
+
+### Updating Versions
+
+**Automated Update (Recommended):**
+```bash
+# Update VERSION file
+echo "0.2.0-rc2" > VERSION
+
+# Update all packages automatically
+./scripts/update-all-versions.sh
+```
+
+**Manual Component Updates:**
+```bash
+# Python packages only
+cd python && python scripts/generate_python_types.py
+
+# TypeScript packages only  
+cd typescript && npm run update-version
+```
+
+**Generated Files:**
+- `python/pyproject.toml`: Uses dynamic versioning via `setup.py`
+- `python/postfiat/__init__.py`: `__version__ = "0.2.0-rc2"`
+- `typescript/package.json`: `"version": "0.2.0-rc2"`
+- `typescript/src/index.ts`: `export const VERSION = '0.2.0-rc2'`
+- `typescript/src/client/base.ts`: User-Agent header with version
+
+**Version Validation:**
+```bash
+# Check Python version
+cd python && python -c "import postfiat; print(postfiat.__version__)"
+
+# Check TypeScript version  
+cd typescript && node -e "console.log(require('./package.json').version)"
+
+# Verify all versions match
+./scripts/update-all-versions.sh | grep "Version:"
+```
+
+### Release Process
+
+1. **Update VERSION file:** `echo "0.2.0-rc2" > VERSION`
+2. **Update all packages:** `./scripts/update-all-versions.sh`
+3. **Test changes:** Run test suites across all packages
+4. **Commit changes:** `git add . && git commit -m "feat: bump to 0.2.0-rc2"`
+5. **Create release tag:** `git tag release-0.2.0-rc2 && git push --tags`
+6. **CI builds artifacts:** GitHub Actions automatically creates release artifacts
+
 ## 🔄 Development Workflow
 
 ### Local Development

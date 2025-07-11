@@ -551,16 +551,22 @@ def generate_init_files():
     """Generate comprehensive __init__.py files for all modules."""
     print("🔍 Generating __init__.py files...")
     
-    # Read existing __init__.py to preserve version
-    init_path = Path(__file__).parent.parent / "postfiat" / "__init__.py"
-    version = "0.1.0"  # default
-    if init_path.exists():
-        with open(init_path, 'r') as f:
-            content = f.read()
-            import re
-            match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
-            if match:
-                version = match.group(1)
+    # Read version from centralized VERSION file
+    version_file = Path(__file__).parent.parent.parent / "VERSION"
+    version = "0.1.0"  # default fallback
+    if version_file.exists():
+        with open(version_file, 'r') as f:
+            version = f.read().strip()
+    else:
+        # Fallback: try to read from existing __init__.py
+        init_path = Path(__file__).parent.parent / "postfiat" / "__init__.py"
+        if init_path.exists():
+            with open(init_path, 'r') as f:
+                content = f.read()
+                import re
+                match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
+                if match:
+                    version = match.group(1)
     
     # Generate enhanced postfiat/__init__.py with all imports
     main_init_code = f'''"""PostFiat Wallet SDK - Python SDK for PostFiat Wallet Protocol.

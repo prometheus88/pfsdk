@@ -1,6 +1,6 @@
 {
   "name": "@postfiat/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0-rc2",
   "description": "TypeScript SDK for PostFiat Wallet Protocol",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -23,7 +23,8 @@
     "generate": "buf generate --template ../proto/buf.gen.yaml ../proto",
     "generate:types": "tsx scripts/generate-typescript-types.ts",
     "generate:tests": "tsx scripts/generate-typescript-tests.ts",
-    "generate:all": "npm run generate && npm run generate:types && npm run generate:tests"
+    "generate:all": "npm run generate && npm run generate:types && npm run generate:tests",
+    "update-version": "node scripts/update-version.js"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

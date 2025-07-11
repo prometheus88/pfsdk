@@ -8,7 +8,7 @@ DO NOT EDIT - This file is auto-generated from proto files.
 Run 'python scripts/generate_python_types.py' to regenerate.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0-rc2"
 
 # Core functionality imports
 from . import exceptions
