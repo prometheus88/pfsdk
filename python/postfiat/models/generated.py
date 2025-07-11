@@ -11,13 +11,69 @@ from pydantic import ConfigDict
 import json
 
 
+class AccessGrant(SQLModel, table=True):
+    """SQLModel for AccessGrant protobuf message."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    key_type: Optional[int] = Field(default=None)
+    target_id: Optional[str] = Field(default=None)
+    encrypted_key_material: Optional[bytes] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default=None)
+
+    @classmethod
+    def from_protobuf(cls, pb_message) -> "AccessGrant":
+        """Create SQLModel instance from protobuf message."""
+        from postfiat.logging import get_logger
+        logger = get_logger("models.accessgrant")
+
+        data = {}
+        if hasattr(pb_message, "key_type"):
+            data["key_type"] = pb_message.key_type
+        if hasattr(pb_message, "target_id"):
+            data["target_id"] = pb_message.target_id
+        if hasattr(pb_message, "encrypted_key_material"):
+            data["encrypted_key_material"] = pb_message.encrypted_key_material
+
+        logger.debug(
+            "Converting protobuf to SQLModel",
+            message_type="AccessGrant",
+            field_count=len(data)
+        )
+
+        return cls(**data)
+
+    def to_protobuf(self):
+        """Convert SQLModel instance to protobuf message."""
+        from postfiat.v3 import messages_pb2, errors_pb2
+        from postfiat.logging import get_logger
+        logger = get_logger("models.accessgrant")
+
+        pb_message = messages_pb2.AccessGrant()
+        if self.key_type is not None:
+            pb_message.key_type = self.key_type
+        if self.target_id is not None:
+            pb_message.target_id = self.target_id
+        if self.encrypted_key_material is not None:
+            pb_message.encrypted_key_material = self.encrypted_key_material
+
+        logger.debug(
+            "Converting SQLModel to protobuf",
+            message_type="AccessGrant",
+            model_id=self.id
+        )
+
+        return pb_message
+
+
 class ContextReference(SQLModel, table=True):
     """SQLModel for ContextReference protobuf message."""
     model_config = ConfigDict(from_attributes=True)
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    content_hash: Optional[str] = Field(default=None)
-    decryption_key: Optional[str] = Field(default=None)
+    content_hash: Optional[bytes] = Field(default=None)
+    group_id: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = Field(default=None)
 
@@ -30,8 +86,8 @@ class ContextReference(SQLModel, table=True):
         data = {}
         if hasattr(pb_message, "content_hash"):
             data["content_hash"] = pb_message.content_hash
-        if hasattr(pb_message, "decryption_key"):
-            data["decryption_key"] = pb_message.decryption_key
+        if hasattr(pb_message, "group_id"):
+            data["group_id"] = pb_message.group_id
 
         logger.debug(
             "Converting protobuf to SQLModel",
@@ -50,8 +106,8 @@ class ContextReference(SQLModel, table=True):
         pb_message = messages_pb2.ContextReference()
         if self.content_hash is not None:
             pb_message.content_hash = self.content_hash
-        if self.decryption_key is not None:
-            pb_message.decryption_key = self.decryption_key
+        if self.group_id is not None:
+            pb_message.group_id = self.group_id
 
         logger.debug(
             "Converting SQLModel to protobuf",
@@ -126,11 +182,12 @@ class Envelope(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     version: Optional[int] = Field(default=None)
-    content_hash: Optional[str] = Field(default=None)
+    content_hash: Optional[bytes] = Field(default=None)
     message_type: Optional[int] = Field(default=None)
     encryption: Optional[int] = Field(default=None)
     reply_to: Optional[str] = Field(default=None)
     public_references: Optional[str] = Field(default=None, description="JSON-encoded list of public_references")
+    access_grants: Optional[str] = Field(default=None, description="JSON-encoded list of access_grants")
     message: Optional[bytes] = Field(default=None)
     message_metadata: Optional[str] = Field(default=None, description="JSON-encoded message_metadata")
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -155,6 +212,8 @@ class Envelope(SQLModel, table=True):
             data["reply_to"] = pb_message.reply_to
         if hasattr(pb_message, "public_references"):
             data["public_references"] = json.dumps(list(pb_message.public_references))
+        if hasattr(pb_message, "access_grants"):
+            data["access_grants"] = json.dumps(list(pb_message.access_grants))
         if hasattr(pb_message, "message"):
             data["message"] = pb_message.message
         if hasattr(pb_message, "metadata"):
@@ -188,6 +247,9 @@ class Envelope(SQLModel, table=True):
         if self.public_references is not None:
             items = json.loads(self.public_references)
             pb_message.public_references.extend(items)
+        if self.access_grants is not None:
+            items = json.loads(self.access_grants)
+            pb_message.access_grants.extend(items)
         if self.message is not None:
             pb_message.message = self.message
         if self.message_metadata is not None:
@@ -336,6 +398,8 @@ class PostFiatAgentCapabilities(SQLModel, table=True):
     context_dag_traversal: Optional[bool] = Field(default=None)
     max_context_depth: Optional[int] = Field(default=None)
     supported_encryption_modes: Optional[str] = Field(default=None, description="JSON-encoded list of supported_encryption_modes")
+    public_encryption_key: Optional[bytes] = Field(default=None)
+    public_key_algorithm: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = Field(default=None)
 
@@ -356,6 +420,10 @@ class PostFiatAgentCapabilities(SQLModel, table=True):
             data["max_context_depth"] = pb_message.max_context_depth
         if hasattr(pb_message, "supported_encryption_modes"):
             data["supported_encryption_modes"] = json.dumps(list(pb_message.supported_encryption_modes))
+        if hasattr(pb_message, "public_encryption_key"):
+            data["public_encryption_key"] = pb_message.public_encryption_key
+        if hasattr(pb_message, "public_key_algorithm"):
+            data["public_key_algorithm"] = pb_message.public_key_algorithm
 
         logger.debug(
             "Converting protobuf to SQLModel",
@@ -383,6 +451,10 @@ class PostFiatAgentCapabilities(SQLModel, table=True):
         if self.supported_encryption_modes is not None:
             items = json.loads(self.supported_encryption_modes)
             pb_message.supported_encryption_modes.extend(items)
+        if self.public_encryption_key is not None:
+            pb_message.public_encryption_key = self.public_encryption_key
+        if self.public_key_algorithm is not None:
+            pb_message.public_key_algorithm = self.public_key_algorithm
 
         logger.debug(
             "Converting SQLModel to protobuf",
@@ -623,4 +695,4 @@ class ErrorResponse(SQLModel, table=True):
 
 
 # Export all generated models
-__all__ = ['ContextReference', 'CoreMessage', 'Envelope', 'MultiPartMessagePart', 'PostFiatA2AMessage', 'PostFiatAgentCapabilities', 'PostFiatEnvelopePayload', 'ErrorInfo', 'ErrorResponse']
+__all__ = ['AccessGrant', 'ContextReference', 'CoreMessage', 'Envelope', 'MultiPartMessagePart', 'PostFiatA2AMessage', 'PostFiatAgentCapabilities', 'PostFiatEnvelopePayload', 'ErrorInfo', 'ErrorResponse']
