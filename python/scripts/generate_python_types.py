@@ -728,16 +728,18 @@ DO NOT EDIT - This file is auto-generated from proto files.
 Run 'python scripts/generate_python_types.py' to regenerate.
 """
 
-# Import all enum types
-from .enums import *
-
-# Re-export everything from enums
-from .enums import __all__ as _enums_all
-
-# Build comprehensive __all__ list
-__all__ = []
-if _enums_all:
-    __all__.extend(_enums_all)
+# Import all enum types - handle case where enums.py doesn't exist yet
+try:
+    from .enums import *
+    # Re-export everything from enums
+    from .enums import __all__ as _enums_all
+    # Build comprehensive __all__ list
+    __all__ = []
+    if _enums_all:
+        __all__.extend(_enums_all)
+except ImportError:
+    # enums.py doesn't exist yet (during generation)
+    __all__ = []
 '''
     
     output_path = Path(__file__).parent.parent / "postfiat" / "types" / "__init__.py"
