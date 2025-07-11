@@ -97,7 +97,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
-          buf mod update
+          buf dep update
           buf generate --template buf.gen.yaml
 
       - name: Generate Python types from protobuf
@@ -185,7 +185,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
-          buf mod update
+          buf dep update
           buf generate --template buf.gen.yaml
       
       - name: Test Python package installation
@@ -252,7 +252,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
-          buf mod update
+          buf dep update
           buf generate --template buf.gen.yaml
       
       - name: Build Python package
@@ -315,7 +315,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
-          buf mod update
+          buf dep update
           buf generate --template buf.gen.yaml
       
       - name: Generate TypeScript types
@@ -386,7 +386,7 @@ jobs:
       - name: Generate protobuf code
         run: |
           cd proto
-          buf mod update
+          buf dep update
           buf generate --template buf.gen.yaml
       
       - name: Generate TypeScript types
