@@ -419,7 +419,6 @@ python scripts/generate_python_types.py
 # ✅ Generated /path/to/postfiat/exceptions.py
 
 python scripts/generate_dynamic_protobuf_tests.py
-# 🔥 REPLACING BROKEN HARDCODED TEST GENERATOR
 # 🎯 NEW: Dynamic Proto Test Generation with Runtime Introspection
 # {"event": "Discovered 10 proto message classes", "level": "info", "timestamp": "2025-07-07T10:35:16.856532Z"}
 # {"event": "✅ Generated serialization tests: tests/generated/test_dynamic_serialization.py", "level": "info"}

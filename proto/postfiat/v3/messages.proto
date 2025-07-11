@@ -41,20 +41,20 @@ message ContextReference {
   string group_id = 2;
 }
 
+// The type of key being granted in an AccessGrant.
+enum KeyType {
+  RESERVED = 0;
+  // The encrypted_key_material contains a Content Encryption Key (CEK),
+  // itself encrypted by a group_key.
+  CONTENT_KEY = 1;
+  // The encrypted_key_material contains a Group Key,
+  // itself encrypted by a user's public key.
+  GROUP_KEY = 2;
+}
+
 // Message to handle all key distribution.
 // This separates access control from the data structure.
 message AccessGrant {
-  // The type of key being granted.
-  enum KeyType {
-    RESERVED = 0;
-    // The encrypted_key_material contains a Content Encryption Key (CEK),
-    // itself encrypted by a group_key.
-    CONTENT_KEY = 1;
-    // The encrypted_key_material contains a Group Key,
-    // itself encrypted by a user's public key.
-    GROUP_KEY = 2;
-  }
-
   KeyType key_type = 1;
 
   // For CONTENT_KEY, this is the hash of the content it decrypts.
