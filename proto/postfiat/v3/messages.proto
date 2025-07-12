@@ -117,13 +117,17 @@ message PostFiatAgentCapabilities {
   // Supported encryption modes
   repeated EncryptionMode supported_encryption_modes = 5;
 
-  // ADDED: The user's public key for encryption (e.g., a Curve25519 key for libsodium).
+  // The user's public key for encryption (e.g., a Curve25519 key for libsodium).
   // This is the key others will use to encrypt messages and group_keys for this user.
   bytes public_encryption_key = 6;
 
-  // ADDED: The algorithm used for the public_encryption_key.
+  // The algorithm used for the public_encryption_key.
   // E.g., "curve25519"
   string public_key_algorithm = 7;
+
+  // A list of URIs defining the semantic tasks or services this agent offers.
+  // Example: "https://schemas.postfiat.org/tasks/text-summarization/v1"
+  repeated string supported_semantic_capabilities = 8;
 }
 
 message PostFiatEnvelopePayload {
