@@ -63,27 +63,34 @@ def create_postfiat_envelope_message(
     context_references: list = None,
     encryption_mode: EncryptionMode = EncryptionMode.PROTECTED
 ) -> PostFiatEnvelopePayload:
-    """Create a PostFiat envelope payload for A2A message."""
+    """Create a PostFiat envelope payload for A2A message with automatic chunking."""
+    from postfiat.envelope import EnvelopeFactory
     
-    # Create core message content
-    core_message = CoreMessage(
+    # Create envelope factory with 1000 byte limit
+    envelope_factory = EnvelopeFactory(max_envelope_size=1000)
+    
+    # Create envelope(s) - will automatically chunk if content is too large
+    envelope_result = envelope_factory.create_envelope(
         content=content,
-        context_references=context_references or [],
-        metadata={"timestamp": "2024-07-07T12:00:00Z"}
+        context_references=context_references,
+        encryption_mode=encryption_mode
     )
     
-    # Serialize core message
-    message_bytes = core_message.SerializeToString()
-    
-    # Create envelope
-    envelope = Envelope(
-        version=1,
-        content_hash="sha256_placeholder",  # In real implementation, compute actual hash
-        message_type=MessageType.CORE_MESSAGE,
-        encryption=encryption_mode,
-        message=message_bytes,
-        metadata={"agent_id": "postfiat_research_agent_001"}
-    )
+    # Handle single envelope vs chunked envelopes
+    if isinstance(envelope_result, Envelope):
+        # Single envelope - fits within size limit
+        envelope = envelope_result
+    else:
+        # Multiple envelopes - content was chunked
+        # For A2A integration, we'll use the first chunk as primary envelope
+        # and include metadata about the chunking
+        envelopes = list(envelope_result)
+        envelope = envelopes[0]  # Primary envelope
+        
+        # Add chunking metadata to indicate this is part of a multipart message
+        if "chunk_info" not in envelope.metadata:
+            envelope.metadata["multipart_message"] = "true"
+            envelope.metadata["total_chunks"] = str(len(envelopes))
     
     # Create PostFiat envelope payload
     payload = PostFiatEnvelopePayload(

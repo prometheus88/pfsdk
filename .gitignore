@@ -248,9 +248,10 @@ typescript/src/hooks/index.ts
 typescript/src/index.ts
 typescript/coverage/
 
-# Generated files in root (legacy paths)
-a2a/
-postfiat/
+# Legacy: root level generated files have been moved to python/ and typescript/
+
+# Third-party generated files
+third_party/generated/
 
 # Third party examples and experimental code
 third_party/a2a_llama_index_file_chat/
