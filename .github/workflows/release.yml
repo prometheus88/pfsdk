@@ -80,44 +80,36 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        run: |
+          gh release create ${{ steps.tag.outputs.tag }} \
+            --title "Release ${{ steps.tag.outputs.tag }}" \
+            --notes "$(cat <<'EOF'
+          ## Changes in ${{ steps.tag.outputs.tag }}
+          
+          ### 🚀 Features
+          - Auto-generated from protobuf definitions
+          - Full gRPC and REST API support
+          - Type-safe Pydantic models
+          - SQLModel database integration
+          - FastAPI server components
+          - EnvelopeFactory with automatic payload chunking
+          
+          ### 📦 Installation
+          \`\`\`bash
+          pip install postfiat-sdk==${{ steps.tag.outputs.tag }}
+          \`\`\`
+          
+          ### 📋 API Documentation
+          - [OpenAPI Spec](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/api/openapi_v2_generated.swagger.json)
+          - [Proto Definitions](https://github.com/${{ github.repository }}/tree/${{ steps.tag.outputs.tag }}/proto)
+          EOF
+          )" \
+            python/dist/*.tar.gz python/dist/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          release_name: Release ${{ steps.tag.outputs.tag }}
-          draft: false
-          prerelease: false
-          body: |
-            ## Changes in ${{ steps.tag.outputs.tag }}
-            
-            ### 🚀 Features
-            - Auto-generated from protobuf definitions
-            - Full gRPC and REST API support
-            - Type-safe Pydantic models
-            - SQLModel database integration
-            - FastAPI server components
-            
-            ### 📦 Installation
-            ```bash
-            pip install postfiat-sdk==${{ steps.tag.outputs.tag }}
-            ```
-            
-            ### 📋 API Documentation
-            - [OpenAPI Spec](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/api/openapi_v2_generated.swagger.json)
-            - [Proto Definitions](https://github.com/${{ github.repository }}/tree/${{ steps.tag.outputs.tag }}/proto)
-      
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/
-          asset_name: postfiat-sdk-${{ steps.tag.outputs.tag }}.tar.gz
-          asset_content_type: application/gzip
       
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
+          packages-dir: python/dist/
