@@ -177,13 +177,14 @@ memory = "postfiat.storage.memory:MemoryStorage"
 [project.entry-points."postfiat.encryption"]
 default = "postfiat.crypto.encryption:DefaultEncryption"
 
-[tool.setuptools.dynamic]
-version = {attr = "postfiat.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["src"] by default)
 include = ["postfiat*", "reference_implementations*"]  # package names should match these glob patterns (["*"] by default)
 exclude = ["tests*"]  # exclude packages matching these glob patterns (empty by default)
+
+[tool.setuptools.dynamic]
+version = {attr = "postfiat.envelope.__version__"}
 
 [tool.setuptools.package-data]
 postfiat = ["*.py", "**/*.py", "exceptions.py", "types/enums.py", "models/generated.py"]

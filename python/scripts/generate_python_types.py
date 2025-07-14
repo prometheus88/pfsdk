@@ -600,6 +600,25 @@ def generate_init_files():
                 if match:
                     version = match.group(1)
     
+    # Update version in envelope/__init__.py (non-generated file)
+    envelope_init_path = Path(__file__).parent.parent / "postfiat" / "envelope" / "__init__.py"
+    if envelope_init_path.exists():
+        with open(envelope_init_path, 'r') as f:
+            envelope_content = f.read()
+        
+        # Replace version line
+        import re
+        envelope_content = re.sub(
+            r'__version__\s*=\s*["\'][^"\']*["\']',
+            f'__version__ = "{version}"',
+            envelope_content
+        )
+        
+        with open(envelope_init_path, 'w') as f:
+            f.write(envelope_content)
+        
+        print(f"✅ Updated version in {envelope_init_path} to {version}")
+    
     # Generate enhanced postfiat/__init__.py with all imports
     main_init_code = f'''"""PostFiat Wallet SDK - Python SDK for PostFiat Wallet Protocol.
 
