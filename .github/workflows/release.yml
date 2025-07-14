@@ -17,6 +17,8 @@ jobs:
       id-token: write  # For PyPI trusted publishing
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -35,10 +37,13 @@ jobs:
           pip install -e .
           pip install -e python/
 
+      - name: Setup A2A dependency
+        run: ./scripts/setup-a2a-dependency.sh
+
       - name: Generate protobuf code
         run: |
           cd proto
-          buf mod update
+          buf dep update
           buf generate --template buf.gen.yaml
 
       - name: Generate Python types from protobuf
