@@ -187,6 +187,11 @@ jobs:
           cd proto
           buf dep update
           buf generate --template buf.gen.yaml
+
+      - name: Generate Python types from protobuf
+        run: |
+          cd python
+          python scripts/generate_python_types.py
       
       - name: Test Python package installation
         run: |
