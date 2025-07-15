@@ -179,7 +179,7 @@ default = "postfiat.crypto.encryption:DefaultEncryption"
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["src"] by default)
-include = ["postfiat*", "reference_implementations*"]  # package names should match these glob patterns (["*"] by default)
+include = ["postfiat*", "reference_implementations*", "a2a*"]  # package names should match these glob patterns (["*"] by default)
 exclude = ["tests*"]  # exclude packages matching these glob patterns (empty by default)
 
 [tool.setuptools.dynamic]

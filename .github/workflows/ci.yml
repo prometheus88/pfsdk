@@ -198,6 +198,56 @@ jobs:
           cd python
           python -c "import postfiat; print(f'PostFiat SDK v{postfiat.__version__} installed successfully')"
 
+      - name: Test critical import paths
+        run: |
+          cd python
+          echo "Testing critical import paths that users depend on..."
+          python -c "
+          import sys
+          
+          # Test main imports
+          try:
+              import postfiat
+              print('✅ import postfiat')
+          except Exception as e:
+              print(f'❌ import postfiat: {e}')
+              sys.exit(1)
+          
+          # Test envelope factory (the main new feature)
+          try:
+              import postfiat.envelope.factory
+              print('✅ import postfiat.envelope.factory')
+          except Exception as e:
+              print(f'❌ import postfiat.envelope.factory: {e}')
+              sys.exit(1)
+          
+          # Test A2A dependency (critical for protobuf imports)
+          try:
+              from a2a.v1 import a2a_pb2
+              print('✅ from a2a.v1 import a2a_pb2')
+          except Exception as e:
+              print(f'❌ from a2a.v1 import a2a_pb2: {e}')
+              sys.exit(1)
+          
+          # Test protobuf imports
+          try:
+              from postfiat.v3 import messages_pb2
+              print('✅ from postfiat.v3 import messages_pb2')
+          except Exception as e:
+              print(f'❌ from postfiat.v3 import messages_pb2: {e}')
+              sys.exit(1)
+          
+          # Test envelope creation
+          try:
+              from postfiat.envelope import EnvelopeFactory
+              print('✅ from postfiat.envelope import EnvelopeFactory')
+          except Exception as e:
+              print(f'❌ from postfiat.envelope import EnvelopeFactory: {e}')
+              sys.exit(1)
+          
+          print('✅ All critical imports successful')
+          "
+
       - name: Generate dynamic protobuf Python tests
         run: python python/scripts/generate_dynamic_protobuf_tests.py
 
@@ -267,6 +317,64 @@ jobs:
       
       - name: Check Python package
         run: twine check python/dist/*
+      
+      - name: Verify package contents
+        run: |
+          echo "🔍 Verifying package contents include A2A module..."
+          cd python
+          
+          # Extract the built wheel to check contents
+          WHEEL_FILE=$(ls dist/*.whl | head -1)
+          echo "Checking wheel: $WHEEL_FILE"
+          
+          # Create temporary directory and extract wheel
+          mkdir -p /tmp/wheel_check
+          cd /tmp/wheel_check
+          unzip -q "$OLDPWD/$WHEEL_FILE"
+          
+          # Check critical files exist
+          echo "Checking for A2A module files..."
+          if [ -f "a2a/__init__.py" ]; then
+            echo "✅ a2a/__init__.py found"
+          else
+            echo "❌ a2a/__init__.py missing"
+            exit 1
+          fi
+          
+          if [ -f "a2a/v1/__init__.py" ]; then
+            echo "✅ a2a/v1/__init__.py found"
+          else
+            echo "❌ a2a/v1/__init__.py missing"
+            exit 1
+          fi
+          
+          if [ -f "a2a/v1/a2a_pb2.py" ]; then
+            echo "✅ a2a/v1/a2a_pb2.py found"
+          else
+            echo "❌ a2a/v1/a2a_pb2.py missing"
+            exit 1
+          fi
+          
+          # Check postfiat envelope module
+          if [ -f "postfiat/envelope/__init__.py" ]; then
+            echo "✅ postfiat/envelope/__init__.py found"
+          else
+            echo "❌ postfiat/envelope/__init__.py missing"
+            exit 1
+          fi
+          
+          if [ -f "postfiat/envelope/factory.py" ]; then
+            echo "✅ postfiat/envelope/factory.py found"
+          else
+            echo "❌ postfiat/envelope/factory.py missing"
+            exit 1
+          fi
+          
+          echo "✅ All critical package contents verified"
+          
+          # Clean up
+          cd "$OLDPWD"
+          rm -rf /tmp/wheel_check
       
       - name: Upload Python build artifacts
         uses: actions/upload-artifact@v4

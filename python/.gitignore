@@ -19,15 +19,12 @@ postfiat/integrations/
 # Note: Manual modules like envelope/ are tracked
 # Import EnvelopeFactory: from postfiat.envelope import EnvelopeFactory
 
-# Symlink to a2a (points to ../a2a generated files)
-a2a
+# A2A generated Python files (but allow __init__.py files)
+a2a/v1/*_pb2.py
+a2a/v1/*_pb2_grpc.py
 
 # Generated tests from protobuf
 tests/generated/
-
-# A2A generated Python files
-a2a/v1/*_pb2.py
-a2a/v1/*_pb2_grpc.py
 
 # Generated documentation
 docs/
