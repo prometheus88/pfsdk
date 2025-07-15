@@ -130,11 +130,34 @@ message PostFiatAgentCapabilities {
   repeated string supported_semantic_capabilities = 8;
 }
 
+// Content descriptor for external content storage
+message ContentDescriptor {
+  // Full URI including scheme: "ipfs://QmXxx", "https://...", "arweave://..."
+  string uri = 1;
+  
+  // MIME type: "text/plain; charset=utf-8", "application/json", etc.
+  string content_type = 2;
+  
+  // Content size in bytes
+  int64 content_length = 3;
+  
+  // Optional content encoding: "gzip", "br", etc.
+  string content_encoding = 4;
+  
+  // Optional integrity check (e.g., SHA-256 hash)
+  bytes content_hash = 5;
+  
+  // Additional metadata specific to the content
+  map<string, string> metadata = 6;
+}
+
 message PostFiatEnvelopePayload {
   Envelope envelope = 1;
-  string xrpl_transaction_hash = 2;
-  string content_address = 3;
-  map<string, string> postfiat_metadata = 4;
+  
+  // Content descriptor for external content (replaces content_address)
+  ContentDescriptor content = 2;
+  
+  map<string, string> postfiat_metadata = 3;
 }
 
 message PostFiatA2AMessage {

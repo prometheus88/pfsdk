@@ -61,41 +61,21 @@ def create_postfiat_agent_capabilities() -> AgentCapabilities:
 def create_postfiat_envelope_message(
     content: str,
     context_references: list = None,
-    encryption_mode: EncryptionMode = EncryptionMode.PROTECTED
+    encryption_mode: EncryptionMode = EncryptionMode.PROTECTED,
+    content_type: str = "text/plain; charset=utf-8"
 ) -> PostFiatEnvelopePayload:
-    """Create a PostFiat envelope payload for A2A message with automatic chunking."""
+    """Create a PostFiat envelope payload for A2A message with automatic content handling."""
     from postfiat.envelope import EnvelopeFactory
     
     # Create envelope factory with 1000 byte limit
     envelope_factory = EnvelopeFactory(max_envelope_size=1000)
     
-    # Create envelope(s) - will automatically chunk if content is too large
-    envelope_result = envelope_factory.create_envelope(
+    # Create envelope payload - will automatically handle large content
+    payload = envelope_factory.create_envelope_payload(
         content=content,
         context_references=context_references,
-        encryption_mode=encryption_mode
-    )
-    
-    # Handle single envelope vs chunked envelopes
-    if isinstance(envelope_result, Envelope):
-        # Single envelope - fits within size limit
-        envelope = envelope_result
-    else:
-        # Multiple envelopes - content was chunked
-        # For A2A integration, we'll use the first chunk as primary envelope
-        # and include metadata about the chunking
-        envelopes = list(envelope_result)
-        envelope = envelopes[0]  # Primary envelope
-        
-        # Add chunking metadata to indicate this is part of a multipart message
-        if "chunk_info" not in envelope.metadata:
-            envelope.metadata["multipart_message"] = "true"
-            envelope.metadata["total_chunks"] = str(len(envelopes))
-    
-    # Create PostFiat envelope payload
-    payload = PostFiatEnvelopePayload(
-        envelope=envelope,
-        content_address="content_addr_placeholder",  # Content-addressable hash
+        encryption_mode=encryption_mode,
+        content_type=content_type,
         postfiat_metadata={
             "extension_version": "v1",
             "processing_mode": "selective_disclosure"
@@ -128,7 +108,12 @@ def create_a2a_message_with_postfiat(
                 "message": postfiat_payload.envelope.message.hex(),  # Hex encode bytes
                 "metadata": dict(postfiat_payload.envelope.metadata)
             },
-            "content_address": postfiat_payload.content_address,
+            "content": {
+                "uri": postfiat_payload.content.uri if postfiat_payload.content.uri else None,
+                "content_type": postfiat_payload.content.content_type if postfiat_payload.content.content_type else None,
+                "content_length": postfiat_payload.content.content_length if postfiat_payload.content.content_length else None,
+                "metadata": dict(postfiat_payload.content.metadata) if postfiat_payload.content.metadata else None
+            },
             "postfiat_metadata": dict(postfiat_payload.postfiat_metadata)
         }
     })
@@ -179,7 +164,8 @@ def main():
         if 'postfiat_envelope' in data_struct:
             envelope_data = data_struct['postfiat_envelope']
             print(f"   Envelope version: {envelope_data['envelope']['version']}")
-            print(f"   Content address: {envelope_data['content_address']}")
+            print(f"   Content URI: {envelope_data['content']['uri']}")
+            print(f"   Content type: {envelope_data['content']['content_type']}")
             print(f"   Encryption mode: {envelope_data['envelope']['encryption']}")
     
     print("\n✅ A2A + PostFiat integration example complete!")

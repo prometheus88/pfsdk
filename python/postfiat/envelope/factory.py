@@ -1,43 +1,59 @@
 """PostFiat Envelope Factory
 
-Factory for creating envelopes with automatic size validation and chunking.
+Factory for creating envelopes with pluggable content storage strategies.
 """
 
 import hashlib
-import uuid
-from typing import List, Set, Union
-from ..v3.messages_pb2 import Envelope, CoreMessage, MultiPartMessagePart, MessageType, EncryptionMode
+from typing import Optional, Tuple, Union, Set
+from ..v3.messages_pb2 import (
+    Envelope, CoreMessage, ContentDescriptor, 
+    PostFiatEnvelopePayload, MessageType, EncryptionMode
+)
 from ..exceptions import ValidationError
+from .storage import ContentStorage, IPFSStorage, MultipartStorage
 
 
 class EnvelopeFactory:
-    """Factory for creating PostFiat envelopes with size validation and automatic chunking."""
+    """Factory for creating PostFiat envelopes with pluggable storage."""
     
-    def __init__(self, max_envelope_size: int = 1000):
+    def __init__(
+        self, 
+        max_envelope_size: int = 1000,
+        storage: Optional[ContentStorage] = None
+    ):
         """Initialize the envelope factory.
         
         Args:
             max_envelope_size: Maximum allowed envelope size in bytes (default: 1000)
+            storage: Content storage backend (defaults to IPFS)
         """
         self.max_envelope_size = max_envelope_size
+        self.storage = storage or IPFSStorage()
     
     def create_envelope(
         self,
         content: str,
         context_references: list = None,
         encryption_mode: EncryptionMode = EncryptionMode.PROTECTED,
-        metadata: dict = None
-    ) -> Union[Envelope, Set[Envelope]]:
-        """Create envelope(s) with automatic size validation and chunking.
+        metadata: dict = None,
+        content_type: str = "text/plain; charset=utf-8"
+    ) -> Union[Envelope, Tuple[Envelope, ContentDescriptor], Set[Envelope]]:
+        """Create envelope(s) with automatic size handling.
+        
+        Returns one of:
+        - Single Envelope (if content fits)
+        - Tuple[Envelope, ContentDescriptor] (if using external storage)
+        - Set[Envelope] (if using ledger multipart storage)
         
         Args:
             content: The content to wrap in envelope
             context_references: Optional context references
             encryption_mode: Encryption mode for the envelope
             metadata: Additional metadata for the envelope
+            content_type: MIME type of the content
             
         Returns:
-            Single Envelope if under size limit, Set of Envelopes if chunked
+            Envelope(s) and optional ContentDescriptor
             
         Raises:
             ValidationError: If envelope creation fails
@@ -47,27 +63,113 @@ class EnvelopeFactory:
         if metadata:
             default_metadata.update(metadata)
         
-        # Try to create a single envelope first
-        try:
-            envelope = self._create_single_envelope(
-                content, context_references, encryption_mode, default_metadata
-            )
-            self._validate_envelope_size(envelope)
+        # Try to embed content directly if small enough
+        envelope = self._try_create_embedded_envelope(
+            content, context_references, encryption_mode, default_metadata
+        )
+        
+        if envelope:
+            # Content fits in envelope
             return envelope
-        except ValidationError:
-            # Need to chunk the content
-            return self._create_chunked_envelopes(
-                content, context_references, encryption_mode, default_metadata
+        
+        # Content too large - use storage backend
+        content_bytes = content.encode('utf-8')
+        descriptor = self.storage.store(content_bytes, content_type)
+        
+        # Handle special case of multipart storage
+        if isinstance(self.storage, MultipartStorage):
+            # Create multiple envelopes for multipart storage
+            return self.storage.create_part_envelopes(
+                content_bytes, descriptor, encryption_mode, default_metadata
             )
+        
+        # Create minimal envelope that references external content
+        reference_envelope = self._create_reference_envelope(
+            descriptor, context_references, encryption_mode, default_metadata
+        )
+        
+        return reference_envelope, descriptor
     
-    def _create_single_envelope(
+    def create_envelope_payload(
+        self,
+        content: str,
+        context_references: list = None,
+        encryption_mode: EncryptionMode = EncryptionMode.PROTECTED,
+        metadata: dict = None,
+        content_type: str = "text/plain; charset=utf-8",
+        postfiat_metadata: dict = None
+    ) -> PostFiatEnvelopePayload:
+        """Create a complete PostFiatEnvelopePayload with automatic content handling.
+        
+        Args:
+            content: The content to wrap
+            context_references: Optional context references
+            encryption_mode: Encryption mode for the envelope
+            metadata: Additional metadata for the envelope
+            content_type: MIME type of the content
+            postfiat_metadata: Additional PostFiat-specific metadata
+            
+        Returns:
+            PostFiatEnvelopePayload with envelope and optional ContentDescriptor
+        """
+        result = self.create_envelope(
+            content, context_references, encryption_mode, metadata, content_type
+        )
+        
+        # Default PostFiat metadata
+        default_postfiat_metadata = {
+            "extension_version": "v1",
+            "processing_mode": "selective_disclosure"
+        }
+        if postfiat_metadata:
+            default_postfiat_metadata.update(postfiat_metadata)
+        
+        # Handle different return types
+        if isinstance(result, Envelope):
+            # Simple embedded content
+            payload = PostFiatEnvelopePayload(
+                envelope=result,
+                postfiat_metadata=default_postfiat_metadata
+            )
+        elif isinstance(result, tuple):
+            # External storage with descriptor
+            envelope, descriptor = result
+            payload = PostFiatEnvelopePayload(
+                envelope=envelope,
+                postfiat_metadata=default_postfiat_metadata
+            )
+            if descriptor:
+                payload.content.CopyFrom(descriptor)
+        elif isinstance(result, set):
+            # Multipart envelopes - return payload for first part
+            envelopes = list(result)
+            if not envelopes:
+                raise ValidationError("No envelopes created")
+            
+            # Sort by part number for consistent ordering
+            sorted_envelopes = sorted(
+                envelopes, 
+                key=lambda e: int(e.metadata.get("multipart", "1/1").split("/")[0])
+            )
+            
+            payload = PostFiatEnvelopePayload(
+                envelope=sorted_envelopes[0],
+                postfiat_metadata=default_postfiat_metadata
+            )
+            payload.postfiat_metadata["total_parts"] = str(len(envelopes))
+        else:
+            raise ValidationError(f"Unexpected result type: {type(result)}")
+        
+        return payload
+    
+    def _try_create_embedded_envelope(
         self,
         content: str,
         context_references: list,
         encryption_mode: EncryptionMode,
         metadata: dict
-    ) -> Envelope:
-        """Create a single envelope from content."""
+    ) -> Optional[Envelope]:
+        """Try to create envelope with embedded content."""
         core_message = CoreMessage(
             content=content,
             context_references=context_references or [],
@@ -85,98 +187,51 @@ class EnvelopeFactory:
             metadata=metadata
         )
         
-        return envelope
+        # Check if it fits
+        envelope_bytes = envelope.SerializeToString()
+        if len(envelope_bytes) <= self.max_envelope_size:
+            return envelope
+        
+        return None
     
-    def _create_chunked_envelopes(
+    def _create_reference_envelope(
         self,
-        content: str,
+        content_descriptor: ContentDescriptor,
         context_references: list,
         encryption_mode: EncryptionMode,
         metadata: dict
-    ) -> Set[Envelope]:
-        """Create multiple envelopes from chunked content."""
-        # Generate unique message ID for this chunked message
-        message_id = str(uuid.uuid4())
+    ) -> Envelope:
+        """Create minimal envelope that references external content."""
+        # Create a minimal core message that references the external content
+        core_message = CoreMessage(
+            content=f"Content stored at: {content_descriptor.uri}",
+            context_references=context_references or [],
+            metadata={
+                "timestamp": "2024-07-07T12:00:00Z",
+                "content_uri": content_descriptor.uri,
+                "content_type": content_descriptor.content_type
+            }
+        )
         
-        # Calculate hash of complete message
-        complete_message_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+        message_bytes = core_message.SerializeToString()
         
-        # Estimate chunk size accounting for envelope overhead
-        estimated_overhead = 200  # Conservative estimate for envelope fields
-        target_content_size = self.max_envelope_size - estimated_overhead
+        # Add reference to external content in envelope metadata
+        envelope_metadata = metadata.copy()
+        envelope_metadata["content_uri"] = content_descriptor.uri
         
-        if target_content_size <= 0:
-            raise ValidationError(
-                f"Maximum size {self.max_envelope_size} too small to accommodate envelope overhead"
-            )
+        envelope = Envelope(
+            version=1,
+            content_hash=hashlib.sha256(message_bytes).hexdigest(),
+            message_type=MessageType.CORE_MESSAGE,
+            encryption=encryption_mode,
+            message=message_bytes,
+            metadata=envelope_metadata
+        )
         
-        # Split content into chunks
-        content_bytes = content.encode('utf-8')
-        chunks = []
-        
-        for i in range(0, len(content_bytes), target_content_size):
-            chunk_content = content_bytes[i:i + target_content_size]
-            chunks.append(chunk_content)
-        
-        if not chunks:
-            raise ValidationError("No chunks created from content")
-        
-        total_parts = len(chunks)
-        envelopes = set()
-        
-        for part_number, chunk_content in enumerate(chunks, 1):
-            # Create multipart message part
-            multipart_part = MultiPartMessagePart(
-                message_id=message_id,
-                part_number=part_number,
-                total_parts=total_parts,
-                content=chunk_content,
-                complete_message_hash=complete_message_hash
-            )
-            
-            # Serialize the multipart message part
-            multipart_bytes = multipart_part.SerializeToString()
-            
-            # Create chunk-specific metadata
-            chunk_metadata = metadata.copy()
-            chunk_metadata.update({
-                "chunk_info": f"part_{part_number}_of_{total_parts}",
-                "message_id": message_id
-            })
-            
-            # Create envelope containing this part
-            envelope = Envelope(
-                version=1,
-                content_hash=hashlib.sha256(multipart_bytes).hexdigest(),
-                message_type=MessageType.MULTIPART_MESSAGE_PART,
-                encryption=encryption_mode,
-                message=multipart_bytes,
-                metadata=chunk_metadata
-            )
-            
-            # Validate each chunk envelope size
-            try:
-                self._validate_envelope_size(envelope)
-                envelopes.add(envelope)
-            except ValidationError as e:
-                raise ValidationError(
-                    f"Chunk {part_number} still exceeds size limit after chunking: {e}"
-                )
-        
-        return envelopes
-    
-    def _validate_envelope_size(self, envelope: Envelope) -> None:
-        """Validate envelope size against maximum allowed size."""
-        envelope_bytes = envelope.SerializeToString()
-        envelope_size = len(envelope_bytes)
-        
-        if envelope_size > self.max_envelope_size:
-            raise ValidationError(
-                f"Envelope size {envelope_size} bytes exceeds maximum allowed size of {self.max_envelope_size} bytes"
-            )
+        return envelope
     
     @staticmethod
-    def reconstruct_content_from_chunks(envelopes: List[Envelope]) -> str:
+    def reconstruct_content_from_chunks(envelopes: list[Envelope]) -> str:
         """Reconstruct original content from chunked envelopes.
         
         Args:
@@ -191,6 +246,9 @@ class EnvelopeFactory:
         if not envelopes:
             raise ValidationError("No envelopes provided for reconstruction")
         
+        # Import here to avoid circular dependency
+        from ..v3.messages_pb2 import MultiPartMessagePart
+        
         # Extract multipart message parts
         parts = []
         message_id = None
@@ -198,7 +256,9 @@ class EnvelopeFactory:
         
         for envelope in envelopes:
             if envelope.message_type != MessageType.MULTIPART_MESSAGE_PART:
-                raise ValidationError(f"Expected MULTIPART_MESSAGE_PART, got {envelope.message_type}")
+                raise ValidationError(
+                    f"Expected MULTIPART_MESSAGE_PART, got {envelope.message_type}"
+                )
             
             # Deserialize the multipart message part
             multipart_part = MultiPartMessagePart()
@@ -210,7 +270,8 @@ class EnvelopeFactory:
                 complete_message_hash = multipart_part.complete_message_hash
             elif message_id != multipart_part.message_id:
                 raise ValidationError(
-                    f"Message ID mismatch: expected {message_id}, got {multipart_part.message_id}"
+                    f"Message ID mismatch: expected {message_id}, "
+                    f"got {multipart_part.message_id}"
                 )
             elif complete_message_hash != multipart_part.complete_message_hash:
                 raise ValidationError("Complete message hash mismatch between chunks")
@@ -224,12 +285,20 @@ class EnvelopeFactory:
         expected_total = parts[0].total_parts if parts else 0
         for i, part in enumerate(parts, 1):
             if part.part_number != i:
-                raise ValidationError(f"Missing or out-of-order part: expected {i}, got {part.part_number}")
+                raise ValidationError(
+                    f"Missing or out-of-order part: expected {i}, "
+                    f"got {part.part_number}"
+                )
             if part.total_parts != expected_total:
-                raise ValidationError(f"Total parts mismatch: expected {expected_total}, got {part.total_parts}")
+                raise ValidationError(
+                    f"Total parts mismatch: expected {expected_total}, "
+                    f"got {part.total_parts}"
+                )
         
         if len(parts) != expected_total:
-            raise ValidationError(f"Incomplete parts: expected {expected_total}, got {len(parts)}")
+            raise ValidationError(
+                f"Incomplete parts: expected {expected_total}, got {len(parts)}"
+            )
         
         # Reconstruct content
         content_bytes = b''.join(part.content for part in parts)
@@ -238,6 +307,8 @@ class EnvelopeFactory:
         # Validate reconstructed content hash
         reconstructed_hash = hashlib.sha256(content_bytes).hexdigest()
         if reconstructed_hash != complete_message_hash:
-            raise ValidationError("Reconstructed content hash does not match expected hash")
+            raise ValidationError(
+                "Reconstructed content hash does not match expected hash"
+            )
         
         return content

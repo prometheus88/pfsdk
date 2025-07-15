@@ -6,12 +6,14 @@
  */
 
 import { 
-  EnvelopeFactory, 
-  EnvelopeValidationError,
-  EncryptionMode 
+  EnvelopeFactory,
+  IPFSStorage,
+  MultipartStorage,
+  EnvelopeValidationError
 } from '../src/envelope';
+import { EncryptionMode } from '../src/types/enums';
 import { PostFiatCrypto } from '../src/crypto';
-import { Envelope } from '../src/generated/postfiat/v3/messages_pb';
+import { Envelope, ContentDescriptor } from '../src/generated/postfiat/v3/messages_pb';
 
 async function demonstrateEnvelopeFactory() {
   console.log('🔧 PostFiat TypeScript SDK: Envelope Factory Example');
@@ -24,9 +26,9 @@ async function demonstrateEnvelopeFactory() {
     console.log(`   Public Key: ${keyPair.publicKey.substring(0, 32)}...`);
     console.log(`   Private Key: ${keyPair.privateKey.substring(0, 32)}...`);
 
-    // 2. Create envelope factory with 1000 byte limit
-    console.log('\n2. Creating envelope factory with 1000 byte limit...');
-    const factory = new EnvelopeFactory(1000);
+    // 2. Create envelope factory with 1000 byte limit and IPFS storage
+    console.log('\n2. Creating envelope factory with 1000 byte limit and IPFS storage...');
+    const factory = new EnvelopeFactory(1000, new IPFSStorage());
 
     // 3. Test with small content (should create single envelope)
     console.log('\n3. Testing with small content...');
@@ -41,9 +43,13 @@ async function demonstrateEnvelopeFactory() {
 
     if (smallResult instanceof Envelope) {
       console.log(`   ✅ Single envelope created for small content`);
-      console.log(`   Envelope size: ${smallResult.toBinary().length} bytes`);
+      console.log(`   Envelope size: ${smallResult.serializeBinary().length} bytes`);
+    } else if (Array.isArray(smallResult)) {
+      const [envelope, descriptor] = smallResult;
+      console.log(`   ✅ Content stored externally via ${descriptor.getUri()}`);
+      console.log(`   Envelope size: ${envelope.serializeBinary().length} bytes`);
     } else {
-      console.log(`   ❌ Unexpected chunking for small content`);
+      console.log(`   ❌ Unexpected result type for small content`);
     }
 
     // 4. Test with large content (should create chunked envelopes)
@@ -63,14 +69,23 @@ async function demonstrateEnvelopeFactory() {
       EncryptionMode.PUBLIC_KEY
     );
 
-    if (largeResult instanceof Set) {
+    if (largeResult instanceof Envelope) {
+      console.log(`   ✅ Single envelope created for large content`);
+      console.log(`   Envelope size: ${largeResult.serializeBinary().length} bytes`);
+    } else if (Array.isArray(largeResult)) {
+      const [envelope, descriptor] = largeResult;
+      console.log(`   ✅ Large content stored externally via ${descriptor.getUri()}`);
+      console.log(`   Content type: ${descriptor.getContentType()}`);
+      console.log(`   Content length: ${descriptor.getContentLength()} bytes`);
+      console.log(`   Envelope size: ${envelope.serializeBinary().length} bytes`);
+    } else if (largeResult instanceof Set) {
       console.log(`   ✅ Content automatically chunked into ${largeResult.size} envelopes`);
       
       // Display chunk information
       const envelopes = Array.from(largeResult);
       envelopes.forEach((envelope, index) => {
-        const chunkInfo = envelope.metadata['chunk_info'] || 'unknown';
-        const size = envelope.toBinary().length;
+        const chunkInfo = envelope.getMetadataMap().get('multipart') || 'unknown';
+        const size = envelope.serializeBinary().length;
         console.log(`   Chunk ${index + 1}: ${chunkInfo}, size: ${size} bytes`);
       });
 
@@ -82,9 +97,8 @@ async function demonstrateEnvelopeFactory() {
       console.log(`   ✅ Content reconstruction: ${isValid ? 'SUCCESS' : 'FAILED'}`);
       console.log(`   Original length: ${largeContent.length}`);
       console.log(`   Reconstructed length: ${reconstructed.length}`);
-      
     } else {
-      console.log(`   ❌ Expected chunking for large content, but got single envelope`);
+      console.log(`   ❌ Unexpected result type for large content`);
     }
 
     // 6. Test size validation error
@@ -107,10 +121,36 @@ async function demonstrateEnvelopeFactory() {
       }
     }
 
+    // 7. Test with MultipartStorage for on-ledger chunking
+    console.log('\n7. Testing with MultipartStorage for on-ledger chunking...');
+    const multipartFactory = new EnvelopeFactory(1000, new MultipartStorage());
+    
+    const multipartResult = await multipartFactory.createEnvelope(
+      largeContent,
+      keyPair.privateKey,
+      keyPair.publicKey,
+      EncryptionMode.PUBLIC_KEY
+    );
+
+    if (multipartResult instanceof Set) {
+      console.log(`   ✅ Content chunked into ${multipartResult.size} envelopes for ledger storage`);
+      
+      const envelopes = Array.from(multipartResult);
+      envelopes.forEach((envelope, index) => {
+        const chunkInfo = envelope.getMetadataMap().get('multipart') || 'unknown';
+        const messageId = envelope.getMetadataMap().get('message_id') || 'unknown';
+        const size = envelope.serializeBinary().length;
+        console.log(`   Chunk ${index + 1}: ${chunkInfo}, message_id: ${messageId.substring(0, 8)}..., size: ${size} bytes`);
+      });
+    } else {
+      console.log(`   ❌ Expected multipart chunking for large content`);
+    }
+
     console.log('\n✅ Envelope Factory example complete!');
     console.log('\nKey features demonstrated:');
     console.log('- Automatic size validation with 1000 byte limit');
-    console.log('- Transparent chunking for large content');
+    console.log('- IPFS storage for external content');
+    console.log('- Multipart storage for on-ledger chunking');
     console.log('- Content reconstruction from chunks');
     console.log('- Proper error handling for oversized content');
     console.log('- Integration with PostFiat crypto system');
