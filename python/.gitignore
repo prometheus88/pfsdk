@@ -23,6 +23,9 @@ postfiat/integrations/
 a2a/v1/*_pb2.py
 a2a/v1/*_pb2_grpc.py
 
+# A2A files sometimes generated in wrong location
+postfiat/a2a/
+
 # Generated tests from protobuf
 tests/generated/
 
