@@ -130,6 +130,168 @@ export class IPFSStorage extends ContentStorage {
 }
 
 /**
+ * Redis content storage implementation.
+ */
+export class RedisStorage extends ContentStorage {
+  private redisUrl: string;
+  private keyPrefix: string;
+  private _client: any;
+
+  constructor(redisUrl: string = 'redis://localhost:6379', keyPrefix: string = 'postfiat:content') {
+    super();
+    this.redisUrl = redisUrl;
+    this.keyPrefix = keyPrefix;
+  }
+
+  private async getClient() {
+    if (!this._client) {
+      try {
+        const Redis = await import('ioredis');
+        this._client = new Redis.default(this.redisUrl);
+      } catch (error) {
+        throw new Error(
+          'ioredis is required for Redis storage. ' +
+          'Install with: npm install ioredis'
+        );
+      }
+    }
+    return this._client;
+  }
+
+  private contentKey(contentHash: Uint8Array): string {
+    return `${this.keyPrefix}:${Buffer.from(contentHash).toString('hex')}`;
+  }
+
+  async store(content: Uint8Array, contentType: string): Promise<ContentDescriptor> {
+    // Calculate content hash
+    const contentHash = createHash('sha256').update(content).digest();
+    
+    // Store content in Redis
+    const key = this.contentKey(contentHash);
+    
+    // Store content and metadata together
+    const contentData = {
+      content: Buffer.from(content).toString('base64'),
+      content_type: contentType,
+      content_length: content.length,
+      content_hash: Buffer.from(contentHash).toString('hex')
+    };
+    
+    try {
+      const client = await this.getClient();
+      await client.set(key, JSON.stringify(contentData));
+      
+      const descriptor = new ContentDescriptor();
+      descriptor.setUri(`redis://${Buffer.from(contentHash).toString('hex')}`);
+      descriptor.setContentType(contentType);
+      descriptor.setContentLength(content.length);
+      descriptor.setContentHash(contentHash);
+      
+      const metadataMap = descriptor.getMetadataMap();
+      metadataMap.set('storage_provider', 'redis');
+      metadataMap.set('redis_key', key);
+      metadataMap.set('redis_url', this.redisUrl);
+      
+      return descriptor;
+    } catch (error: any) {
+      throw new Error(`Failed to store content in Redis: ${error.message}`);
+    }
+  }
+
+  async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
+    if (!this.canHandle(descriptor.getUri())) {
+      throw new ValidationError(`Invalid Redis URI: ${descriptor.getUri()}`);
+    }
+
+    // Extract content hash from URI
+    const contentHashHex = descriptor.getUri().substring(8); // Remove "redis://" prefix
+    const contentHash = Buffer.from(contentHashHex, 'hex');
+    
+    const key = this.contentKey(contentHash);
+    
+    try {
+      const client = await this.getClient();
+      const contentData = await client.get(key);
+      
+      if (!contentData) {
+        throw new Error(`Content not found in Redis: ${descriptor.getUri()}`);
+      }
+      
+      const data = JSON.parse(contentData);
+      const content = Buffer.from(data.content, 'base64');
+      
+      // Verify content hash
+      const actualHash = createHash('sha256').update(content).digest();
+      if (!Buffer.from(actualHash).equals(contentHash)) {
+        throw new Error(`Content hash mismatch for ${descriptor.getUri()}`);
+      }
+      
+      return new Uint8Array(content);
+    } catch (error: any) {
+      throw new Error(`Failed to retrieve content from Redis: ${error.message}`);
+    }
+  }
+
+  canHandle(uri: string): boolean {
+    return uri.startsWith('redis://');
+  }
+}
+
+/**
+ * Inline content storage - stores content directly in descriptor.
+ */
+export class InlineStorage extends ContentStorage {
+  async store(content: Uint8Array, contentType: string): Promise<ContentDescriptor> {
+    // Calculate content hash
+    const contentHash = createHash('sha256').update(content).digest();
+    
+    // Encode content as base64 for inline storage
+    const contentB64 = Buffer.from(content).toString('base64');
+    
+    const descriptor = new ContentDescriptor();
+    descriptor.setUri('inline://data');
+    descriptor.setContentType(contentType);
+    descriptor.setContentLength(content.length);
+    descriptor.setContentHash(contentHash);
+    
+    const metadataMap = descriptor.getMetadataMap();
+    metadataMap.set('storage_provider', 'inline');
+    metadataMap.set('content_data', contentB64);
+    
+    return descriptor;
+  }
+
+  async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
+    if (!this.canHandle(descriptor.getUri())) {
+      throw new ValidationError(`Invalid inline URI: ${descriptor.getUri()}`);
+    }
+
+    try {
+      const contentB64 = descriptor.getMetadataMap().get('content_data');
+      if (!contentB64) {
+        throw new Error('No inline content data found in descriptor');
+      }
+
+      const content = Buffer.from(contentB64, 'base64');
+      
+      // Verify content hash
+      const actualHash = createHash('sha256').update(content).digest();
+      if (!Buffer.from(actualHash).equals(Buffer.from(descriptor.getContentHash()))) {
+        throw new Error('Content hash mismatch for inline content');
+      }
+      
+      return new Uint8Array(content);
+    } catch (error: any) {
+      throw new Error(`Failed to retrieve inline content: ${error.message}`);
+    }
+  }
+
+  canHandle(uri: string): boolean {
+    return uri.startsWith('inline://');
+  }
+}
+
+/**
  * Storage-agnostic multipart message chunking.
  * 
  * This storage backend has no knowledge of the underlying ledger.

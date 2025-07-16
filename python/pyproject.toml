@@ -155,12 +155,19 @@ llm = [
 # Storage backend dependencies (optional)
 storage = [
     "ipfshttpclient>=0.8.0,<1.0.0",  # IPFS HTTP client for distributed storage
+    "redis>=4.5.0,<6.0.0",           # Redis client for envelope storage
     # Future: could add arweave, filecoin, etc.
+]
+
+# Blockchain storage dependencies (optional)
+blockchain = [
+    "web3>=6.0.0,<7.0.0",           # Ethereum/EVM interaction
+    "xrpl-py>=2.0.0,<3.0.0",        # XRPL ledger interaction
 ]
 
 # All optional dependencies for complete installation
 all = [
-    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm,storage]"
+    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm,storage,blockchain]"
 ]
 
 [project.urls]

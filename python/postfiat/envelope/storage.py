@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from typing import Tuple, List, Set
 import hashlib
 import uuid
+import json
+import base64
 from ..v3.messages_pb2 import (
     ContentDescriptor, Envelope, CoreMessage, 
     MultiPartMessagePart, MessageType, EncryptionMode
@@ -310,3 +312,147 @@ class CompositeStorage(ContentStorage):
     def can_handle(self, uri: str) -> bool:
         """Check if any storage backend can handle the URI."""
         return any(storage.can_handle(uri) for storage in self.storages)
+
+
+class RedisStorage(ContentStorage):
+    """Redis content storage implementation."""
+    
+    def __init__(self, redis_url: str = "redis://localhost:6379", key_prefix: str = "postfiat:content"):
+        """Initialize Redis storage.
+        
+        Args:
+            redis_url: Redis connection URL
+            key_prefix: Prefix for Redis keys
+        """
+        self.redis_url = redis_url
+        self.key_prefix = key_prefix
+        self._client = None
+    
+    @property
+    def client(self):
+        """Lazy-load Redis client."""
+        if self._client is None:
+            try:
+                import redis
+                self._client = redis.from_url(self.redis_url)
+            except ImportError:
+                raise ImportError(
+                    "redis is required for Redis storage. "
+                    "Install with: pip install postfiat-sdk[storage]"
+                )
+        return self._client
+    
+    def _content_key(self, content_hash: bytes) -> str:
+        """Get Redis key for content."""
+        return f"{self.key_prefix}:{content_hash.hex()}"
+    
+    def store(self, content: bytes, content_type: str) -> ContentDescriptor:
+        """Store content in Redis."""
+        # Calculate content hash
+        content_hash = hashlib.sha256(content).digest()
+        
+        # Store content in Redis
+        key = self._content_key(content_hash)
+        
+        # Store content and metadata together
+        content_data = {
+            "content": base64.b64encode(content).decode(),
+            "content_type": content_type,
+            "content_length": len(content),
+            "content_hash": content_hash.hex()
+        }
+        
+        try:
+            self.client.set(key, json.dumps(content_data))
+            
+            return ContentDescriptor(
+                uri=f"redis://{content_hash.hex()}",
+                content_type=content_type,
+                content_length=len(content),
+                content_hash=content_hash,
+                metadata={
+                    "storage_provider": "redis",
+                    "redis_key": key,
+                    "redis_url": self.redis_url
+                }
+            )
+        except Exception as e:
+            raise IOError(f"Failed to store content in Redis: {e}")
+    
+    def retrieve(self, descriptor: ContentDescriptor) -> bytes:
+        """Retrieve content from Redis."""
+        if not self.can_handle(descriptor.uri):
+            raise ValidationError(f"Invalid Redis URI: {descriptor.uri}")
+        
+        # Extract content hash from URI
+        content_hash_hex = descriptor.uri[8:]  # Remove "redis://" prefix
+        content_hash = bytes.fromhex(content_hash_hex)
+        
+        key = self._content_key(content_hash)
+        
+        try:
+            content_data = self.client.get(key)
+            if content_data is None:
+                raise IOError(f"Content not found in Redis: {descriptor.uri}")
+            
+            data = json.loads(content_data)
+            content = base64.b64decode(data["content"])
+            
+            # Verify content hash
+            if hashlib.sha256(content).digest() != content_hash:
+                raise IOError(f"Content hash mismatch for {descriptor.uri}")
+            
+            return content
+        except Exception as e:
+            raise IOError(f"Failed to retrieve content from Redis: {e}")
+    
+    def can_handle(self, uri: str) -> bool:
+        """Check if URI is a Redis URI."""
+        return uri.startswith("redis://")
+
+
+class InlineStorage(ContentStorage):
+    """Inline content storage - stores content directly in descriptor."""
+    
+    def store(self, content: bytes, content_type: str) -> ContentDescriptor:
+        """Store content inline in descriptor."""
+        # Calculate content hash
+        content_hash = hashlib.sha256(content).digest()
+        
+        # Encode content as base64 for inline storage
+        content_b64 = base64.b64encode(content).decode()
+        
+        return ContentDescriptor(
+            uri=f"inline://data",
+            content_type=content_type,
+            content_length=len(content),
+            content_hash=content_hash,
+            metadata={
+                "storage_provider": "inline",
+                "content_data": content_b64
+            }
+        )
+    
+    def retrieve(self, descriptor: ContentDescriptor) -> bytes:
+        """Retrieve content from descriptor metadata."""
+        if not self.can_handle(descriptor.uri):
+            raise ValidationError(f"Invalid inline URI: {descriptor.uri}")
+        
+        try:
+            content_b64 = descriptor.metadata.get("content_data")
+            if not content_b64:
+                raise IOError(f"No inline content data found in descriptor")
+            
+            content = base64.b64decode(content_b64)
+            
+            # Verify content hash
+            if hashlib.sha256(content).digest() != descriptor.content_hash:
+                raise IOError(f"Content hash mismatch for inline content")
+            
+            return content
+        except Exception as e:
+            raise IOError(f"Failed to retrieve inline content: {e}")
+    
+    def can_handle(self, uri: str) -> bool:
+        """Check if URI is an inline URI."""
+        return uri.startswith("inline://")
