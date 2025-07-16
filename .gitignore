@@ -236,6 +236,10 @@ python/third_party/a2a
 python/a2a/v1/*_pb2.py
 python/a2a/v1/*_pb2_grpc.py
 
+# PostFiat generated Python files
+python/postfiat/v3/*_pb2.py
+python/postfiat/v3/*_pb2_grpc.py
+
 # TypeScript generated files
 typescript/src/generated/
 typescript/node_modules/

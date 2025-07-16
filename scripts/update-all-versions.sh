@@ -15,7 +15,7 @@ echo "📦 Version: $VERSION"
 echo ""
 echo "🐍 Updating Python packages..."
 cd python
-python scripts/generate_python_types.py
+python3 scripts/generate_python_types.py
 echo "✅ Python versions updated"
 
 echo ""

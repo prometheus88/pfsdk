@@ -1,6 +1,6 @@
 {
   "name": "@postfiat/sdk",
-  "version": "0.2.0-rc6",
+  "version": "0.3.0-rc1",
   "description": "TypeScript SDK for PostFiat Wallet Protocol",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
