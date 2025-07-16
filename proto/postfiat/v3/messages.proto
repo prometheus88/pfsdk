@@ -175,7 +175,7 @@ message PostFiatA2AMessage {
 // PostFiat Agent Registry Service
 service PostFiatAgentRegistryService {
   // Get agent card (A2A compliant)
-  rpc GetAgentCard(a2a.v1.GetAgentCardRequest) returns (GetAgentCardResponse) {
+  rpc GetAgentCard(GetAgentCardRequest) returns (GetAgentCardResponse) {
     option (google.api.http) = {
       get: "/v3/agents/card"
     };
@@ -452,7 +452,11 @@ message ListEnvelopesBySenderResponse {
   int32 total_count = 2;
 }
 
-// Response message types for proper gRPC service compliance
+// Request/Response message types for proper gRPC service compliance
+message GetAgentCardRequest {
+  string agent_id = 1;
+}
+
 message GetAgentCardResponse {
   a2a.v1.AgentCard agent_card = 1;
 }
