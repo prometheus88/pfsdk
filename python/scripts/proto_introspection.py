@@ -287,6 +287,17 @@ class ProtoIntrospector:
                     return getattr(module, class_name)
             except (ImportError, AttributeError):
                 pass
+        
+        elif full_name.startswith('a2a.v1.'):
+            # A2A messages
+            module_name = 'a2a.v1.a2a_pb2'
+            try:
+                import importlib
+                module = importlib.import_module(module_name)
+                class_name = message_desc.name
+                return getattr(module, class_name)
+            except (ImportError, AttributeError):
+                pass
 
         # Try to get from the file descriptor's generated module
         try:
