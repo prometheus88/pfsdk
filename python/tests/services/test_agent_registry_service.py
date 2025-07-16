@@ -1,1 +1,108 @@
-"""\nUnit tests for AgentRegistryServiceImpl.\n\nGenerated tests for proto-defined gRPC service implementation.\n"""\n\nimport pytest\nimport grpc\nfrom unittest.mock import Mock, patch, MagicMock\nfrom concurrent import futures\n\nfrom postfiat.services.impl.agent_registry_impl import AgentRegistryServiceImpl\nfrom postfiat.v3.messages_pb2_grpc import PostFiatAgentRegistryServicer\nfrom postfiat.v3.messages_pb2 import *\nfrom a2a.v1.a2a_pb2 import *\nfrom google.protobuf.empty_pb2 import Empty\n\n\nclass TestAgentRegistryServiceImpl:\n    """AgentRegistryServiceImpl unit tests."""\n\n    def setup_method(self):\n        """Set up test fixtures."""\n        self.service = AgentRegistryServiceImpl()\n        self.context = Mock(spec=grpc.ServicerContext)\n\n    def test_getagentcard(self):\n        """Test GetAgentCard method."""\n        # TODO: Implement GetAgentCard test\n        request = Mock()\n        response = self.service.GetAgentCard(request, self.context)\n        assert response is not None\n\n    def test_storeagentcard(self):\n        """Test StoreAgentCard method."""\n        # TODO: Implement StoreAgentCard test\n        request = Mock()\n        response = self.service.StoreAgentCard(request, self.context)\n        assert response is not None\n\n    def test_searchagents(self):\n        """Test SearchAgents method."""\n        # TODO: Implement SearchAgents test\n        request = Mock()\n        response = self.service.SearchAgents(request, self.context)\n        assert response is not None\n\n    def test_deleteagentcard(self):\n        """Test DeleteAgentCard method."""\n        # TODO: Implement DeleteAgentCard test\n        request = Mock()\n        response = self.service.DeleteAgentCard(request, self.context)\n        assert response is not None\n\n    def test_getagentbyenvelope(self):\n        """Test GetAgentByEnvelope method."""\n        # TODO: Implement GetAgentByEnvelope test\n        request = Mock()\n        response = self.service.GetAgentByEnvelope(request, self.context)\n        assert response is not None\n\n    def test_service_integration(self):\n        """Test service integration."""\n        # Create gRPC server\n        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))\n        \n        # Add service to server\n        from postfiat.v3.messages_pb2_grpc import add_PostFiatAgentRegistryServicer_to_server\n        add_PostFiatAgentRegistryServicer_to_server(self.service, server)\n        \n        # Test server creation\n        assert server is not None\n\n    @patch("postfiat.services.impl.agent_registry_impl.AgentRegistryServiceImpl._create_default_storage")\n    def test_with_mock_storage(self, mock_storage):\n        """Test service with mocked storage."""\n        mock_storage.return_value = Mock()\n        service = AgentRegistryServiceImpl()\n        assert service is not None\n\n    def test_error_handling(self):\n        """Test error handling."""\n        # Test with invalid request\n        request = Mock()\n        request.configure_mock(**{"side_effect": Exception("Test error")})\n        \n        # Should handle errors gracefully\n        # TODO: Add specific error handling tests\n        pass\n\n    def test_performance(self):\n        """Test service performance."""\n        import time\n        \n        # Test method performance\n        start_time = time.time()\n        \n        # TODO: Add performance tests\n        \n        end_time = time.time()\n        duration = end_time - start_time\n        \n        # Should complete within reasonable time\n        assert duration < 1.0  # 1 second max\n\n\nif __name__ == "__main__":\n    pytest.main([__file__])
+"""
+Unit tests for AgentRegistryServiceImpl.
+
+Generated tests for proto-defined gRPC service implementation.
+"""
+
+import pytest
+import grpc
+from unittest.mock import Mock, patch, MagicMock
+from concurrent import futures
+
+from postfiat.services.impl.agent_registry_impl import AgentRegistryServiceImpl
+from postfiat.v3.messages_pb2_grpc import PostFiatAgentRegistryServicer
+from postfiat.v3.messages_pb2 import *
+from a2a.v1.a2a_pb2 import *
+from google.protobuf.empty_pb2 import Empty
+
+
+class TestAgentRegistryServiceImpl:
+    """AgentRegistryServiceImpl unit tests."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.service = AgentRegistryServiceImpl()
+        self.context = Mock(spec=grpc.ServicerContext)
+
+    def test_getagentcard(self):
+        """Test GetAgentCard method."""
+        # TODO: Implement GetAgentCard test
+        request = Mock()
+        response = self.service.GetAgentCard(request, self.context)
+        assert response is not None
+
+    def test_storeagentcard(self):
+        """Test StoreAgentCard method."""
+        # TODO: Implement StoreAgentCard test
+        request = Mock()
+        response = self.service.StoreAgentCard(request, self.context)
+        assert response is not None
+
+    def test_searchagents(self):
+        """Test SearchAgents method."""
+        # TODO: Implement SearchAgents test
+        request = Mock()
+        response = self.service.SearchAgents(request, self.context)
+        assert response is not None
+
+    def test_deleteagentcard(self):
+        """Test DeleteAgentCard method."""
+        # TODO: Implement DeleteAgentCard test
+        request = Mock()
+        response = self.service.DeleteAgentCard(request, self.context)
+        assert response is not None
+
+    def test_getagentbyenvelope(self):
+        """Test GetAgentByEnvelope method."""
+        # TODO: Implement GetAgentByEnvelope test
+        request = Mock()
+        response = self.service.GetAgentByEnvelope(request, self.context)
+        assert response is not None
+
+    def test_service_integration(self):
+        """Test service integration."""
+        # Create gRPC server
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        
+        # Add service to server
+        from postfiat.v3.messages_pb2_grpc import add_PostFiatAgentRegistryServicer_to_server
+        add_PostFiatAgentRegistryServicer_to_server(self.service, server)
+        
+        # Test server creation
+        assert server is not None
+
+    @patch("postfiat.services.impl.agent_registry_impl.AgentRegistryServiceImpl._create_default_storage")
+    def test_with_mock_storage(self, mock_storage):
+        """Test service with mocked storage."""
+        mock_storage.return_value = Mock()
+        service = AgentRegistryServiceImpl()
+        assert service is not None
+
+    def test_error_handling(self):
+        """Test error handling."""
+        # Test with invalid request
+        request = Mock()
+        request.configure_mock(**{"side_effect": Exception("Test error")})
+        
+        # Should handle errors gracefully
+        # TODO: Add specific error handling tests
+        pass
+
+    def test_performance(self):
+        """Test service performance."""
+        import time
+        
+        # Test method performance
+        start_time = time.time()
+        
+        # TODO: Add performance tests
+        
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        # Should complete within reasonable time
+        assert duration < 1.0  # 1 second max
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

@@ -1,1 +1,135 @@
-"""\nUnit tests for EnvelopeStorageServiceImpl.\n\nGenerated tests for proto-defined gRPC service implementation.\n"""\n\nimport pytest\nimport grpc\nfrom unittest.mock import Mock, patch, MagicMock\nfrom concurrent import futures\n\nfrom postfiat.services.impl.envelope_storage_impl import EnvelopeStorageServiceImpl\nfrom postfiat.v3.messages_pb2_grpc import PostFiatEnvelopeStorageServicer\nfrom postfiat.v3.messages_pb2 import *\nfrom a2a.v1.a2a_pb2 import *\nfrom google.protobuf.empty_pb2 import Empty\n\n\nclass TestEnvelopeStorageServiceImpl:\n    """EnvelopeStorageServiceImpl unit tests."""\n\n    def setup_method(self):\n        """Set up test fixtures."""\n        self.service = EnvelopeStorageServiceImpl()\n        self.context = Mock(spec=grpc.ServicerContext)\n\n    def test_storeenvelope(self):\n        """Test StoreEnvelope method."""\n        # TODO: Implement StoreEnvelope test\n        request = Mock()\n        response = self.service.StoreEnvelope(request, self.context)\n        assert response is not None\n\n    def test_retrieveenvelope(self):\n        """Test RetrieveEnvelope method."""\n        # TODO: Implement RetrieveEnvelope test\n        request = Mock()\n        response = self.service.RetrieveEnvelope(request, self.context)\n        assert response is not None\n\n    def test_searchenvelopes(self):\n        """Test SearchEnvelopes method."""\n        # TODO: Implement SearchEnvelopes test\n        request = Mock()\n        response = self.service.SearchEnvelopes(request, self.context)\n        assert response is not None\n\n    def test_deleteenvelope(self):\n        """Test DeleteEnvelope method."""\n        # TODO: Implement DeleteEnvelope test\n        request = Mock()\n        response = self.service.DeleteEnvelope(request, self.context)\n        assert response is not None\n\n    def test_envelopeexists(self):\n        """Test EnvelopeExists method."""\n        # TODO: Implement EnvelopeExists test\n        request = Mock()\n        response = self.service.EnvelopeExists(request, self.context)\n        assert response is not None\n\n    def test_findenvelopesbycontenthash(self):\n        """Test FindEnvelopesByContentHash method."""\n        # TODO: Implement FindEnvelopesByContentHash test\n        request = Mock()\n        response = self.service.FindEnvelopesByContentHash(request, self.context)\n        assert response is not None\n\n    def test_findenvelopesbycontext(self):\n        """Test FindEnvelopesByContext method."""\n        # TODO: Implement FindEnvelopesByContext test\n        request = Mock()\n        response = self.service.FindEnvelopesByContext(request, self.context)\n        assert response is not None\n\n    def test_listenvelopesbysender(self):\n        """Test ListEnvelopesBySender method."""\n        # TODO: Implement ListEnvelopesBySender test\n        request = Mock()\n        response = self.service.ListEnvelopesBySender(request, self.context)\n        assert response is not None\n\n    def test_service_integration(self):\n        """Test service integration."""\n        # Create gRPC server\n        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))\n        \n        # Add service to server\n        from postfiat.v3.messages_pb2_grpc import add_PostFiatEnvelopeStorageServicer_to_server\n        add_PostFiatEnvelopeStorageServicer_to_server(self.service, server)\n        \n        # Test server creation\n        assert server is not None\n\n    @patch("postfiat.services.impl.envelope_storage_impl.EnvelopeStorageServiceImpl._create_default_storage")\n    def test_with_mock_storage(self, mock_storage):\n        """Test service with mocked storage."""\n        mock_storage.return_value = Mock()\n        service = EnvelopeStorageServiceImpl()\n        assert service is not None\n\n    def test_error_handling(self):\n        """Test error handling."""\n        # Test with invalid request\n        request = Mock()\n        request.configure_mock(**{"side_effect": Exception("Test error")})\n        \n        # Should handle errors gracefully\n        # TODO: Add specific error handling tests\n        pass\n\n    @pytest.mark.asyncio\n    async def test_async_operations(self):\n        """Test async operation wrappers."""\n        # TODO: Test async operation wrappers\n        pass\n\n    def test_performance(self):\n        """Test service performance."""\n        import time\n        \n        # Test method performance\n        start_time = time.time()\n        \n        # TODO: Add performance tests\n        \n        end_time = time.time()\n        duration = end_time - start_time\n        \n        # Should complete within reasonable time\n        assert duration < 1.0  # 1 second max\n\n\nif __name__ == "__main__":\n    pytest.main([__file__])
+"""
+Unit tests for EnvelopeStorageServiceImpl.
+
+Generated tests for proto-defined gRPC service implementation.
+"""
+
+import pytest
+import grpc
+from unittest.mock import Mock, patch, MagicMock
+from concurrent import futures
+
+from postfiat.services.impl.envelope_storage_impl import EnvelopeStorageServiceImpl
+from postfiat.v3.messages_pb2_grpc import PostFiatEnvelopeStorageServicer
+from postfiat.v3.messages_pb2 import *
+from a2a.v1.a2a_pb2 import *
+from google.protobuf.empty_pb2 import Empty
+
+
+class TestEnvelopeStorageServiceImpl:
+    """EnvelopeStorageServiceImpl unit tests."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.service = EnvelopeStorageServiceImpl()
+        self.context = Mock(spec=grpc.ServicerContext)
+
+    def test_storeenvelope(self):
+        """Test StoreEnvelope method."""
+        # TODO: Implement StoreEnvelope test
+        request = Mock()
+        response = self.service.StoreEnvelope(request, self.context)
+        assert response is not None
+
+    def test_retrieveenvelope(self):
+        """Test RetrieveEnvelope method."""
+        # TODO: Implement RetrieveEnvelope test
+        request = Mock()
+        response = self.service.RetrieveEnvelope(request, self.context)
+        assert response is not None
+
+    def test_searchenvelopes(self):
+        """Test SearchEnvelopes method."""
+        # TODO: Implement SearchEnvelopes test
+        request = Mock()
+        response = self.service.SearchEnvelopes(request, self.context)
+        assert response is not None
+
+    def test_deleteenvelope(self):
+        """Test DeleteEnvelope method."""
+        # TODO: Implement DeleteEnvelope test
+        request = Mock()
+        response = self.service.DeleteEnvelope(request, self.context)
+        assert response is not None
+
+    def test_envelopeexists(self):
+        """Test EnvelopeExists method."""
+        # TODO: Implement EnvelopeExists test
+        request = Mock()
+        response = self.service.EnvelopeExists(request, self.context)
+        assert response is not None
+
+    def test_findenvelopesbycontenthash(self):
+        """Test FindEnvelopesByContentHash method."""
+        # TODO: Implement FindEnvelopesByContentHash test
+        request = Mock()
+        response = self.service.FindEnvelopesByContentHash(request, self.context)
+        assert response is not None
+
+    def test_findenvelopesbycontext(self):
+        """Test FindEnvelopesByContext method."""
+        # TODO: Implement FindEnvelopesByContext test
+        request = Mock()
+        response = self.service.FindEnvelopesByContext(request, self.context)
+        assert response is not None
+
+    def test_listenvelopesbysender(self):
+        """Test ListEnvelopesBySender method."""
+        # TODO: Implement ListEnvelopesBySender test
+        request = Mock()
+        response = self.service.ListEnvelopesBySender(request, self.context)
+        assert response is not None
+
+    def test_service_integration(self):
+        """Test service integration."""
+        # Create gRPC server
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        
+        # Add service to server
+        from postfiat.v3.messages_pb2_grpc import add_PostFiatEnvelopeStorageServicer_to_server
+        add_PostFiatEnvelopeStorageServicer_to_server(self.service, server)
+        
+        # Test server creation
+        assert server is not None
+
+    @patch("postfiat.services.impl.envelope_storage_impl.EnvelopeStorageServiceImpl._create_default_storage")
+    def test_with_mock_storage(self, mock_storage):
+        """Test service with mocked storage."""
+        mock_storage.return_value = Mock()
+        service = EnvelopeStorageServiceImpl()
+        assert service is not None
+
+    def test_error_handling(self):
+        """Test error handling."""
+        # Test with invalid request
+        request = Mock()
+        request.configure_mock(**{"side_effect": Exception("Test error")})
+        
+        # Should handle errors gracefully
+        # TODO: Add specific error handling tests
+        pass
+
+    @pytest.mark.asyncio
+    async def test_async_operations(self):
+        """Test async operation wrappers."""
+        # TODO: Test async operation wrappers
+        pass
+
+    def test_performance(self):
+        """Test service performance."""
+        import time
+        
+        # Test method performance
+        start_time = time.time()
+        
+        # TODO: Add performance tests
+        
+        end_time = time.time()
+        duration = end_time - start_time
+        
+        # Should complete within reasonable time
+        assert duration < 1.0  # 1 second max
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
