@@ -152,9 +152,15 @@ llm = [
     # Ollama doesn't require additional dependencies (uses httpx)
 ]
 
+# Storage backend dependencies (optional)
+storage = [
+    "ipfshttpclient>=0.8.0,<1.0.0",  # IPFS HTTP client for distributed storage
+    # Future: could add arweave, filecoin, etc.
+]
+
 # All optional dependencies for complete installation
 all = [
-    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm]"
+    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm,storage]"
 ]
 
 [project.urls]

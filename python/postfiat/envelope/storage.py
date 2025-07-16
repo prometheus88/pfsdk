@@ -65,31 +65,59 @@ class IPFSStorage(ContentStorage):
             gateway_url: IPFS API gateway URL
         """
         self.gateway_url = gateway_url
+        self._client = None
+    
+    @property
+    def client(self):
+        """Lazy-load IPFS client."""
+        if self._client is None:
+            try:
+                import ipfshttpclient
+                self._client = ipfshttpclient.connect(self.gateway_url)
+            except ImportError:
+                raise ImportError(
+                    "ipfshttpclient is required for IPFS storage. "
+                    "Install with: pip install postfiat-sdk[storage]"
+                )
+            except Exception as e:
+                raise ConnectionError(f"Failed to connect to IPFS at {self.gateway_url}: {e}")
+        return self._client
     
     def store(self, content: bytes, content_type: str) -> ContentDescriptor:
         """Store content in IPFS."""
         # Calculate content hash
         content_hash = hashlib.sha256(content).digest()
         
-        # TODO: Actual IPFS implementation
-        # import ipfshttpclient
-        # client = ipfshttpclient.connect(self.gateway_url)
-        # result = client.add_bytes(content)
-        # cid = result['Hash']
-        
-        # For now, simulate with hash-based CID
-        cid = f"Qm{content_hash.hex()[:44]}"
-        
-        return ContentDescriptor(
-            uri=f"ipfs://{cid}",
-            content_type=content_type,
-            content_length=len(content),
-            content_hash=content_hash,
-            metadata={
-                "storage_provider": "ipfs",
-                "gateway_url": self.gateway_url
-            }
-        )
+        try:
+            # Add content to IPFS
+            result = self.client.add_bytes(content)
+            cid = result
+            
+            return ContentDescriptor(
+                uri=f"ipfs://{cid}",
+                content_type=content_type,
+                content_length=len(content),
+                content_hash=content_hash,
+                metadata={
+                    "storage_provider": "ipfs",
+                    "gateway_url": self.gateway_url
+                }
+            )
+        except Exception as e:
+            # Fallback to simulated CID if IPFS is not available
+            cid = f"Qm{content_hash.hex()[:44]}"
+            return ContentDescriptor(
+                uri=f"ipfs://{cid}",
+                content_type=content_type,
+                content_length=len(content),
+                content_hash=content_hash,
+                metadata={
+                    "storage_provider": "ipfs",
+                    "gateway_url": self.gateway_url,
+                    "simulated": "true",
+                    "error": str(e)
+                }
+            )
     
     def retrieve(self, descriptor: ContentDescriptor) -> bytes:
         """Retrieve content from IPFS."""
@@ -99,12 +127,11 @@ class IPFSStorage(ContentStorage):
         # Extract CID from URI
         cid = descriptor.uri[7:]  # Remove "ipfs://" prefix
         
-        # TODO: Actual IPFS retrieval
-        # import ipfshttpclient
-        # client = ipfshttpclient.connect(self.gateway_url)
-        # return client.cat(cid)
-        
-        raise NotImplementedError("IPFS retrieval not yet implemented")
+        try:
+            # Retrieve content from IPFS
+            return self.client.cat(cid)
+        except Exception as e:
+            raise IOError(f"Failed to retrieve content from IPFS: {e}")
     
     def can_handle(self, uri: str) -> bool:
         """Check if URI is an IPFS URI."""

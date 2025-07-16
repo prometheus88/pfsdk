@@ -39,23 +39,45 @@ export abstract class ContentStorage {
  */
 export class IPFSStorage extends ContentStorage {
   private gatewayUrl: string;
+  private _client: any;
 
   constructor(gatewayUrl: string = 'http://localhost:5001') {
     super();
     this.gatewayUrl = gatewayUrl;
   }
 
+  private async getClient() {
+    if (!this._client) {
+      try {
+        const { create } = await import('ipfs-http-client');
+        this._client = create({ url: this.gatewayUrl });
+      } catch (error) {
+        throw new Error(
+          'ipfs-http-client is required for IPFS storage. ' +
+          'Install with: npm install ipfs-http-client'
+        );
+      }
+    }
+    return this._client;
+  }
+
   async store(content: Uint8Array, contentType: string): Promise<ContentDescriptor> {
     // Calculate content hash
     const contentHash = createHash('sha256').update(content).digest();
     
-    // TODO: Actual IPFS implementation
-    // const ipfsClient = create({ url: this.gatewayUrl });
-    // const result = await ipfsClient.add(content);
-    // const cid = result.cid.toString();
+    let cid: string;
+    let simulated = false;
     
-    // For now, simulate with hash-based CID
-    const cid = `Qm${contentHash.toString('hex').substring(0, 44)}`;
+    try {
+      // Try actual IPFS storage
+      const ipfsClient = await this.getClient();
+      const result = await ipfsClient.add(content);
+      cid = result.cid.toString();
+    } catch (error) {
+      // Fallback to simulated CID if IPFS is not available
+      cid = `Qm${contentHash.toString('hex').substring(0, 44)}`;
+      simulated = true;
+    }
     
     const descriptor = new ContentDescriptor();
     descriptor.setUri(`ipfs://${cid}`);
@@ -66,6 +88,9 @@ export class IPFSStorage extends ContentStorage {
     const metadataMap = descriptor.getMetadataMap();
     metadataMap.set('storage_provider', 'ipfs');
     metadataMap.set('gateway_url', this.gatewayUrl);
+    if (simulated) {
+      metadataMap.set('simulated', 'true');
+    }
     
     return descriptor;
   }
@@ -78,15 +103,25 @@ export class IPFSStorage extends ContentStorage {
     // Extract CID from URI
     const cid = descriptor.getUri().substring(7); // Remove "ipfs://" prefix
     
-    // TODO: Actual IPFS retrieval
-    // const ipfsClient = create({ url: this.gatewayUrl });
-    // const chunks = [];
-    // for await (const chunk of ipfsClient.cat(cid)) {
-    //   chunks.push(chunk);
-    // }
-    // return new Uint8Array(Buffer.concat(chunks));
-    
-    throw new Error('IPFS retrieval not yet implemented');
+    try {
+      const ipfsClient = await this.getClient();
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of ipfsClient.cat(cid)) {
+        chunks.push(chunk);
+      }
+      
+      // Combine chunks into single Uint8Array
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return result;
+    } catch (error: any) {
+      throw new Error(`Failed to retrieve content from IPFS: ${error.message}`);
+    }
   }
 
   canHandle(uri: string): boolean {
