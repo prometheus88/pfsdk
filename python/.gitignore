@@ -33,3 +33,4 @@ tests/generated/
 docs/
 
 *.pyc
+__pycache__/
