@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 from concurrent import futures
 
 from postfiat.services.impl.agent_registry_impl import AgentRegistryServiceImpl
-from postfiat.v3.messages_pb2_grpc import PostFiatAgentRegistryServicer
+from postfiat.v3.messages_pb2_grpc import PostFiatAgentRegistryServiceServicer
 from postfiat.v3.messages_pb2 import *
 from a2a.v1.a2a_pb2 import *
 from google.protobuf.empty_pb2 import Empty
@@ -65,17 +65,16 @@ class TestAgentRegistryServiceImpl:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         
         # Add service to server
-        from postfiat.v3.messages_pb2_grpc import add_PostFiatAgentRegistryServicer_to_server
-        add_PostFiatAgentRegistryServicer_to_server(self.service, server)
+        from postfiat.v3.messages_pb2_grpc import add_PostFiatAgentRegistryServiceServicer_to_server
+        add_PostFiatAgentRegistryServiceServicer_to_server(self.service, server)
         
         # Test server creation
         assert server is not None
 
-    @patch("postfiat.services.impl.agent_registry_impl.AgentRegistryServiceImpl._create_default_storage")
-    def test_with_mock_storage(self, mock_storage):
+    def test_with_mock_storage(self):
         """Test service with mocked storage."""
-        mock_storage.return_value = Mock()
-        service = AgentRegistryServiceImpl()
+        mock_storage = Mock()
+        service = AgentRegistryServiceImpl(storage=mock_storage)
         assert service is not None
 
     def test_error_handling(self):

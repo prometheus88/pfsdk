@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 from concurrent import futures
 
 from postfiat.services.impl.envelope_storage_impl import EnvelopeStorageServiceImpl
-from postfiat.v3.messages_pb2_grpc import PostFiatEnvelopeStorageServicer
+from postfiat.v3.messages_pb2_grpc import PostFiatEnvelopeStorageServiceServicer
 from postfiat.v3.messages_pb2 import *
 from a2a.v1.a2a_pb2 import *
 from google.protobuf.empty_pb2 import Empty
@@ -86,17 +86,16 @@ class TestEnvelopeStorageServiceImpl:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         
         # Add service to server
-        from postfiat.v3.messages_pb2_grpc import add_PostFiatEnvelopeStorageServicer_to_server
-        add_PostFiatEnvelopeStorageServicer_to_server(self.service, server)
+        from postfiat.v3.messages_pb2_grpc import add_PostFiatEnvelopeStorageServiceServicer_to_server
+        add_PostFiatEnvelopeStorageServiceServicer_to_server(self.service, server)
         
         # Test server creation
         assert server is not None
 
-    @patch("postfiat.services.impl.envelope_storage_impl.EnvelopeStorageServiceImpl._create_default_storage")
-    def test_with_mock_storage(self, mock_storage):
+    def test_with_mock_storage(self):
         """Test service with mocked storage."""
-        mock_storage.return_value = Mock()
-        service = EnvelopeStorageServiceImpl()
+        mock_storage = Mock()
+        service = EnvelopeStorageServiceImpl(store=mock_storage)
         assert service is not None
 
     def test_error_handling(self):
@@ -109,8 +108,7 @@ class TestEnvelopeStorageServiceImpl:
         # TODO: Add specific error handling tests
         pass
 
-    @pytest.mark.asyncio
-    async def test_async_operations(self):
+    def test_async_operations(self):
         """Test async operation wrappers."""
         # TODO: Test async operation wrappers
         pass

@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 from concurrent import futures
 
 from postfiat.services.impl.content_storage_impl import ContentStorageServiceImpl
-from postfiat.v3.messages_pb2_grpc import PostFiatContentStorageServicer
+from postfiat.v3.messages_pb2_grpc import PostFiatContentStorageServiceServicer
 from postfiat.v3.messages_pb2 import *
 from a2a.v1.a2a_pb2 import *
 from google.protobuf.empty_pb2 import Empty
@@ -58,17 +58,16 @@ class TestContentStorageServiceImpl:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         
         # Add service to server
-        from postfiat.v3.messages_pb2_grpc import add_PostFiatContentStorageServicer_to_server
-        add_PostFiatContentStorageServicer_to_server(self.service, server)
+        from postfiat.v3.messages_pb2_grpc import add_PostFiatContentStorageServiceServicer_to_server
+        add_PostFiatContentStorageServiceServicer_to_server(self.service, server)
         
         # Test server creation
         assert server is not None
 
-    @patch("postfiat.services.impl.content_storage_impl.ContentStorageServiceImpl._create_default_storage")
-    def test_with_mock_storage(self, mock_storage):
+    def test_with_mock_storage(self):
         """Test service with mocked storage."""
-        mock_storage.return_value = Mock()
-        service = ContentStorageServiceImpl()
+        mock_storage = Mock()
+        service = ContentStorageServiceImpl(storage=mock_storage)
         assert service is not None
 
     def test_error_handling(self):
