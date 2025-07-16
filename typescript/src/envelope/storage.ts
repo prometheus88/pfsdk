@@ -80,28 +80,27 @@ export class IPFSStorage extends ContentStorage {
     }
     
     const descriptor = new ContentDescriptor();
-    descriptor.setUri(`ipfs://${cid}`);
-    descriptor.setContentType(contentType);
-    descriptor.setContentLength(content.length);
-    descriptor.setContentHash(contentHash);
+    descriptor.uri = `ipfs:${cid}`;
+    descriptor.contentType = contentType;
+    descriptor.contentLength = BigInt(content.length);
+    descriptor.contentHash = contentHash;
     
-    const metadataMap = descriptor.getMetadataMap();
-    metadataMap.set('storage_provider', 'ipfs');
-    metadataMap.set('gateway_url', this.gatewayUrl);
+    descriptor.metadata['storage_provider'] = 'ipfs';
+    descriptor.metadata['gateway_url'] = this.gatewayUrl;
     if (simulated) {
-      metadataMap.set('simulated', 'true');
+      descriptor.metadata['simulated'] = 'true';
     }
     
     return descriptor;
   }
 
   async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
-    if (!this.canHandle(descriptor.getUri())) {
-      throw new ValidationError(`Invalid IPFS URI: ${descriptor.getUri()}`);
+    if (!this.canHandle(descriptor.uri)) {
+      throw new ValidationError(`Invalid IPFS URI: ${descriptor.uri}`);
     }
 
     // Extract CID from URI
-    const cid = descriptor.getUri().substring(7); // Remove "ipfs://" prefix
+    const cid = descriptor.uri.substring(5); // Remove "ipfs:" prefix
     
     try {
       const ipfsClient = await this.getClient();
@@ -125,7 +124,7 @@ export class IPFSStorage extends ContentStorage {
   }
 
   canHandle(uri: string): boolean {
-    return uri.startsWith('ipfs://');
+    return uri.startsWith('ipfs:');
   }
 }
 
@@ -182,15 +181,14 @@ export class RedisStorage extends ContentStorage {
       await client.set(key, JSON.stringify(contentData));
       
       const descriptor = new ContentDescriptor();
-      descriptor.setUri(`redis://${Buffer.from(contentHash).toString('hex')}`);
-      descriptor.setContentType(contentType);
-      descriptor.setContentLength(content.length);
-      descriptor.setContentHash(contentHash);
+      descriptor.uri = `redis:${Buffer.from(contentHash).toString('hex')}`;
+      descriptor.contentType = contentType;
+      descriptor.contentLength = BigInt(content.length);
+      descriptor.contentHash = contentHash;
       
-      const metadataMap = descriptor.getMetadataMap();
-      metadataMap.set('storage_provider', 'redis');
-      metadataMap.set('redis_key', key);
-      metadataMap.set('redis_url', this.redisUrl);
+      descriptor.metadata['storage_provider'] = 'redis';
+      descriptor.metadata['redis_key'] = key;
+      descriptor.metadata['redis_url'] = this.redisUrl;
       
       return descriptor;
     } catch (error: any) {
@@ -199,12 +197,12 @@ export class RedisStorage extends ContentStorage {
   }
 
   async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
-    if (!this.canHandle(descriptor.getUri())) {
-      throw new ValidationError(`Invalid Redis URI: ${descriptor.getUri()}`);
+    if (!this.canHandle(descriptor.uri)) {
+      throw new ValidationError(`Invalid Redis URI: ${descriptor.uri}`);
     }
 
     // Extract content hash from URI
-    const contentHashHex = descriptor.getUri().substring(8); // Remove "redis://" prefix
+    const contentHashHex = descriptor.uri.substring(6); // Remove "redis:" prefix
     const contentHash = Buffer.from(contentHashHex, 'hex');
     
     const key = this.contentKey(contentHash);
@@ -214,7 +212,7 @@ export class RedisStorage extends ContentStorage {
       const contentData = await client.get(key);
       
       if (!contentData) {
-        throw new Error(`Content not found in Redis: ${descriptor.getUri()}`);
+        throw new Error(`Content not found in Redis: ${descriptor.uri}`);
       }
       
       const data = JSON.parse(contentData);
@@ -223,7 +221,7 @@ export class RedisStorage extends ContentStorage {
       // Verify content hash
       const actualHash = createHash('sha256').update(content).digest();
       if (!Buffer.from(actualHash).equals(contentHash)) {
-        throw new Error(`Content hash mismatch for ${descriptor.getUri()}`);
+        throw new Error(`Content hash mismatch for ${descriptor.uri}`);
       }
       
       return new Uint8Array(content);
@@ -233,7 +231,7 @@ export class RedisStorage extends ContentStorage {
   }
 
   canHandle(uri: string): boolean {
-    return uri.startsWith('redis://');
+    return uri.startsWith('redis:');
   }
 }
 
@@ -249,34 +247,35 @@ export class InlineStorage extends ContentStorage {
     const contentB64 = Buffer.from(content).toString('base64');
     
     const descriptor = new ContentDescriptor();
-    descriptor.setUri('inline://data');
-    descriptor.setContentType(contentType);
-    descriptor.setContentLength(content.length);
-    descriptor.setContentHash(contentHash);
+    descriptor.uri = `data:${contentType};base64,${contentB64}`;
+    descriptor.contentType = contentType;
+    descriptor.contentLength = BigInt(content.length);
+    descriptor.contentHash = contentHash;
     
-    const metadataMap = descriptor.getMetadataMap();
-    metadataMap.set('storage_provider', 'inline');
-    metadataMap.set('content_data', contentB64);
+    descriptor.metadata['storage_provider'] = 'inline';
+    descriptor.metadata['content_data'] = contentB64;
     
     return descriptor;
   }
 
   async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
-    if (!this.canHandle(descriptor.getUri())) {
-      throw new ValidationError(`Invalid inline URI: ${descriptor.getUri()}`);
+    if (!this.canHandle(descriptor.uri)) {
+      throw new ValidationError(`Invalid data URI: ${descriptor.uri}`);
     }
 
     try {
-      const contentB64 = descriptor.getMetadataMap().get('content_data');
-      if (!contentB64) {
-        throw new Error('No inline content data found in descriptor');
+      // Parse data URI: data:contentType;base64,data
+      const match = descriptor.uri.match(/^data:([^;]+);base64,(.+)$/);
+      if (!match) {
+        throw new Error('Invalid data URI format');
       }
-
+      
+      const contentB64 = match[2];
       const content = Buffer.from(contentB64, 'base64');
       
       // Verify content hash
       const actualHash = createHash('sha256').update(content).digest();
-      if (!Buffer.from(actualHash).equals(Buffer.from(descriptor.getContentHash()))) {
+      if (!Buffer.from(actualHash).equals(Buffer.from(descriptor.contentHash))) {
         throw new Error('Content hash mismatch for inline content');
       }
       
@@ -287,7 +286,7 @@ export class InlineStorage extends ContentStorage {
   }
 
   canHandle(uri: string): boolean {
-    return uri.startsWith('inline://');
+    return uri.startsWith('data:');
   }
 }
 
@@ -316,19 +315,18 @@ export class MultipartStorage extends ContentStorage {
     const totalParts = Math.ceil(content.length / this.maxPartSize);
     
     // Create multipart URI - describes how to find all parts
-    const uri = `multipart://${messageId}`;
+    const uri = `multipart:${messageId}`;
     
     const descriptor = new ContentDescriptor();
-    descriptor.setUri(uri);
-    descriptor.setContentType(contentType);
-    descriptor.setContentLength(content.length);
-    descriptor.setContentHash(contentHash);
+    descriptor.uri = uri;
+    descriptor.contentType = contentType;
+    descriptor.contentLength = BigInt(content.length);
+    descriptor.contentHash = contentHash;
     
-    const metadataMap = descriptor.getMetadataMap();
-    metadataMap.set('storage_provider', 'multipart');
-    metadataMap.set('message_id', messageId);
-    metadataMap.set('total_parts', totalParts.toString());
-    metadataMap.set('part_size', this.maxPartSize.toString());
+    descriptor.metadata['storage_provider'] = 'multipart';
+    descriptor.metadata['message_id'] = messageId;
+    descriptor.metadata['total_parts'] = totalParts.toString();
+    descriptor.metadata['part_size'] = this.maxPartSize.toString();
     
     return descriptor;
   }
@@ -342,12 +340,12 @@ export class MultipartStorage extends ContentStorage {
     encryptionMode: EncryptionMode = EncryptionMode.PROTECTED,
     baseMetadata: { [key: string]: string } = {}
   ): Promise<Set<Envelope>> {
-    if (!this.canHandle(descriptor.getUri())) {
-      throw new ValidationError(`Invalid multipart URI: ${descriptor.getUri()}`);
+    if (!this.canHandle(descriptor.uri)) {
+      throw new ValidationError(`Invalid multipart URI: ${descriptor.uri}`);
     }
 
-    const messageId = descriptor.getMetadataMap().get('message_id');
-    const totalParts = parseInt(descriptor.getMetadataMap().get('total_parts') || '0');
+    const messageId = descriptor.metadata['message_id'];
+    const totalParts = parseInt(descriptor.metadata['total_parts'] || '0');
 
     if (!messageId || totalParts === 0) {
       throw new ValidationError('Missing multipart metadata');
@@ -361,29 +359,28 @@ export class MultipartStorage extends ContentStorage {
 
       // Create multipart message part
       const multipart = new MultiPartMessagePart();
-      multipart.setMessageId(messageId);
-      multipart.setPartNumber(partNumber);
-      multipart.setTotalParts(totalParts);
-      multipart.setContent(chunkContent);
-      multipart.setCompleteMessageHash(descriptor.getContentHash_asB64());
+      multipart.messageId = messageId;
+      multipart.partNumber = partNumber;
+      multipart.totalParts = totalParts;
+      multipart.content = chunkContent;
+      multipart.completeMessageHash = Buffer.from(descriptor.contentHash).toString('base64');
 
       // Create envelope for this part
-      const messageBytes = multipart.serializeBinary();
+      const messageBytes = multipart.toBinary();
 
       const metadata = { ...baseMetadata };
       metadata['multipart'] = `${partNumber}/${totalParts}`;
       metadata['message_id'] = messageId;
 
       const envelope = new Envelope();
-      envelope.setVersion(1);
-      envelope.setContentHash(createHash('sha256').update(messageBytes).digest('hex'));
-      envelope.setMessageType(MessageType.MULTIPART_MESSAGE_PART);
-      envelope.setEncryption(encryptionMode);
-      envelope.setMessage(messageBytes);
+      envelope.version = 1;
+      envelope.contentHash = createHash('sha256').update(messageBytes).digest('hex');
+      envelope.messageType = MessageType.MULTIPART_MESSAGE_PART;
+      envelope.encryption = encryptionMode;
+      envelope.message = messageBytes;
       
-      const metadataMap = envelope.getMetadataMap();
       Object.entries(metadata).forEach(([key, value]) => {
-        metadataMap.set(key, value);
+        envelope.metadata[key] = value;
       });
 
       envelopes.add(envelope);
@@ -397,7 +394,7 @@ export class MultipartStorage extends ContentStorage {
   }
 
   canHandle(uri: string): boolean {
-    return uri.startsWith('multipart://');
+    return uri.startsWith('multipart:');
   }
 }
 
@@ -411,12 +408,12 @@ export class HTTPStorage extends ContentStorage {
   }
 
   async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
-    if (!this.canHandle(descriptor.getUri())) {
-      throw new ValidationError(`Invalid HTTP URI: ${descriptor.getUri()}`);
+    if (!this.canHandle(descriptor.uri)) {
+      throw new ValidationError(`Invalid HTTP URI: ${descriptor.uri}`);
     }
 
     // TODO: Implement HTTP retrieval
-    // const response = await fetch(descriptor.getUri());
+    // const response = await fetch(descriptor.uri);
     // return new Uint8Array(await response.arrayBuffer());
     
     throw new Error('HTTP retrieval not yet implemented');
@@ -449,12 +446,12 @@ export class CompositeStorage extends ContentStorage {
 
   async retrieve(descriptor: ContentDescriptor): Promise<Uint8Array> {
     for (const storage of this.storages) {
-      if (storage.canHandle(descriptor.getUri())) {
+      if (storage.canHandle(descriptor.uri)) {
         return storage.retrieve(descriptor);
       }
     }
 
-    throw new ValidationError(`No storage backend can handle URI: ${descriptor.getUri()}`);
+    throw new ValidationError(`No storage backend can handle URI: ${descriptor.uri}`);
   }
 
   canHandle(uri: string): boolean {
