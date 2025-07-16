@@ -4,7 +4,7 @@ Provides different strategies for storing and retrieving content.
 """
 
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Set
+from typing import Tuple, List
 import hashlib
 import uuid
 import json
@@ -188,7 +188,7 @@ class MultipartStorage(ContentStorage):
         descriptor: ContentDescriptor,
         encryption_mode: EncryptionMode = EncryptionMode.PROTECTED,
         base_metadata: dict = None
-    ) -> Set[Envelope]:
+    ) -> List[Envelope]:
         """Create multipart envelopes for ledger storage.
         
         Args:
@@ -198,7 +198,7 @@ class MultipartStorage(ContentStorage):
             base_metadata: Base metadata for all envelopes
             
         Returns:
-            Set of envelopes containing multipart message parts
+            List of envelopes containing multipart message parts
         """
         if not self.can_handle(descriptor.uri):
             raise ValidationError(f"Invalid ledger URI: {descriptor.uri}")
@@ -209,7 +209,7 @@ class MultipartStorage(ContentStorage):
         if not message_id or total_parts == 0:
             raise ValidationError("Missing multipart metadata")
         
-        envelopes = set()
+        envelopes = []
         
         for i in range(0, len(content), self.max_part_size):
             part_number = (i // self.max_part_size) + 1
@@ -235,14 +235,14 @@ class MultipartStorage(ContentStorage):
             
             envelope = Envelope(
                 version=1,
-                content_hash=hashlib.sha256(message_bytes).hexdigest(),
+                content_hash=hashlib.sha256(message_bytes).digest(),
                 message_type=MessageType.MULTIPART_MESSAGE_PART,
                 encryption=encryption_mode,
                 message=message_bytes,
                 metadata=metadata
             )
             
-            envelopes.add(envelope)
+            envelopes.append(envelope)
         
         return envelopes
     

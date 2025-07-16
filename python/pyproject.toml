@@ -259,6 +259,7 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "gui: marks tests that require GUI",
+    "asyncio: marks tests as async",
 ]
 
 [tool.coverage.run]
