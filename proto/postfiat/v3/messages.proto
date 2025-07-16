@@ -173,16 +173,16 @@ message PostFiatA2AMessage {
 // ============================================================================
 
 // PostFiat Agent Registry Service
-service PostFiatAgentRegistry {
+service PostFiatAgentRegistryService {
   // Get agent card (A2A compliant)
-  rpc GetAgentCard(a2a.v1.GetAgentCardRequest) returns (a2a.v1.AgentCard) {
+  rpc GetAgentCard(a2a.v1.GetAgentCardRequest) returns (GetAgentCardResponse) {
     option (google.api.http) = {
       get: "/v3/agents/card"
     };
   }
   
   // Store agent card with PostFiat capabilities
-  rpc StoreAgentCard(StoreAgentCardRequest) returns (a2a.v1.AgentCard) {
+  rpc StoreAgentCard(StoreAgentCardRequest) returns (StoreAgentCardResponse) {
     option (google.api.http) = {
       post: "/v3/agents"
       body: "*"
@@ -204,7 +204,7 @@ service PostFiatAgentRegistry {
   }
   
   // Get agent by envelope sender
-  rpc GetAgentByEnvelope(GetAgentByEnvelopeRequest) returns (a2a.v1.AgentCard) {
+  rpc GetAgentByEnvelope(GetAgentByEnvelopeRequest) returns (GetAgentByEnvelopeResponse) {
     option (google.api.http) = {
       post: "/v3/agents/by-envelope"
       body: "*"
@@ -213,9 +213,9 @@ service PostFiatAgentRegistry {
 }
 
 // PostFiat Content Storage Service
-service PostFiatContentStorage {
+service PostFiatContentStorageService {
   // Store content and return descriptor
-  rpc StoreContent(StoreContentRequest) returns (ContentDescriptor) {
+  rpc StoreContent(StoreContentRequest) returns (StoreContentResponse) {
     option (google.api.http) = {
       post: "/v3/content"
       body: "*"
@@ -223,7 +223,7 @@ service PostFiatContentStorage {
   }
   
   // Retrieve content by descriptor
-  rpc RetrieveContent(RetrieveContentRequest) returns (ContentResponse) {
+  rpc RetrieveContent(RetrieveContentRequest) returns (RetrieveContentResponse) {
     option (google.api.http) = {
       post: "/v3/content/retrieve"
       body: "*"
@@ -246,7 +246,7 @@ service PostFiatContentStorage {
 }
 
 // PostFiat Envelope Storage Service
-service PostFiatEnvelopeStorage {
+service PostFiatEnvelopeStorageService {
   // Store envelope
   rpc StoreEnvelope(StoreEnvelopeRequest) returns (StoreEnvelopeResponse) {
     option (google.api.http) = {
@@ -256,7 +256,7 @@ service PostFiatEnvelopeStorage {
   }
   
   // Retrieve envelope by ID
-  rpc RetrieveEnvelope(RetrieveEnvelopeRequest) returns (Envelope) {
+  rpc RetrieveEnvelope(RetrieveEnvelopeRequest) returns (RetrieveEnvelopeResponse) {
     option (google.api.http) = {
       get: "/v3/envelopes/{envelope_id}"
     };
@@ -358,12 +358,6 @@ message RetrieveContentRequest {
   ContentDescriptor descriptor = 1;
 }
 
-message ContentResponse {
-  bytes content = 1;
-  string content_type = 2;
-  int64 content_length = 3;
-}
-
 message DeleteContentRequest {
   string content_id = 1;
 }
@@ -456,4 +450,31 @@ message ListEnvelopesBySenderRequest {
 message ListEnvelopesBySenderResponse {
   repeated Envelope envelopes = 1;
   int32 total_count = 2;
+}
+
+// Response message types for proper gRPC service compliance
+message GetAgentCardResponse {
+  a2a.v1.AgentCard agent_card = 1;
+}
+
+message StoreAgentCardResponse {
+  a2a.v1.AgentCard agent_card = 1;
+}
+
+message GetAgentByEnvelopeResponse {
+  a2a.v1.AgentCard agent_card = 1;
+}
+
+message StoreContentResponse {
+  ContentDescriptor descriptor = 1;
+}
+
+message RetrieveContentResponse {
+  bytes content = 1;
+  string content_type = 2;
+  int64 content_length = 3;
+}
+
+message RetrieveEnvelopeResponse {
+  Envelope envelope = 1;
 }
