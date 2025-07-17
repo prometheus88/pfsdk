@@ -8,9 +8,24 @@ EVMEnvelopeStore, XRPLEnvelopeStore, and CompositeEnvelopeStore.
 import pytest
 import hashlib
 import json
+import base64
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime
 from typing import Dict, Any
+import sys
+
+# Skip integration tests if dependencies aren't available
+try:
+    import redis.asyncio
+    redis_available = True
+except ImportError:
+    redis_available = False
+
+try:
+    import web3
+    web3_available = True
+except ImportError:
+    web3_available = False
 
 from postfiat.envelope.envelope_store import (
     EnvelopeStore, CompositeEnvelopeStore, EnvelopeNotFoundError, StorageError
@@ -21,6 +36,7 @@ from postfiat.envelope.stores.xrpl_store import XRPLEnvelopeStore
 from postfiat.v3.messages_pb2 import Envelope, MessageType, EncryptionMode
 
 
+@pytest.mark.skipif(not redis_available, reason="redis not available")
 class TestRedisEnvelopeStore:
     """Test RedisEnvelopeStore implementation."""
     
@@ -35,19 +51,21 @@ class TestRedisEnvelopeStore:
         self.test_envelope.metadata["sender"] = "test_sender"
         self.test_envelope.metadata["timestamp"] = str(datetime.now().timestamp())
     
-    @patch('postfiat.envelope.stores.redis_store.redis.asyncio')
     @pytest.mark.asyncio
-    async def test_store_envelope(self, mock_redis):
+    async def test_store_envelope(self):
         """Test storing an envelope in Redis."""
+        mock_redis = MagicMock()
+        mock_asyncio = MagicMock()
         mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
+        mock_asyncio.from_url.return_value = mock_client
         mock_pipeline = AsyncMock()
         mock_client.pipeline.return_value = mock_pipeline
         
-        envelope_id = await self.store.store(self.test_envelope)
+        with patch.dict('sys.modules', {'redis': mock_redis, 'redis.asyncio': mock_asyncio}):
+            envelope_id = await self.store.store(self.test_envelope)
         
-        # Verify Redis operations
-        mock_redis.from_url.assert_called_once_with("redis://localhost:6379")
+            # Verify Redis operations
+            mock_asyncio.from_url.assert_called_once_with("redis://localhost:6379")
         mock_client.pipeline.assert_called_once()
         mock_pipeline.set.assert_called()
         mock_pipeline.sadd.assert_called()
@@ -61,19 +79,21 @@ class TestRedisEnvelopeStore:
         assert self.test_envelope.metadata["storage_backend"] == "redis"
         assert self.test_envelope.metadata["envelope_id"] == envelope_id
     
-    @patch('postfiat.envelope.stores.redis_store.redis.asyncio')
     @pytest.mark.asyncio
-    async def test_retrieve_envelope(self, mock_redis):
+    async def test_retrieve_envelope(self):
         """Test retrieving an envelope from Redis."""
+        mock_redis = MagicMock()
+        mock_asyncio = MagicMock()
         mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
+        mock_asyncio.from_url.return_value = mock_client
         
         # Mock envelope data
         envelope_data = self.test_envelope.SerializeToString()
         mock_client.get.return_value = envelope_data
         
-        envelope_id = "test_id"
-        retrieved_envelope = await self.store.retrieve(envelope_id)
+        with patch.dict('sys.modules', {'redis': mock_redis, 'redis.asyncio': mock_asyncio}):
+            envelope_id = "test_id"
+            retrieved_envelope = await self.store.retrieve(envelope_id)
         
         # Verify Redis call
         mock_client.get.assert_called_once_with(f"postfiat:envelope:{envelope_id}")
@@ -83,31 +103,35 @@ class TestRedisEnvelopeStore:
         assert retrieved_envelope.content_hash == self.test_envelope.content_hash
         assert retrieved_envelope.message_type == self.test_envelope.message_type
     
-    @patch('postfiat.envelope.stores.redis_store.redis.asyncio')
     @pytest.mark.asyncio
-    async def test_retrieve_not_found(self, mock_redis):
+    async def test_retrieve_not_found(self):
         """Test retrieving non-existent envelope."""
+        mock_redis = MagicMock()
+        mock_asyncio = MagicMock()
         mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
+        mock_asyncio.from_url.return_value = mock_client
         mock_client.get.return_value = None
         
-        with pytest.raises(EnvelopeNotFoundError, match="Envelope 'nonexistent' not found"):
-            await self.store.retrieve("nonexistent")
+        with patch.dict('sys.modules', {'redis': mock_redis, 'redis.asyncio': mock_asyncio}):
+            with pytest.raises(EnvelopeNotFoundError, match="Envelope 'nonexistent' not found"):
+                await self.store.retrieve("nonexistent")
     
-    @patch('postfiat.envelope.stores.redis_store.redis.asyncio')
     @pytest.mark.asyncio
-    async def test_find_by_content_hash(self, mock_redis):
+    async def test_find_by_content_hash(self):
         """Test finding envelopes by content hash."""
+        mock_redis = MagicMock()
+        mock_asyncio = MagicMock()
         mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
+        mock_asyncio.from_url.return_value = mock_client
         
-        # Mock Redis responses
-        mock_client.smembers.return_value = [b"envelope_id_1", b"envelope_id_2"]
-        envelope_data = self.test_envelope.SerializeToString()
-        mock_client.get.return_value = envelope_data
-        
-        content_hash = b"test_hash"
-        envelopes = await self.store.find_by_content_hash(content_hash)
+        with patch.dict('sys.modules', {'redis': mock_redis, 'redis.asyncio': mock_asyncio}):
+            # Mock Redis responses
+            mock_client.smembers.return_value = [b"envelope_id_1", b"envelope_id_2"]
+            envelope_data = self.test_envelope.SerializeToString()
+            mock_client.get.return_value = envelope_data
+            
+            content_hash = b"test_hash"
+            envelopes = await self.store.find_by_content_hash(content_hash)
         
         # Verify Redis operations
         expected_key = f"postfiat:content_hash:{content_hash.hex()}"
@@ -117,41 +141,45 @@ class TestRedisEnvelopeStore:
         assert len(envelopes) == 2
         assert all(isinstance(env, Envelope) for env in envelopes)
     
-    @patch('postfiat.envelope.stores.redis_store.redis.asyncio')
     @pytest.mark.asyncio
-    async def test_exists(self, mock_redis):
+    async def test_exists(self):
         """Test checking if envelope exists."""
+        mock_redis = MagicMock()
+        mock_asyncio = MagicMock()
         mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
+        mock_asyncio.from_url.return_value = mock_client
         mock_client.exists.return_value = 1
         
-        exists = await self.store.exists("test_id")
-        
-        assert exists is True
-        mock_client.exists.assert_called_once_with("postfiat:envelope:test_id")
+        with patch.dict('sys.modules', {'redis': mock_redis, 'redis.asyncio': mock_asyncio}):
+            exists = await self.store.exists("test_id")
+            
+            assert exists is True
+            mock_client.exists.assert_called_once_with("postfiat:envelope:test_id")
     
-    @patch('postfiat.envelope.stores.redis_store.redis.asyncio')
     @pytest.mark.asyncio
-    async def test_delete_envelope(self, mock_redis):
+    async def test_delete_envelope(self):
         """Test deleting an envelope."""
+        mock_redis = MagicMock()
+        mock_asyncio = MagicMock()
         mock_client = AsyncMock()
-        mock_redis.from_url.return_value = mock_client
+        mock_asyncio.from_url.return_value = mock_client
         
-        # Mock retrieve for cleanup
-        envelope_data = self.test_envelope.SerializeToString()
-        mock_client.get.return_value = envelope_data
-        
-        # Mock pipeline operations
-        mock_pipeline = AsyncMock()
-        mock_client.pipeline.return_value = mock_pipeline
-        mock_pipeline.exec.return_value = [[1], [1]]  # Simulate successful deletion
-        
-        deleted = await self.store.delete("test_id")
-        
-        assert deleted is True
-        mock_client.pipeline.assert_called_once()
-        mock_pipeline.delete.assert_called()
-        mock_pipeline.exec.assert_called_once()
+        with patch.dict('sys.modules', {'redis': mock_redis, 'redis.asyncio': mock_asyncio}):
+            # Mock retrieve for cleanup
+            envelope_data = self.test_envelope.SerializeToString()
+            mock_client.get.return_value = envelope_data
+            
+            # Mock pipeline operations
+            mock_pipeline = AsyncMock()
+            mock_client.pipeline.return_value = mock_pipeline
+            mock_pipeline.exec.return_value = [[1], [1]]  # Simulate successful deletion
+            
+            deleted = await self.store.delete("test_id")
+            
+            assert deleted is True
+            mock_client.pipeline.assert_called_once()
+            mock_pipeline.delete.assert_called()
+            mock_pipeline.exec.assert_called_once()
     
     def test_get_backend_info(self):
         """Test getting backend information."""
@@ -163,11 +191,16 @@ class TestRedisEnvelopeStore:
     
     def test_import_error(self):
         """Test behavior when Redis is not installed."""
-        with patch('postfiat.envelope.stores.redis_store.redis.asyncio', side_effect=ImportError):
+        # Mock the import at the module level
+        with patch.dict('sys.modules', {'redis.asyncio': None}):
+            # Create a new store instance to trigger the import error
+            from postfiat.envelope.stores.redis_store import RedisEnvelopeStore
+            store = RedisEnvelopeStore()
             with pytest.raises(ImportError, match="redis is required"):
-                _ = self.store.client
+                _ = store.client
 
 
+@pytest.mark.skipif(not web3_available, reason="web3 not available")
 class TestEVMEnvelopeStore:
     """Test EVMEnvelopeStore implementation."""
     
@@ -183,44 +216,45 @@ class TestEVMEnvelopeStore:
         self.test_envelope.message_type = MessageType.CORE_MESSAGE
         self.test_envelope.message = b"test_message"
     
-    @patch('postfiat.envelope.stores.evm_store.Web3')
     @pytest.mark.asyncio
-    async def test_store_envelope(self, mock_web3_class):
+    async def test_store_envelope(self):
         """Test storing an envelope on EVM."""
-        # Mock Web3 and contract
+        # Mock Web3 module
+        mock_web3_module = MagicMock()
         mock_web3 = Mock()
-        mock_web3_class.return_value = mock_web3
+        mock_web3_module.Web3.return_value = mock_web3
         mock_web3.HTTPProvider.return_value = "provider"
         
-        mock_contract = Mock()
-        mock_web3.eth.contract.return_value = mock_contract
-        
-        # Mock account and transaction
-        mock_account = Mock()
-        mock_account.address = "0x123..."
-        mock_web3.eth.account.from_key.return_value = mock_account
-        
-        mock_web3.eth.gas_price = 20000000000
-        mock_web3.eth.get_transaction_count.return_value = 1
-        
-        # Mock transaction building and signing
-        mock_transaction = {"hash": "0xabc..."}
-        mock_contract.functions.storeEnvelope.return_value.build_transaction.return_value = mock_transaction
-        
-        mock_signed_txn = Mock()
-        mock_signed_txn.rawTransaction = b"raw_tx"
-        mock_web3.eth.account.sign_transaction.return_value = mock_signed_txn
-        
-        mock_web3.eth.send_raw_transaction.return_value = "0xhash"
-        
-        # Mock receipt
-        mock_receipt = Mock()
-        mock_receipt.transactionHash.hex.return_value = "0xhash"
-        mock_receipt.blockNumber = 12345
-        mock_receipt.gasUsed = 100000
-        mock_web3.eth.wait_for_transaction_receipt.return_value = mock_receipt
-        
-        envelope_id = await self.store.store(self.test_envelope)
+        with patch.dict('sys.modules', {'web3': mock_web3_module}):
+            mock_contract = Mock()
+            mock_web3.eth.contract.return_value = mock_contract
+            
+            # Mock account and transaction
+            mock_account = Mock()
+            mock_account.address = "0x123..."
+            mock_web3.eth.account.from_key.return_value = mock_account
+            
+            mock_web3.eth.gas_price = 20000000000
+            mock_web3.eth.get_transaction_count.return_value = 1
+            
+            # Mock transaction building and signing
+            mock_transaction = {"hash": "0xabc..."}
+            mock_contract.functions.storeEnvelope.return_value.build_transaction.return_value = mock_transaction
+            
+            mock_signed_txn = Mock()
+            mock_signed_txn.rawTransaction = b"raw_tx"
+            mock_web3.eth.account.sign_transaction.return_value = mock_signed_txn
+            
+            mock_web3.eth.send_raw_transaction.return_value = "0xhash"
+            
+            # Mock receipt
+            mock_receipt = Mock()
+            mock_receipt.transactionHash.hex.return_value = "0xhash"
+            mock_receipt.blockNumber = 12345
+            mock_receipt.gasUsed = 100000
+            mock_web3.eth.wait_for_transaction_receipt.return_value = mock_receipt
+            
+            envelope_id = await self.store.store(self.test_envelope)
         
         # Verify envelope_id is valid
         assert isinstance(envelope_id, str)
@@ -232,22 +266,23 @@ class TestEVMEnvelopeStore:
         assert self.test_envelope.metadata["transaction_hash"] == "0xhash"
         assert self.test_envelope.metadata["block_number"] == "12345"
     
-    @patch('postfiat.envelope.stores.evm_store.Web3')
     @pytest.mark.asyncio
-    async def test_retrieve_envelope(self, mock_web3_class):
+    async def test_retrieve_envelope(self):
         """Test retrieving an envelope from EVM."""
+        mock_web3_module = MagicMock()
         mock_web3 = Mock()
-        mock_web3_class.return_value = mock_web3
+        mock_web3_module.Web3.return_value = mock_web3
         
-        mock_contract = Mock()
-        mock_web3.eth.contract.return_value = mock_contract
-        
-        # Mock contract call
-        envelope_data = self.test_envelope.SerializeToString()
-        mock_contract.functions.getEnvelope.return_value.call.return_value = envelope_data
-        
-        envelope_id = "test_id"
-        retrieved_envelope = await self.store.retrieve(envelope_id)
+        with patch.dict('sys.modules', {'web3': mock_web3_module}):
+            mock_contract = Mock()
+            mock_web3.eth.contract.return_value = mock_contract
+            
+            # Mock contract call
+            envelope_data = self.test_envelope.SerializeToString()
+            mock_contract.functions.getEnvelope.return_value.call.return_value = envelope_data
+            
+            envelope_id = "1234567890abcdef1234567890abcdef12345678901234567890abcdef123456"  # Valid 64-char hex
+            retrieved_envelope = await self.store.retrieve(envelope_id)
         
         # Verify contract call
         mock_contract.functions.getEnvelope.assert_called_once()
@@ -272,9 +307,13 @@ class TestEVMEnvelopeStore:
     
     def test_import_error(self):
         """Test behavior when web3 is not installed."""
-        with patch('postfiat.envelope.stores.evm_store.Web3', side_effect=ImportError):
+        # Mock the import at the module level
+        with patch.dict('sys.modules', {'web3': None}):
+            # Create a new store instance to trigger the import error
+            from postfiat.envelope.stores.evm_store import EVMEnvelopeStore
+            store = EVMEnvelopeStore(contract_address="0x123...", private_key="0xabc...", chain_id=1)
             with pytest.raises(ImportError, match="web3 is required"):
-                _ = self.store.web3
+                _ = store.web3
 
 
 class TestXRPLEnvelopeStore:
@@ -282,8 +321,8 @@ class TestXRPLEnvelopeStore:
     
     def setup_method(self):
         self.store = XRPLEnvelopeStore(
-            wallet_seed="s...",
-            destination="rDestination..."
+            wallet_seed="sEdTM1uX8pu2do5XvTnutH6HsouMaM2",  # Valid test seed
+            destination="rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"  # Valid test address
         )
         self.test_envelope = Envelope()
         self.test_envelope.version = 1
@@ -291,9 +330,9 @@ class TestXRPLEnvelopeStore:
         self.test_envelope.message_type = MessageType.CORE_MESSAGE
         self.test_envelope.message = b"small_message"  # Keep small for memo limit
     
-    @patch('postfiat.envelope.stores.xrpl_store.JsonRpcClient')
-    @patch('postfiat.envelope.stores.xrpl_store.Wallet')
-    @patch('postfiat.envelope.stores.xrpl_store.submit_and_wait')
+    @patch('xrpl.clients.JsonRpcClient')
+    @patch('xrpl.wallet.Wallet')
+    @patch('xrpl.transaction.submit_and_wait')
     @pytest.mark.asyncio
     async def test_store_envelope(self, mock_submit, mock_wallet_class, mock_client_class):
         """Test storing an envelope on XRPL."""
@@ -326,8 +365,8 @@ class TestXRPLEnvelopeStore:
         assert self.test_envelope.metadata["transaction_hash"] == "ABC123..."
         assert self.test_envelope.metadata["ledger_index"] == "12345"
     
-    @patch('postfiat.envelope.stores.xrpl_store.JsonRpcClient')
-    @patch('postfiat.envelope.stores.xrpl_store.Wallet')
+    @patch('xrpl.clients.JsonRpcClient')
+    @patch('xrpl.wallet.Wallet')
     @pytest.mark.asyncio
     async def test_retrieve_by_transaction_hash(self, mock_wallet_class, mock_client_class):
         """Test retrieving an envelope by transaction hash."""
@@ -363,7 +402,7 @@ class TestXRPLEnvelopeStore:
         large_envelope = Envelope()
         large_envelope.message = b"x" * 2000  # Too large for XRPL memo
         
-        with pytest.raises(ValueError, match="Envelope too large for XRPL memo"):
+        with pytest.raises(StorageError, match="Envelope too large for XRPL memo"):
             await self.store.store(large_envelope)
     
     @pytest.mark.asyncio
@@ -381,9 +420,13 @@ class TestXRPLEnvelopeStore:
     
     def test_import_error(self):
         """Test behavior when xrpl-py is not installed."""
-        with patch('postfiat.envelope.stores.xrpl_store.JsonRpcClient', side_effect=ImportError):
+        # Mock the import at the module level  
+        with patch.dict('sys.modules', {'xrpl.clients': None}):
+            # Create a new store instance to trigger the import error
+            from postfiat.envelope.stores.xrpl_store import XRPLEnvelopeStore
+            store = XRPLEnvelopeStore(wallet_seed="sEdTM1uX8pu2do5XvTnutH6HsouMaM2", destination="rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH")
             with pytest.raises(ImportError, match="xrpl-py is required"):
-                _ = self.store.client
+                _ = store.client
 
 
 class TestCompositeEnvelopeStore:
