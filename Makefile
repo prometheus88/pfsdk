@@ -58,7 +58,7 @@ deps:
 	@echo "📦 Installing Python dependencies..."
 	pip install -e .
 	pip install -e "python/[dev]"
-	pip install build twine sphinx sphinx-rtd-theme sphinx-autoapi myst-parser
+	pip install build twine sphinx sphinx-rtd-theme sphinx-autoapi myst-parser mkdocs mkdocs-material mkdocs-swagger-ui-tag
 	@echo "📦 Installing TypeScript dependencies (workaround for rollup native module bug)..."
 	cd typescript && rm -rf node_modules package-lock.json && npm install
 
