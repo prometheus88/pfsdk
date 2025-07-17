@@ -82,29 +82,19 @@ jobs:
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
       
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install -e python/
-          pip install pytest
-      
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
-      
-      - name: Generate protobuf code
-        run: |
-          cd proto
-          buf dep update
-          buf generate --template buf.gen.yaml
+      # Use Makefile for all code generation and version bumping
+      - name: Makefile help (discoverability)
+        run: make help
 
-      - name: Generate Python types from protobuf
-        run: |
-          cd python
-          python scripts/generate_python_types.py
-      
+      - name: Bump all version strings
+        run: make bump-version
+
+      - name: Generate all code and tests
+        run: make regen-all
+
+      - name: Generate dynamic proto tests
+        run: make tests-dynamic
+
       - name: Verify generated code
         run: |
           python -c "
@@ -114,23 +104,11 @@ jobs:
           print('✅ Generated code imports successfully')
           "
 
-      - name: Generate dynamic protobuf tests
-        run: python python/scripts/generate_dynamic_protobuf_tests.py
-
-      - name: Run Python tests
-        run: |
-          # Run both manual and generated tests
-          cd python
-          python -m pytest tests/ -v --tb=short
-
-      - name: Run generated dynamic tests
-        run: |
-          cd python
-          python -m pytest tests/generated/test_dynamic_*.py -v --tb=short
-
+      - name: Run all tests (Python + TypeScript)
+        run: make tests
 
   python-tests:
-    name: Python Tests
+    name: Python & TypeScript Tests
     runs-on: ubuntu-latest
     needs: code-generation
     strategy:
@@ -169,93 +147,19 @@ jobs:
 
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
-      
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install -e python/
-          pip install pytest
-      
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
-      
-      - name: Generate protobuf code
-        run: |
-          cd proto
-          buf dep update
-          buf generate --template buf.gen.yaml
 
-      - name: Generate Python types from protobuf
-        run: |
-          cd python
-          python scripts/generate_python_types.py
-      
-      - name: Test Python package installation
-        run: |
-          cd python
-          python -c "import postfiat; print(f'PostFiat SDK v{postfiat.__version__} installed successfully')"
+      # Use Makefile for all code generation and tests
+      - name: Makefile help (discoverability)
+        run: make help
 
-      - name: Test critical import paths
-        run: |
-          cd python
-          echo "Testing critical import paths that users depend on..."
-          python -c "
-          import sys
-          
-          # Test main imports
-          try:
-              import postfiat
-              print('✅ import postfiat')
-          except Exception as e:
-              print(f'❌ import postfiat: {e}')
-              sys.exit(1)
-          
-          # Test envelope factory (the main new feature)
-          try:
-              import postfiat.envelope.factory
-              print('✅ import postfiat.envelope.factory')
-          except Exception as e:
-              print(f'❌ import postfiat.envelope.factory: {e}')
-              sys.exit(1)
-          
-          # Test A2A dependency (critical for protobuf imports)
-          try:
-              from a2a.v1 import a2a_pb2
-              print('✅ from a2a.v1 import a2a_pb2')
-          except Exception as e:
-              print(f'❌ from a2a.v1 import a2a_pb2: {e}')
-              sys.exit(1)
-          
-          # Test protobuf imports
-          try:
-              from postfiat.v3 import messages_pb2
-              print('✅ from postfiat.v3 import messages_pb2')
-          except Exception as e:
-              print(f'❌ from postfiat.v3 import messages_pb2: {e}')
-              sys.exit(1)
-          
-          # Test envelope creation
-          try:
-              from postfiat.envelope import EnvelopeFactory
-              print('✅ from postfiat.envelope import EnvelopeFactory')
-          except Exception as e:
-              print(f'❌ from postfiat.envelope import EnvelopeFactory: {e}')
-              sys.exit(1)
-          
-          print('✅ All critical imports successful')
-          "
+      - name: Bump all version strings
+        run: make bump-version
 
-      - name: Generate dynamic protobuf Python tests
-        run: python python/scripts/generate_dynamic_protobuf_tests.py
+      - name: Generate all code and tests
+        run: make regen-all
 
-      - name: Run Python test suite
-        run: |
-          # Run both manual and generated tests
-          cd python
-          python -m pytest tests/ -v --tb=short
+      - name: Run all tests (Python + TypeScript)
+        run: make tests
 
   build:
     name: Build Python Package
@@ -293,46 +197,34 @@ jobs:
 
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
-      
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine pyyaml
 
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
-      
-      - name: Generate protobuf code
-        run: |
-          cd proto
-          buf dep update
-          buf generate --template buf.gen.yaml
-      
+      # Use Makefile for code generation and version bumping
+      - name: Makefile help (discoverability)
+        run: make help
+
+      - name: Bump all version strings
+        run: make bump-version
+
+      - name: Generate all code and tests
+        run: make regen-all
+
       - name: Build Python package
         run: |
           cd python
           python -m build
-      
+
       - name: Check Python package
         run: twine check python/dist/*
-      
+
       - name: Verify package contents
         run: |
           echo "🔍 Verifying package contents include A2A module..."
           cd python
-          
-          # Extract the built wheel to check contents
           WHEEL_FILE=$(ls dist/*.whl | head -1)
           echo "Checking wheel: $WHEEL_FILE"
-          
-          # Create temporary directory and extract wheel
           mkdir -p /tmp/wheel_check
           cd /tmp/wheel_check
           unzip -q "$OLDPWD/$WHEEL_FILE"
-          
-          # Check critical files exist
           echo "Checking for A2A module files..."
           if [ -f "a2a/__init__.py" ]; then
             echo "✅ a2a/__init__.py found"
@@ -340,42 +232,34 @@ jobs:
             echo "❌ a2a/__init__.py missing"
             exit 1
           fi
-          
           if [ -f "a2a/v1/__init__.py" ]; then
             echo "✅ a2a/v1/__init__.py found"
           else
             echo "❌ a2a/v1/__init__.py missing"
             exit 1
           fi
-          
           if [ -f "a2a/v1/a2a_pb2.py" ]; then
             echo "✅ a2a/v1/a2a_pb2.py found"
           else
             echo "❌ a2a/v1/a2a_pb2.py missing"
             exit 1
           fi
-          
-          # Check postfiat envelope module
           if [ -f "postfiat/envelope/__init__.py" ]; then
             echo "✅ postfiat/envelope/__init__.py found"
           else
             echo "❌ postfiat/envelope/__init__.py missing"
             exit 1
           fi
-          
           if [ -f "postfiat/envelope/factory.py" ]; then
             echo "✅ postfiat/envelope/factory.py found"
           else
             echo "❌ postfiat/envelope/factory.py missing"
             exit 1
           fi
-          
           echo "✅ All critical package contents verified"
-          
-          # Clean up
           cd "$OLDPWD"
           rm -rf /tmp/wheel_check
-      
+
       - name: Upload Python build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -413,44 +297,25 @@ jobs:
 
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
-      
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install -e python/
-      
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
-      
-      - name: Generate protobuf code
-        run: |
-          cd proto
-          buf dep update
-          buf generate --template buf.gen.yaml
-      
-      - name: Generate TypeScript types
-        run: |
-          cd typescript
-          npm run generate:types
-      
-      - name: Generate TypeScript tests
-        run: |
-          cd typescript
-          npm run generate:tests
-      
-      - name: Run TypeScript tests
-        run: |
-          cd typescript
-          npm test
-      
+
+      # Use Makefile for all code generation and tests
+      - name: Makefile help (discoverability)
+        run: make help
+
+      - name: Bump all version strings
+        run: make bump-version
+
+      - name: Generate all code and tests
+        run: make regen-all
+
+      - name: Run all tests (Python + TypeScript)
+        run: make tests
+
       - name: Lint TypeScript code
         run: |
           cd typescript
           npm run lint || echo "Linting step failed but continuing..."
-      
+
       - name: Type check TypeScript code
         run: |
           cd typescript
@@ -484,34 +349,23 @@ jobs:
 
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
-      
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install -e python/
 
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
-      
-      - name: Generate protobuf code
-        run: |
-          cd proto
-          buf dep update
-          buf generate --template buf.gen.yaml
-      
-      - name: Generate TypeScript types
-        run: |
-          cd typescript
-          npm run generate:types
-      
+      # Use Makefile for code generation and version bumping
+      - name: Makefile help (discoverability)
+        run: make help
+
+      - name: Bump all version strings
+        run: make bump-version
+
+      - name: Generate all code and tests
+        run: make regen-all
+
       - name: Build TypeScript package
         run: |
           cd typescript
           npm run build
-      
+          npm pack
+
       - name: Upload TypeScript build artifacts
         uses: actions/upload-artifact@v4
         with:

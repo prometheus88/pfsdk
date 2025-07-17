@@ -37,44 +37,28 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
-          pip install -e .
-          pip install -e python/
-
-      - name: Install TypeScript dependencies
-        run: |
-          cd typescript
-          npm ci
-
       - name: Setup A2A dependency
         run: ./scripts/setup-a2a-dependency.sh
 
-      - name: Generate protobuf code
-        run: |
-          cd proto
-          buf dep update
-          buf generate --template buf.gen.yaml
+      # Use Makefile for all build and artifact steps
+      - name: Makefile help (discoverability)
+        run: make help
 
-      - name: Generate Python types from protobuf
-        run: python python/scripts/generate_python_types.py
-      
+      - name: Bump all version strings
+        run: make bump-version
+
+      - name: Regenerate all code and tests
+        run: make regen-all
+
+      - name: Build all release artifacts (Python + TypeScript)
+        run: make release
+
       - name: Verify all generated files exist
         run: |
           echo "Checking generated files..."
           ls -la python/postfiat/v3/*_pb2.py python/postfiat/types/enums.py python/postfiat/exceptions.py
           echo "✅ All generated files present"
 
-      - name: Build package
-        run: |
-          cd python
-          python -m build
-
-      - name: Check package
-        run: twine check python/dist/*
-      
       - name: Extract tag name
         id: tag
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
@@ -95,9 +79,9 @@ jobs:
           - EnvelopeFactory with automatic payload chunking
           
           ### 📦 Installation
-          \`\`\`bash
+          ```bash
           pip install postfiat-sdk==${{ steps.tag.outputs.tag }}
-          \`\`\`
+          ```
           
           ### 📋 API Documentation
           - [OpenAPI Spec](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/api/openapi_v2_generated.swagger.json)
