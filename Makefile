@@ -60,7 +60,7 @@ deps:
 	pip install -e "python/[dev]"
 	pip install build
 	@echo "📦 Installing TypeScript dependencies..."
-	cd typescript && rm -rf node_modules package-lock.json && npm ci
+	cd typescript && rm -rf node_modules && npm ci
 
 # Code generation
 proto: deps
