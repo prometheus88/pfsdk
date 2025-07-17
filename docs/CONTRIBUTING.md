@@ -217,3 +217,41 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed information about the code gen
 - Follow existing patterns and conventions
 
 Thank you for contributing to PostFiat SDK! 🚀
+
+## 🛠️ Build & Test Workflow (Unified)
+
+The Makefile at the project root now orchestrates all major development tasks for both Python and TypeScript SDKs. Use these targets for a consistent workflow:
+
+### Setup
+```bash
+make dev-setup  # Installs all dependencies and generates code
+```
+
+### Code Generation
+```bash
+make proto      # Generate protobuf classes
+make types      # Generate Python types
+make tests      # Generate dynamic proto tests (Python)
+make regen-all  # Regenerate everything (proto + types + tests)
+```
+
+### Testing
+```bash
+make tests-manual   # Run manual Python tests
+make tests-core     # Run core dynamic Python tests
+make tests-all      # Run all generated Python tests
+make ts-build       # Build TypeScript SDK
+make ts-test        # Run TypeScript tests
+make ts-test-all    # Run all TypeScript unit and integration tests
+make test           # Run all Python and TypeScript tests (recommended)
+```
+
+- The `test` target runs both Python and TypeScript tests for full coverage.
+- All TypeScript build/test commands are now available via Makefile.
+
+## 🧪 Running All Tests
+
+- To run all tests (Python + TypeScript):
+```bash
+make test
+```

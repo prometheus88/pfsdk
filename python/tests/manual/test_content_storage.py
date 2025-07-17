@@ -11,6 +11,7 @@ import base64
 import json
 from unittest.mock import Mock, patch, MagicMock
 from typing import List
+import sys
 
 from postfiat.envelope.storage import (
     ContentStorage, IPFSStorage, RedisStorage, InlineStorage, 
@@ -91,17 +92,18 @@ class TestRedisStorage:
         self.test_content = b"Hello, Redis!"
         self.test_content_type = "text/plain"
     
-    @patch('redis.from_url')
-    def test_store_content(self, mock_from_url):
+    def test_store_content(self):
         """Test storing content in Redis."""
+        mock_redis = MagicMock()
         mock_client = Mock()
-        mock_from_url.return_value = mock_client
+        mock_redis.from_url.return_value = mock_client
         
-        descriptor = self.storage.store(self.test_content, self.test_content_type)
+        with patch.dict('sys.modules', {'redis': mock_redis}):
+            descriptor = self.storage.store(self.test_content, self.test_content_type)
         
-        # Verify Redis client was called
-        mock_from_url.assert_called_once_with("redis://localhost:6379")
-        mock_client.set.assert_called_once()
+            # Verify Redis client was called
+            mock_redis.from_url.assert_called_once_with("redis://localhost:6379")
+            mock_client.set.assert_called_once()
         
         # Verify descriptor
         content_hash = hashlib.sha256(self.test_content).digest()
@@ -111,39 +113,41 @@ class TestRedisStorage:
         assert descriptor.content_hash == content_hash
         assert descriptor.metadata["storage_provider"] == "redis"
     
-    @patch('redis.from_url')
-    def test_retrieve_content(self, mock_from_url):
+    def test_retrieve_content(self):
         """Test retrieving content from Redis."""
+        mock_redis = MagicMock()
         mock_client = Mock()
-        mock_from_url.return_value = mock_client
+        mock_redis.from_url.return_value = mock_client
         
-        # Store first to get descriptor
-        descriptor = self.storage.store(self.test_content, self.test_content_type)
-        
-        # Mock Redis get response
-        content_data = {
-            "content": base64.b64encode(self.test_content).decode(),
-            "content_type": self.test_content_type,
-            "content_length": len(self.test_content),
-            "content_hash": hashlib.sha256(self.test_content).digest().hex()
-        }
-        mock_client.get.return_value = json.dumps(content_data)
-        
-        retrieved_content = self.storage.retrieve(descriptor)
-        assert retrieved_content == self.test_content
+        with patch.dict('sys.modules', {'redis': mock_redis}):
+            # Store first to get descriptor
+            descriptor = self.storage.store(self.test_content, self.test_content_type)
+            
+            # Mock Redis get response
+            content_data = {
+                "content": base64.b64encode(self.test_content).decode(),
+                "content_type": self.test_content_type,
+                "content_length": len(self.test_content),
+                "content_hash": hashlib.sha256(self.test_content).digest().hex()
+            }
+            mock_client.get.return_value = json.dumps(content_data)
+            
+            retrieved_content = self.storage.retrieve(descriptor)
+            assert retrieved_content == self.test_content
     
-    @patch('redis.from_url')
-    def test_retrieve_not_found(self, mock_from_url):
+    def test_retrieve_not_found(self):
         """Test retrieving non-existent content."""
+        mock_redis = MagicMock()
         mock_client = Mock()
-        mock_from_url.return_value = mock_client
+        mock_redis.from_url.return_value = mock_client
         mock_client.get.return_value = None
         
-        descriptor = ContentDescriptor()
-        descriptor.uri = "redis://nonexistent"
-        
-        with pytest.raises(IOError, match="Content not found in Redis"):
-            self.storage.retrieve(descriptor)
+        with patch.dict('sys.modules', {'redis': mock_redis}):
+            descriptor = ContentDescriptor()
+            descriptor.uri = "redis://1234567890abcdef1234567890abcdef12345678"  # Valid hex hash
+            
+            with pytest.raises(IOError, match="Content not found in Redis"):
+                self.storage.retrieve(descriptor)
     
     def test_can_handle_uri(self):
         """Test URI handling."""
@@ -153,9 +157,13 @@ class TestRedisStorage:
     
     def test_import_error(self):
         """Test behavior when Redis is not installed."""
-        with patch('redis.from_url', side_effect=ImportError):
+        # Mock the import at the module level
+        with patch.dict('sys.modules', {'redis': None}):
+            # Create a new storage instance to trigger the import error
+            from postfiat.envelope.storage import RedisStorage
+            storage = RedisStorage()
             with pytest.raises(ImportError, match="redis is required"):
-                _ = self.storage.client
+                _ = storage.client
 
 
 class TestIPFSStorage:
@@ -166,18 +174,19 @@ class TestIPFSStorage:
         self.test_content = b"Hello, IPFS!"
         self.test_content_type = "text/plain"
     
-    @patch('ipfshttpclient.connect')
-    def test_store_content_success(self, mock_connect):
+    def test_store_content_success(self):
         """Test successful content storage in IPFS."""
+        mock_ipfs = MagicMock()
         mock_client = Mock()
-        mock_connect.return_value = mock_client
+        mock_ipfs.connect.return_value = mock_client
         mock_client.add_bytes.return_value = "QmTestHash"
         
-        descriptor = self.storage.store(self.test_content, self.test_content_type)
+        with patch.dict('sys.modules', {'ipfshttpclient': mock_ipfs}):
+            descriptor = self.storage.store(self.test_content, self.test_content_type)
         
-        # Verify IPFS client was called
-        mock_connect.assert_called_once_with("http://localhost:5001")
-        mock_client.add_bytes.assert_called_once_with(self.test_content)
+            # Verify IPFS client was called
+            mock_ipfs.connect.assert_called_once_with("http://localhost:5001")
+            mock_client.add_bytes.assert_called_once_with(self.test_content)
         
         # Verify descriptor
         assert descriptor.uri == "ipfs://QmTestHash"
@@ -185,35 +194,38 @@ class TestIPFSStorage:
         assert descriptor.metadata["storage_provider"] == "ipfs"
         assert "simulated" not in descriptor.metadata
     
-    @patch('ipfshttpclient.connect')
-    def test_store_content_fallback(self, mock_connect):
+    def test_store_content_fallback(self):
         """Test content storage fallback when IPFS fails."""
-        mock_connect.side_effect = Exception("IPFS connection failed")
+        mock_ipfs = MagicMock()
+        mock_ipfs.connect.side_effect = Exception("IPFS connection failed")
         
-        descriptor = self.storage.store(self.test_content, self.test_content_type)
+        with patch.dict('sys.modules', {'ipfshttpclient': mock_ipfs}):
         
-        # Should fall back to simulated CID
-        content_hash = hashlib.sha256(self.test_content).digest()
-        expected_cid = f"Qm{content_hash.hex()[:44]}"
-        
-        assert descriptor.uri == f"ipfs://{expected_cid}"
-        assert descriptor.metadata["simulated"] == "true"
-        assert "error" in descriptor.metadata
+            descriptor = self.storage.store(self.test_content, self.test_content_type)
+            
+            # Should fall back to simulated CID
+            content_hash = hashlib.sha256(self.test_content).digest()
+            expected_cid = f"Qm{content_hash.hex()[:44]}"
+            
+            assert descriptor.uri == f"ipfs://{expected_cid}"
+            assert descriptor.metadata["simulated"] == "true"
+            assert "error" in descriptor.metadata
     
-    @patch('ipfshttpclient.connect')
-    def test_retrieve_content(self, mock_connect):
+    def test_retrieve_content(self):
         """Test retrieving content from IPFS."""
+        mock_ipfs = MagicMock()
         mock_client = Mock()
-        mock_connect.return_value = mock_client
+        mock_ipfs.connect.return_value = mock_client
         mock_client.cat.return_value = self.test_content
         
-        descriptor = ContentDescriptor()
-        descriptor.uri = "ipfs://QmTestHash"
-        
-        retrieved_content = self.storage.retrieve(descriptor)
-        
-        mock_client.cat.assert_called_once_with("QmTestHash")
-        assert retrieved_content == self.test_content
+        with patch.dict('sys.modules', {'ipfshttpclient': mock_ipfs}):
+            descriptor = ContentDescriptor()
+            descriptor.uri = "ipfs://QmTestHash"
+            
+            retrieved_content = self.storage.retrieve(descriptor)
+            
+            mock_client.cat.assert_called_once_with("QmTestHash")
+            assert retrieved_content == self.test_content
     
     def test_can_handle_uri(self):
         """Test URI handling."""
@@ -223,9 +235,13 @@ class TestIPFSStorage:
     
     def test_import_error(self):
         """Test behavior when IPFS client is not installed."""
-        with patch('ipfshttpclient.connect', side_effect=ImportError):
+        # Mock the import at the module level
+        with patch.dict('sys.modules', {'ipfshttpclient': None}):
+            # Create a new storage instance to trigger the import error
+            from postfiat.envelope.storage import IPFSStorage
+            storage = IPFSStorage()
             with pytest.raises(ImportError, match="ipfshttpclient is required"):
-                _ = self.storage.client
+                _ = storage.client
 
 
 class TestMultipartStorage:

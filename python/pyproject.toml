@@ -252,6 +252,7 @@ minversion = "7.0"
 addopts = [
     "--strict-markers",
     "--strict-config",
+    "--asyncio-mode=auto",
 ]
 testpaths = ["tests"]
 markers = [

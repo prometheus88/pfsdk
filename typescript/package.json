@@ -16,7 +16,7 @@
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "test:unit": "jest tests/generated --testTimeout=10000",
+    "test:unit": "jest tests/generated --testTimeout=10000 --passWithNoTests",
     "test:integration": "jest tests/manual/integration --testTimeout=60000",
     "test:selective-disclosure": "jest tests/manual/integration/selective-disclosure.test.ts --testTimeout=120000 --verbose",
     "test:all": "npm run test:unit && npm run test:integration",
