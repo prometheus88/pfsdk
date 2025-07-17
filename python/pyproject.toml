@@ -104,9 +104,11 @@ dev = [
 
 # Documentation dependencies
 docs = [
-    "mkdocs>=1.5.0,<2.0.0",
-    "mkdocs-material>=9.0.0,<10.0.0",
+    "mkdocs==1.5.3",
+    "mkdocs-material==9.1.21",
     "mkdocstrings[python]>=0.22.0,<1.0.0",
+    "pymdown-extensions==9.11",
+    "Markdown==3.3.7"
 ]
 
 # Jupyter notebook examples

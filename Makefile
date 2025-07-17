@@ -169,6 +169,8 @@ docs:
 	@echo "📚 Building documentation..."
 	# Python API docs (Sphinx)
 	cd python && sphinx-build -b html docs docs/_build/html
+	# TypeScript codegen (ensure src/index.ts exists)
+	cd typescript && npm run generate:all
 	# TypeScript API docs (TypeDoc)
 	cd typescript && npx typedoc --out ../docs/generated/typescript src/index.ts --plugin typedoc-plugin-markdown --theme markdown --skipErrorChecking
 	# MkDocs site
