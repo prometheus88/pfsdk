@@ -59,8 +59,10 @@ deps:
 	pip install -e .
 	pip install -e "python/[dev]"
 	pip install build twine
-	@echo "📦 Upgrading npm to latest (for CI rollup bug workaround)..."
-	cd typescript && npm install -g npm@latest
+	@echo "📦 Upgrading npm to compatible version (for CI rollup bug workaround)..."
+	cd typescript && node -e "const v=parseInt(process.versions.node.split('.')[0]); process.exit(v>=20?0:1)" \
+	  && npm install -g npm@latest \
+	  || npm install -g npm@10
 	@echo "📦 Installing TypeScript dependencies..."
 	cd typescript && rm -rf node_modules && npm ci
 	# If you see rollup native module errors in CI, add an npm upgrade step before this:
