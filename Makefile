@@ -2,7 +2,7 @@
 # 
 # Common development tasks for the PostFiat SDK
 
-.PHONY: help proto types tests tests-dynamic tests-core clean install dev-setup ts-build ts-test ts-test-all test bump-version bump-ts-version build-py build-ts docs release
+.PHONY: help proto types tests tests-dynamic tests-core clean install dev-setup ts-build ts-test ts-test-all test bump-version bump-ts-version build-py build-ts docs release deps
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "Setup:"
 	@echo "  install      Install package in development mode"
 	@echo "  dev-setup    Complete development environment setup"
+	@echo "  deps         Install all Python and TypeScript dependencies"
 	@echo ""
 	@echo "Code Generation:"
 	@echo "  proto        Generate protobuf classes from .proto files"
@@ -52,8 +53,16 @@ dev-setup: install
 	$(MAKE) regen-all
 	@echo "✅ Development setup complete!"
 
+# Install all dependencies
+deps:
+	@echo "📦 Installing Python dependencies..."
+	pip install -e .
+	pip install -e "python/[dev]"
+	@echo "📦 Installing TypeScript dependencies..."
+	cd typescript && npm install
+
 # Code generation
-proto:
+proto: deps
 	@echo "🔄 Generating protobuf classes..."
 	cd proto && buf generate --template buf.gen.yaml
 
