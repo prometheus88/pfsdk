@@ -68,19 +68,19 @@ proto: deps
 
 types:
 	@echo "🔄 Generating Python types..."
-	python scripts/generate_python_types.py
+	cd python && python scripts/generate_python_types.py
 
 tests-dynamic:
 	@echo "🔄 Generating dynamic proto tests..."
-	python python/scripts/generate_dynamic_protobuf_tests.py
+	cd python && python scripts/generate_dynamic_protobuf_tests.py
 
 # Testing
 # Canonical: run all tests in all languages
 tests:
 	@echo "🧪 Running manual Python tests..."
-	python -m pytest python/tests/manual/ -v
+	cd python && python -m pytest tests/manual/ -v
 	@echo "🧪 Running core dynamic Python tests..."
-	python python/scripts/dev_test_regen.py --run-tests --core-only
+	cd python && python scripts/dev_test_regen.py --run-tests --core-only
 	@echo "🧪 Running all TypeScript unit and integration tests..."
 	cd typescript && npm install && npm run test:all
 	@echo "✅ All Python and TypeScript tests completed!"
@@ -90,16 +90,16 @@ test: tests
 # All generated and manual tests (Python + TypeScript)
 tests-all:
 	@echo "🧪 Running all generated Python tests..."
-	python -m pytest python/tests/generated/ -v
+	cd python && python -m pytest tests/generated/ -v
 	@echo "🧪 Running manual Python tests..."
-	python -m pytest python/tests/manual/ -v
+	cd python && python -m pytest tests/manual/ -v
 	@echo "🧪 Running all TypeScript unit and integration tests..."
 	cd typescript && npm install && npm run test:all
 	@echo "✅ All Python and TypeScript tests completed!"
 
 tests-manual:
 	@echo "🧪 Running manual tests..."
-	python -m pytest python/tests/manual/ -v
+	cd python && python -m pytest tests/manual/ -v
 
 # TypeScript build and test
 ts-build:
