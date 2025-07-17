@@ -201,8 +201,15 @@ class TestNoServices:
         method_name = method['name']
         input_type = method['input_type']
         output_type = method['output_type']
+        output_full_name = method.get('output_full_name', '')
         
         test_method_name = f"test_{method_name.lower()}_method"
+        
+        # Check if output type is google.protobuf.Empty
+        if output_full_name == 'google.protobuf.Empty':
+            response_creation = "from google.protobuf import empty_pb2\n        expected_response = empty_pb2.Empty()"
+        else:
+            response_creation = f"expected_response = {service.module_name}_pb2.{output_type}()"
         
         return f'''    def {test_method_name}(self, mock_{service.name.lower()}_service):
         """Test {method_name} method signature and basic functionality."""
@@ -214,7 +221,7 @@ class TestNoServices:
         request = {service.module_name}_pb2.{input_type}()
         
         # Mock the response
-        expected_response = {service.module_name}_pb2.{output_type}()
+        {response_creation}
         mock_{service.name.lower()}_service.{method_name}.return_value = expected_response
         
         # Call the method
@@ -234,7 +241,7 @@ class TestNoServices:
         request = {service.module_name}_pb2.{input_type}()
         
         # Mock the response
-        expected_response = {service.module_name}_pb2.{output_type}()
+        {response_creation}
         mock_{service.name.lower()}_service.{method_name}.return_value = expected_response
         
         # Call the method
