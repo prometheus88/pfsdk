@@ -44,6 +44,9 @@ jobs:
       - name: Makefile help (discoverability)
         run: make help
 
+      - name: Install all dependencies
+        run: make deps
+
       - name: Build all documentation (mkdocs, Sphinx, TypeDoc, Swagger, etc.)
         run: make docs
 
