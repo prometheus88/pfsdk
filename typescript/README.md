@@ -1,6 +1,6 @@
 # PostFiat TypeScript SDK
 
-Modern TypeScript SDK for the PostFiat Wallet Protocol, built with gRPC-Web and React support.
+TypeScript SDK for the PostFiat Wallet Protocol, featuring KEK-CEK hierarchical group key management.
 
 ## Installation
 
@@ -8,21 +8,45 @@ Modern TypeScript SDK for the PostFiat Wallet Protocol, built with gRPC-Web and 
 npm install @postfiat/sdk
 ```
 
+## Webpack/React Compatibility
+
+**✅ Recommended:** Always import from the main SDK package:
+```typescript
+import { AccessGrant, KeyType, Envelope } from '@postfiat/sdk';
+```
+
+**❌ Avoid:** Direct protobuf imports that can cause webpack issues:
+```typescript
+// Don't do this - causes "Unexpected token" errors
+import { AccessGrant } from '@postfiat/sdk/src/generated/postfiat/v3/messages_pb';
+```
+
 ## Quick Start
 
-### Basic Usage
+### KEK-CEK Key Management
 
 ```typescript
-import { PostFiatClient, createConfig } from '@postfiat/sdk';
+import { AccessGrant, KeyType, ContextReference } from '@postfiat/sdk';
 
-// Create a client
-const client = new PostFiatClient(createConfig('development', {
-  apiKey: 'your-api-key'
-}));
+// Create a group key grant (encrypted with user's public key)
+const groupKeyGrant = new AccessGrant({
+  keyType: KeyType.GROUP_KEY,
+  targetId: "research_group_xyz",
+  encryptedKeyMaterial: encryptedGroupKey
+});
 
-// Use the client
-const health = await client.health();
-console.log(health);
+// Create a content key grant (encrypted with group key)
+const contentKeyGrant = new AccessGrant({
+  keyType: KeyType.CONTENT_KEY,
+  targetId: "document_hash_456",
+  encryptedKeyMaterial: encryptedContentKey
+});
+
+// Context reference now uses group_id instead of decryption_key
+const contextRef = new ContextReference({
+  contentHash: documentHash,
+  groupId: "research_group_xyz"
+});
 ```
 
 ### React Integration

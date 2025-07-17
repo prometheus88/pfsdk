@@ -16,4 +16,11 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  // Enhanced configuration for integration tests
+  testTimeout: 60000, // 60 seconds for integration tests
+  setupFiles: ['<rootDir>/tests/setup.js'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/'
+  ]
 };

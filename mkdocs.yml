@@ -1,49 +1,8 @@
 site_name: PostFiat SDK Documentation
-site_description: Proto-first multi-language SDK with Python and TypeScript support
-site_url: https://allenday.github.io/pfsdk
-repo_url: https://github.com/allenday/pfsdk
-repo_name: allenday/pfsdk
-
-extra:
-  version: 0.1.0-rc1
-  release_tag: release-0.1.0-rc1
-  release_url: "https://github.com/allenday/pfsdk/releases/tag/release-0.1.0-rc1"
-  release_date: "2025-07-09"
-
-theme:
-  name: material
-  custom_dir: overrides
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.top
-    - search.highlight
-    - search.share
-    - content.code.copy
 
 plugins:
   - search
   - swagger-ui-tag
-  - mermaid2:
-      version: 10.4.0
-      javascript: https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js
-      arguments:
-        theme: base
-        themeVariables:
-          primaryColor: "#ff0000"
 
 nav:
   - Home: index.md
@@ -51,22 +10,18 @@ nav:
   - Development: DEVELOPMENT.md
   - Contributing: CONTRIBUTING.md
   - API Reference:
-    - OpenAPI Specification: api/openapi.md
-    - Python SDK: generated/python/index.html
-    - Protocol Buffers: generated/proto/index.md
+      - OpenAPI Specification: api/openapi.md
+      - Python SDK: generated/python/index.html
+      - Protocol Buffers: generated/proto/index.md
   - Research:
-    - Key Management: research/KEY-MANAGEMENT.md
-    - A2A Selective Disclosure: research/A2A-SELECTIVE-DISCLOSURE-EXTENSION.md
-    - XRPL Chat Application: research/XRPL-CHAT-APPLICATION-ADAPTATION.md
+      - Key Management: research/KEY-MANAGEMENT.md
+      - A2A Selective Disclosure: research/A2A-SELECTIVE-DISCLOSURE-EXTENSION.md
+      - XRPL Chat Application: research/XRPL-CHAT-APPLICATION-ADAPTATION.md
 
 markdown_extensions:
   - admonition
   - codehilite
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:mermaid2.fence_mermaid
+  - pymdownx.superfences
   - pymdownx.tabbed
   - pymdownx.details
   - toc:

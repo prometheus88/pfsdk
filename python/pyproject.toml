@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "postfiat-sdk"
-version = "0.1.0"
+dynamic = ["version"]
 description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     { name = "PostFiat Team", email = "team@postfiat.org" }
 ]
@@ -21,7 +21,6 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -105,9 +104,11 @@ dev = [
 
 # Documentation dependencies
 docs = [
-    "mkdocs>=1.5.0,<2.0.0",
-    "mkdocs-material>=9.0.0,<10.0.0",
+    "mkdocs==1.5.3",
+    "mkdocs-material==9.1.21",
     "mkdocstrings[python]>=0.22.0,<1.0.0",
+    "pymdown-extensions==9.11",
+    "Markdown==3.3.7"
 ]
 
 # Jupyter notebook examples
@@ -153,9 +154,22 @@ llm = [
     # Ollama doesn't require additional dependencies (uses httpx)
 ]
 
+# Storage backend dependencies (optional)
+storage = [
+    "ipfshttpclient>=0.8.0,<1.0.0",  # IPFS HTTP client for distributed storage
+    "redis>=4.5.0,<6.0.0",           # Redis client for envelope storage
+    # Future: could add arweave, filecoin, etc.
+]
+
+# Blockchain storage dependencies (optional)
+blockchain = [
+    "web3>=6.0.0,<7.0.0",           # Ethereum/EVM interaction
+    "xrpl-py>=2.0.0,<3.0.0",        # XRPL ledger interaction
+]
+
 # All optional dependencies for complete installation
 all = [
-    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm]"
+    "postfiat[gui,cli,dev,docs,notebooks,integrations,heavy,observability,llm,storage,blockchain]"
 ]
 
 [project.urls]
@@ -177,10 +191,14 @@ memory = "postfiat.storage.memory:MemoryStorage"
 [project.entry-points."postfiat.encryption"]
 default = "postfiat.crypto.encryption:DefaultEncryption"
 
+
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["src"] by default)
-include = ["postfiat*", "reference_implementations*"]  # package names should match these glob patterns (["*"] by default)
+include = ["postfiat*", "reference_implementations*", "a2a*"]  # package names should match these glob patterns (["*"] by default)
 exclude = ["tests*"]  # exclude packages matching these glob patterns (empty by default)
+
+[tool.setuptools.dynamic]
+version = {attr = "postfiat.envelope.__version__"}
 
 [tool.setuptools.package-data]
 postfiat = ["*.py", "**/*.py", "exceptions.py", "types/enums.py", "models/generated.py"]
@@ -236,6 +254,7 @@ minversion = "7.0"
 addopts = [
     "--strict-markers",
     "--strict-config",
+    "--asyncio-mode=auto",
 ]
 testpaths = ["tests"]
 markers = [
@@ -243,6 +262,7 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "gui: marks tests that require GUI",
+    "asyncio: marks tests as async",
 ]
 
 [tool.coverage.run]

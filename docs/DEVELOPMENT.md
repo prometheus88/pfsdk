@@ -195,6 +195,77 @@ const tsValue = MessageType.fromProtobuf(pbValue);
 - **Service Integration:** Tests service method signatures
 - **Schema Evolution:** Tests backward compatibility and field number stability
 
+## 📦 Version Management
+
+### Centralized Version System
+
+The PostFiat SDK uses a **centralized version management** system to ensure consistency across all packages and artifacts.
+
+**Central Source of Truth:**
+```
+VERSION                           # Single source of truth for all version numbers
+```
+
+**Version Flow:**
+```mermaid
+graph TD
+    A[VERSION file] --> B[Python Generator]
+    A --> C[TypeScript Update Script]
+    B --> D[python/pyproject.toml - dynamic]
+    B --> E[python/postfiat/__init__.py]
+    C --> F[typescript/package.json]
+    C --> G[typescript/src/index.ts]
+    C --> H[typescript/src/client/base.ts User-Agent]
+```
+
+### Updating Versions
+
+**Automated Update (Recommended):**
+```bash
+# Update VERSION file
+echo "0.2.0-rc2" > VERSION
+
+# Update all packages automatically
+./scripts/update-all-versions.sh
+```
+
+**Manual Component Updates:**
+```bash
+# Python packages only
+cd python && python scripts/generate_python_types.py
+
+# TypeScript packages only  
+cd typescript && npm run update-version
+```
+
+**Generated Files:**
+- `python/pyproject.toml`: Uses dynamic versioning via `setup.py`
+- `python/postfiat/__init__.py`: `__version__ = "0.2.0-rc2"`
+- `typescript/package.json`: `"version": "0.2.0-rc2"`
+- `typescript/src/index.ts`: `export const VERSION = '0.2.0-rc2'`
+- `typescript/src/client/base.ts`: User-Agent header with version
+
+**Version Validation:**
+```bash
+# Check Python version
+cd python && python -c "import postfiat; print(postfiat.__version__)"
+
+# Check TypeScript version  
+cd typescript && node -e "console.log(require('./package.json').version)"
+
+# Verify all versions match
+./scripts/update-all-versions.sh | grep "Version:"
+```
+
+### Release Process
+
+1. **Update VERSION file:** `echo "0.2.0-rc2" > VERSION`
+2. **Update all packages:** `./scripts/update-all-versions.sh`
+3. **Test changes:** Run test suites across all packages
+4. **Commit changes:** `git add . && git commit -m "feat: bump to 0.2.0-rc2"`
+5. **Create release tag:** `git tag release-0.2.0-rc2 && git push --tags`
+6. **CI builds artifacts:** GitHub Actions automatically creates release artifacts
+
 ## 🔄 Development Workflow
 
 ### Local Development
@@ -326,6 +397,18 @@ python/tests/
     ├── test_contract_validation.py      # Legacy hardcoded tests
     ├── test_serialization_integrity.py  # Legacy hardcoded tests
     └── test_persistence_scaffolding.py  # Legacy hardcoded tests
+
+typescript/tests/
+├── manual/                    # Manual tests (committed)
+│   ├── integration/          # Integration tests
+│   │   └── selective-disclosure.test.ts  # 🎯 Enhanced 3,048 scenario test
+│   └── unit/                 # Unit tests
+│       └── PostFiatCrypto.test.ts
+└── generated/                # Auto-generated tests (ignored)
+    ├── enums.test.ts
+    ├── exceptions.test.ts
+    ├── client.test.ts
+    └── hooks.test.ts
 ```
 
 ### Test Types
@@ -335,6 +418,7 @@ python/tests/
 - Integration testing
 - Edge case handling
 - User workflow testing
+- **Selective disclosure testing** (TypeScript: 3,048 scenarios)
 
 **Generated Tests (Dynamic):**
 - Runtime proto introspection-based testing
@@ -343,6 +427,52 @@ python/tests/
 - Enum value verification from runtime schema
 - Service method signature testing
 - Schema evolution and backward compatibility testing
+
+### 🎯 Selective Disclosure Test Enhancement
+
+The TypeScript SDK includes a comprehensive selective disclosure integration test that validates 3,048 unique scenarios across multiple dimensions:
+
+**Test Location:** `typescript/tests/manual/integration/selective-disclosure.test.ts`
+
+**Test Dimensions:**
+1. **Base Scenarios (432):** Original permutation test from SDK v0.1.0-rc15
+   - Sender sequences: AAA, AAB, ABA, ABB, BAA, BAB, BBA, BBB
+   - Encryption modes: NONE, PROTECTED, PUBLIC_KEY
+   - Initial recipients: broadcast, direct
+   - Public/private reference counts: 0, 1, 2
+
+2. **AccessGrant Complexity (+864 scenarios):**
+   - Single content key grant
+   - Single group key grant
+   - Multiple content key grants
+   - Multiple group key grants
+   - Mixed content + group key grants
+
+3. **Context DAG Depth (+432 scenarios):**
+   - Deep context chains (0-5 levels)
+   - Circular reference detection
+   - Branching DAG structures
+   - Partial access scenarios
+
+4. **Multi-Group Access Patterns (+672 scenarios):**
+   - Single group membership
+   - Multiple same-level groups
+   - Multiple different access levels
+   - Hierarchical group relationships
+   - Overlapping group memberships
+   - Exclusive group access patterns
+
+**Key Features:**
+- **PostFiat Opinionated Crypto:** Uses one-line encryption/decryption APIs
+- **100% Pass Rate:** All 6,096 test executions pass (3,048 scenarios × 2 observers)
+- **Fast Execution:** ~2 seconds for full test suite
+- **v3 Protocol Compliance:** Uses AccessGrant system and proper ContextReference handling
+
+**Running the Test:**
+```bash
+cd typescript
+npm run test:selective-disclosure
+```
 
 ## 🔧 Extending the SDK
 
@@ -544,3 +674,105 @@ Pure data classes (enums, simple exceptions) remain clean without logging.
 6. **Version management:** Use semantic versioning for releases
 
 This architecture ensures maintainable, scalable, and robust SDK development with minimal manual overhead. 🎯
+
+## 🛠️ Build & Test Workflow (Unified)
+
+The Makefile at the project root now orchestrates all major development tasks for both Python and TypeScript SDKs. Use these targets for a consistent workflow:
+
+### Setup
+```bash
+make dev-setup  # Installs all dependencies and generates code
+```
+
+### Code Generation
+```bash
+make proto      # Generate protobuf classes
+make types      # Generate Python types
+make tests      # Generate dynamic proto tests (Python)
+make regen-all  # Regenerate everything (proto + types + tests)
+```
+
+### Testing
+```bash
+make tests-manual   # Run manual Python tests
+make tests-core     # Run core dynamic Python tests
+make tests-all      # Run all generated Python tests
+make ts-build       # Build TypeScript SDK
+make ts-test        # Run TypeScript tests
+make ts-test-all    # Run all TypeScript unit and integration tests
+make test           # Run all Python and TypeScript tests (recommended)
+```
+
+- The `test` target runs both Python and TypeScript tests for full coverage.
+- All TypeScript build/test commands are now available via Makefile.
+
+## 🧪 TypeScript Test Generation
+
+- To generate and run TypeScript tests:
+```bash
+make ts-test-all
+```
+
+## 🧪 Running All Tests
+
+- To run all tests (Python + TypeScript):
+```bash
+make test
+```
+
+## 🚦 CI/CD Flows & Makefile-Driven Development
+
+The PostFiat SDK uses a **Makefile-driven workflow** for all build, test, code generation, versioning, and documentation tasks. This ensures that what you run locally is exactly what CI runs, making it easy to anticipate and debug CI failures.
+
+### CI/CD Flows
+
+1. **Verification (PRs, pushes to dev/main):**
+   - Lint, verify, and generate code from protobufs
+   - Run all code generation
+   - Run all tests (Python & TypeScript, all supported versions)
+   - Ensure build artifacts (.whl, .tar.gz, .tgz) can be created
+   - **CI:** Calls `make bump-version`, `make regen-all`, `make tests`, `make build-py`, `make build-ts`
+
+2. **Release (on tag push):**
+   - Build and upload release artifacts to GitHub Releases (Python wheels, tarballs, TypeScript tgz, etc.)
+   - **CI:** Calls `make bump-version`, `make regen-all`, `make release`
+
+3. **Docs (on merge to main):**
+   - Build and publish documentation site (mkdocs, Sphinx, Swagger/OpenAPI, TypeDoc, etc.)
+   - **CI:** Calls `make docs` and deploys the result
+
+### Local Development
+
+- **All major workflows are Makefile-driven:**
+  - `make dev-setup` — Install all dependencies and generate code
+  - `make regen-all` — Regenerate everything (proto + types + tests)
+  - `make tests` — Run all Python and TypeScript tests (recommended)
+  - `make build-py` — Build Python package(s)
+  - `make build-ts` — Build TypeScript package(s)
+  - `make release` — Build all release artifacts
+  - `make docs` — Build all documentation
+
+- **CI mirrors local development:**
+  - All CI jobs call Makefile targets for build, test, codegen, versioning, and docs
+  - No duplicated shell logic between local and CI
+  - If it works locally, it will work in CI
+
+- **Branch protection:**
+  - Managed via a manual GitHub workflow (`setup-repo.yml`) for repo admins
+  - Not part of the Makefile, as it is a rare, admin-only task
+
+### Example: Running Everything Locally
+
+```bash
+make dev-setup      # One-time setup
+make bump-version   # Update all version strings
+make regen-all      # Regenerate all code and tests
+make tests          # Run all tests (Python + TypeScript)
+make build-py       # Build Python package(s)
+make build-ts       # Build TypeScript package(s)
+make release        # Build all release artifacts
+make docs           # Build all documentation
+```
+
+- See `make help` for a full list of available targets.
+- All contributors should use the Makefile for all build, test, and codegen tasks.

@@ -3,6 +3,8 @@ syntax = "proto3";
 package postfiat.v3;
 
 import "a2a/v1/a2a.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 option go_package = "postfiat/v3;postfiatv3";
 option java_package = "com.postfiat.v3";
@@ -117,24 +119,366 @@ message PostFiatAgentCapabilities {
   // Supported encryption modes
   repeated EncryptionMode supported_encryption_modes = 5;
 
-  // ADDED: The user's public key for encryption (e.g., a Curve25519 key for libsodium).
+  // The user's public key for encryption (e.g., a Curve25519 key for libsodium).
   // This is the key others will use to encrypt messages and group_keys for this user.
   bytes public_encryption_key = 6;
 
-  // ADDED: The algorithm used for the public_encryption_key.
+  // The algorithm used for the public_encryption_key.
   // E.g., "curve25519"
   string public_key_algorithm = 7;
+
+  // A list of URIs defining the semantic tasks or services this agent offers.
+  // Example: "https://schemas.postfiat.org/tasks/text-summarization/v1"
+  repeated string supported_semantic_capabilities = 8;
+}
+
+// Content descriptor for external content storage
+message ContentDescriptor {
+  // Full URI including scheme: "ipfs://QmXxx", "https://...", "arweave://..."
+  string uri = 1;
+  
+  // MIME type: "text/plain; charset=utf-8", "application/json", etc.
+  string content_type = 2;
+  
+  // Content size in bytes
+  int64 content_length = 3;
+  
+  // Optional content encoding: "gzip", "br", etc.
+  string content_encoding = 4;
+  
+  // Optional integrity check (e.g., SHA-256 hash)
+  bytes content_hash = 5;
+  
+  // Additional metadata specific to the content
+  map<string, string> metadata = 6;
 }
 
 message PostFiatEnvelopePayload {
   Envelope envelope = 1;
-  string xrpl_transaction_hash = 2;
-  string content_address = 3;
-  map<string, string> postfiat_metadata = 4;
+  
+  // Content descriptor for external content (replaces content_address)
+  ContentDescriptor content = 2;
+  
+  map<string, string> postfiat_metadata = 3;
 }
 
 message PostFiatA2AMessage {
   a2a.v1.Message a2a_message = 1;
   PostFiatEnvelopePayload postfiat_payload = 2;
   map<string, string> integration_metadata = 3;
+}
+
+// ============================================================================
+// PostFiat Storage Services
+// ============================================================================
+
+// PostFiat Agent Registry Service
+service PostFiatAgentRegistryService {
+  // Get agent card (A2A compliant)
+  rpc GetAgentCard(GetAgentCardRequest) returns (GetAgentCardResponse) {
+    option (google.api.http) = {
+      get: "/v3/agents/card"
+    };
+  }
+  
+  // Store agent card with PostFiat capabilities
+  rpc StoreAgentCard(StoreAgentCardRequest) returns (StoreAgentCardResponse) {
+    option (google.api.http) = {
+      post: "/v3/agents"
+      body: "*"
+    };
+  }
+  
+  // Search agents by capabilities, name, etc.
+  rpc SearchAgents(SearchAgentsRequest) returns (SearchAgentsResponse) {
+    option (google.api.http) = {
+      get: "/v3/agents/search"
+    };
+  }
+  
+  // Delete agent card
+  rpc DeleteAgentCard(DeleteAgentCardRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v3/agents/{agent_id}"
+    };
+  }
+  
+  // Get agent by envelope sender
+  rpc GetAgentByEnvelope(GetAgentByEnvelopeRequest) returns (GetAgentByEnvelopeResponse) {
+    option (google.api.http) = {
+      post: "/v3/agents/by-envelope"
+      body: "*"
+    };
+  }
+}
+
+// PostFiat Content Storage Service
+service PostFiatContentStorageService {
+  // Store content and return descriptor
+  rpc StoreContent(StoreContentRequest) returns (StoreContentResponse) {
+    option (google.api.http) = {
+      post: "/v3/content"
+      body: "*"
+    };
+  }
+  
+  // Retrieve content by descriptor
+  rpc RetrieveContent(RetrieveContentRequest) returns (RetrieveContentResponse) {
+    option (google.api.http) = {
+      post: "/v3/content/retrieve"
+      body: "*"
+    };
+  }
+  
+  // Delete content
+  rpc DeleteContent(DeleteContentRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v3/content/{content_id}"
+    };
+  }
+  
+  // Check if storage can handle URI
+  rpc CanHandleUri(CanHandleUriRequest) returns (CanHandleUriResponse) {
+    option (google.api.http) = {
+      get: "/v3/content/can-handle"
+    };
+  }
+}
+
+// PostFiat Envelope Storage Service
+service PostFiatEnvelopeStorageService {
+  // Store envelope
+  rpc StoreEnvelope(StoreEnvelopeRequest) returns (StoreEnvelopeResponse) {
+    option (google.api.http) = {
+      post: "/v3/envelopes"
+      body: "*"
+    };
+  }
+  
+  // Retrieve envelope by ID
+  rpc RetrieveEnvelope(RetrieveEnvelopeRequest) returns (RetrieveEnvelopeResponse) {
+    option (google.api.http) = {
+      get: "/v3/envelopes/{envelope_id}"
+    };
+  }
+  
+  // Search envelopes
+  rpc SearchEnvelopes(SearchEnvelopesRequest) returns (SearchEnvelopesResponse) {
+    option (google.api.http) = {
+      get: "/v3/envelopes/search"
+    };
+  }
+  
+  // Delete envelope
+  rpc DeleteEnvelope(DeleteEnvelopeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v3/envelopes/{envelope_id}"
+    };
+  }
+  
+  // Check if envelope exists
+  rpc EnvelopeExists(EnvelopeExistsRequest) returns (EnvelopeExistsResponse) {
+    option (google.api.http) = {
+      get: "/v3/envelopes/{envelope_id}/exists"
+    };
+  }
+  
+  // Find envelopes by content hash
+  rpc FindEnvelopesByContentHash(FindEnvelopesByContentHashRequest) 
+      returns (FindEnvelopesByContentHashResponse) {
+    option (google.api.http) = {
+      get: "/v3/envelopes/by-content-hash/{content_hash}"
+    };
+  }
+  
+  // Find envelopes by context
+  rpc FindEnvelopesByContext(FindEnvelopesByContextRequest) 
+      returns (FindEnvelopesByContextResponse) {
+    option (google.api.http) = {
+      get: "/v3/envelopes/by-context/{context_hash}"
+    };
+  }
+  
+  // List envelopes by sender
+  rpc ListEnvelopesBySender(ListEnvelopesBySenderRequest) 
+      returns (ListEnvelopesBySenderResponse) {
+    option (google.api.http) = {
+      get: "/v3/envelopes/by-sender/{sender}"
+    };
+  }
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+// Agent Registry Messages
+message StoreAgentCardRequest {
+  a2a.v1.AgentCard agent_card = 1;
+  PostFiatAgentCapabilities postfiat_capabilities = 2;
+  string agent_id = 3;  // Optional - if not provided, will be generated
+}
+
+message SearchAgentsRequest {
+  string query = 1;  // Search query
+  repeated string capabilities = 2;  // Filter by capabilities
+  string organization = 3;  // Filter by organization
+  int32 limit = 4;  // Maximum results
+  int32 offset = 5;  // Pagination offset
+}
+
+message SearchAgentsResponse {
+  repeated AgentSearchResult results = 1;
+  int32 total_count = 2;
+}
+
+message AgentSearchResult {
+  string agent_id = 1;
+  a2a.v1.AgentCard agent_card = 2;
+  PostFiatAgentCapabilities postfiat_capabilities = 3;
+  float relevance_score = 4;
+}
+
+message DeleteAgentCardRequest {
+  string agent_id = 1;
+}
+
+message GetAgentByEnvelopeRequest {
+  Envelope envelope = 1;
+}
+
+// Content Storage Messages
+message StoreContentRequest {
+  bytes content = 1;
+  string content_type = 2;
+  string preferred_storage = 3;  // "redis", "ipfs", "inline", etc.
+}
+
+message RetrieveContentRequest {
+  ContentDescriptor descriptor = 1;
+}
+
+message DeleteContentRequest {
+  string content_id = 1;
+}
+
+message CanHandleUriRequest {
+  string uri = 1;
+}
+
+message CanHandleUriResponse {
+  bool can_handle = 1;
+  string storage_provider = 2;
+}
+
+// Envelope Storage Messages
+message StoreEnvelopeRequest {
+  Envelope envelope = 1;
+  string preferred_storage = 2;  // "redis", "evm", "xrpl", etc.
+}
+
+message StoreEnvelopeResponse {
+  string envelope_id = 1;
+  string storage_backend = 2;
+  map<string, string> metadata = 3;
+}
+
+message RetrieveEnvelopeRequest {
+  string envelope_id = 1;
+}
+
+message SearchEnvelopesRequest {
+  string query = 1;
+  MessageType message_type = 2;
+  EncryptionMode encryption_mode = 3;
+  string sender = 4;
+  int64 start_time = 5;
+  int64 end_time = 6;
+  int32 limit = 7;
+  int32 offset = 8;
+}
+
+message SearchEnvelopesResponse {
+  repeated EnvelopeSearchResult results = 1;
+  int32 total_count = 2;
+}
+
+message EnvelopeSearchResult {
+  string envelope_id = 1;
+  Envelope envelope = 2;
+  string storage_backend = 3;
+  float relevance_score = 4;
+}
+
+message DeleteEnvelopeRequest {
+  string envelope_id = 1;
+}
+
+message EnvelopeExistsRequest {
+  string envelope_id = 1;
+}
+
+message EnvelopeExistsResponse {
+  bool exists = 1;
+  string storage_backend = 2;
+}
+
+message FindEnvelopesByContentHashRequest {
+  string content_hash = 1;
+  int32 limit = 2;
+}
+
+message FindEnvelopesByContentHashResponse {
+  repeated Envelope envelopes = 1;
+}
+
+message FindEnvelopesByContextRequest {
+  string context_hash = 1;
+  int32 limit = 2;
+}
+
+message FindEnvelopesByContextResponse {
+  repeated Envelope envelopes = 1;
+}
+
+message ListEnvelopesBySenderRequest {
+  string sender = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListEnvelopesBySenderResponse {
+  repeated Envelope envelopes = 1;
+  int32 total_count = 2;
+}
+
+// Request/Response message types for proper gRPC service compliance
+message GetAgentCardRequest {
+  string agent_id = 1;
+}
+
+message GetAgentCardResponse {
+  a2a.v1.AgentCard agent_card = 1;
+}
+
+message StoreAgentCardResponse {
+  a2a.v1.AgentCard agent_card = 1;
+}
+
+message GetAgentByEnvelopeResponse {
+  a2a.v1.AgentCard agent_card = 1;
+}
+
+message StoreContentResponse {
+  ContentDescriptor descriptor = 1;
+}
+
+message RetrieveContentResponse {
+  bytes content = 1;
+  string content_type = 2;
+  int64 content_length = 3;
+}
+
+message RetrieveEnvelopeResponse {
+  Envelope envelope = 1;
 }

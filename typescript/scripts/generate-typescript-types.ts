@@ -776,6 +776,7 @@ function generateGeneratedIndex(): boolean {
 export {
   MessageType as ProtoMessageType,
   EncryptionMode as ProtoEncryptionMode,
+  KeyType,
 } from './postfiat/v3/messages_pb';
 export {
   ErrorCode as ProtoErrorCode,
@@ -794,6 +795,7 @@ export {
   PostFiatAgentCapabilities,
   PostFiatEnvelopePayload,
   PostFiatA2AMessage,
+  AccessGrant,
 } from './postfiat/v3/messages_pb';
 
 // Type-only exports for additional type safety
@@ -805,6 +807,7 @@ export type {
   PostFiatAgentCapabilities as PostFiatAgentCapabilitiesType,
   PostFiatEnvelopePayload as PostFiatEnvelopePayloadType,
   PostFiatA2AMessage as PostFiatA2AMessageType,
+  AccessGrant as AccessGrantType,
 } from './postfiat/v3/messages_pb';
 `;
 

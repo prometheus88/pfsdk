@@ -3,6 +3,7 @@ postfiat/v3/*_pb2.py
 postfiat/v3/*_pb2_grpc.py
 
 # Generated Python types from protobuf
+postfiat/__init__.py
 postfiat/types/enums.py
 postfiat/exceptions.py
 postfiat/models/envelope_enums.py
@@ -15,12 +16,21 @@ postfiat/services/
 postfiat/clients/
 postfiat/integrations/
 
-# Generated tests from protobuf
-tests/generated/
+# Note: Manual modules like envelope/ are tracked
+# Import EnvelopeFactory: from postfiat.envelope import EnvelopeFactory
 
-# A2A generated Python files
+# A2A generated Python files (but allow __init__.py files)
 a2a/v1/*_pb2.py
 a2a/v1/*_pb2_grpc.py
 
+# A2A files sometimes generated in wrong location
+postfiat/a2a/
+
+# Generated tests from protobuf
+tests/generated/
+
 # Generated documentation
 docs/
+
+*.pyc
+__pycache__/

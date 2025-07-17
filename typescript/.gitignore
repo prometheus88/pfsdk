@@ -3,6 +3,7 @@ src/generated/
 src/client/
 src/types/
 src/index.ts
+src/version.ts
 tests/generated/
 dist/
 

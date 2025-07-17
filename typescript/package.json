@@ -1,6 +1,6 @@
 {
   "name": "@postfiat/sdk",
-  "version": "0.1.0",
+  "version": "0.3.0-rc1",
   "description": "TypeScript SDK for PostFiat Wallet Protocol",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -16,6 +16,10 @@
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/generated --testTimeout=10000 --passWithNoTests",
+    "test:integration": "jest tests/manual/integration --testTimeout=60000",
+    "test:selective-disclosure": "jest tests/manual/integration/selective-disclosure.test.ts --testTimeout=120000 --verbose",
+    "test:all": "npm run test:unit && npm run test:integration",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "typecheck": "tsc --noEmit",
@@ -23,7 +27,8 @@
     "generate": "buf generate --template ../proto/buf.gen.yaml ../proto",
     "generate:types": "tsx scripts/generate-typescript-types.ts",
     "generate:tests": "tsx scripts/generate-typescript-tests.ts",
-    "generate:all": "npm run generate && npm run generate:types && npm run generate:tests"
+    "generate:all": "npm run generate && npm run generate:types && npm run generate:tests",
+    "update-version": "node scripts/update-version.js"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -41,6 +46,12 @@
     "@bufbuild/protobuf": "^1.10.0",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0"
+  },
+  "optionalDependencies": {
+    "ipfs-http-client": "^60.0.0",
+    "ioredis": "^5.3.0",
+    "web3": "^4.0.0",
+    "xrpl": "^3.0.0"
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^1.10.0",
