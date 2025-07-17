@@ -357,14 +357,11 @@ jobs:
       - name: Bump all version strings
         run: make bump-version
 
-      - name: Generate all code and tests
+      - name: Regenerate all code and tests
         run: make regen-all
 
-      - name: Build TypeScript package
-        run: |
-          cd typescript
-          npm run build
-          npm pack
+      - name: Build TypeScript package (with codegen)
+        run: make build-ts
 
       - name: Upload TypeScript build artifacts
         uses: actions/upload-artifact@v4
