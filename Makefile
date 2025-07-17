@@ -58,9 +58,13 @@ deps:
 	@echo "📦 Installing Python dependencies..."
 	pip install -e .
 	pip install -e "python/[dev]"
-	pip install build
+	pip install build twine
 	@echo "📦 Installing TypeScript dependencies..."
 	cd typescript && rm -rf node_modules && npm ci
+	# If you see rollup native module errors in CI, add an npm upgrade step before this:
+	#   npm install -g npm@latest
+	# As a last resort, also delete package-lock.json and use npm install (not ci):
+	#   rm -rf node_modules package-lock.json && npm install
 
 # Code generation
 proto: deps
