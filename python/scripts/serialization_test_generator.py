@@ -251,7 +251,10 @@ class TestDynamicSerialization:
             return f'message.{field.name} = 0  # Default enum value'
         
         elif field.type.name == 'MESSAGE':
-            return f'# TODO: Populate nested message {field.name}'
+            # Use introspection to populate nested message
+            return f'''# Populate nested message {field.name}
+        factory = TestDataFactory(self.introspector)
+        factory.populate_message(message.{field.name})'''
         
         return f'# TODO: Handle field type {field.type.name} for {field.name}'
     
@@ -265,7 +268,8 @@ class TestDynamicSerialization:
             return f'''# Populate repeated message field {field.name}
         for i in range(2):
             item = message.{field.name}.add()
-            # TODO: Populate nested message fields'''
+            factory = TestDataFactory(self.introspector)
+            factory.populate_message(item)'''
         else:
             # For primitive repeated fields
             singular_code = self._generate_singular_field_code(field, schema)
