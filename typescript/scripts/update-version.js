@@ -44,6 +44,18 @@ function updateTypeScriptFiles(version) {
         console.log('✅ Updated src/index.ts version');
     }
     
+    // Update src/version.ts
+    const versionPath = path.join(__dirname, '../src/version.ts');
+    if (fs.existsSync(versionPath)) {
+        let content = fs.readFileSync(versionPath, 'utf8');
+        content = content.replace(
+            /export const VERSION = '[^']+';/,
+            `export const VERSION = '${version}';`
+        );
+        fs.writeFileSync(versionPath, content);
+        console.log('✅ Updated src/version.ts version');
+    }
+    
     // Update src/client/base.ts User-Agent
     const clientPath = path.join(__dirname, '../src/client/base.ts');
     if (fs.existsSync(clientPath)) {
