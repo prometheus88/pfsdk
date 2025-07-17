@@ -88,7 +88,7 @@ jobs:
           - [Proto Definitions](https://github.com/${{ github.repository }}/tree/${{ steps.tag.outputs.tag }}/proto)
           EOF
           )" \
-            python/dist/*.tar.gz python/dist/*.whl
+            python/dist/*.tar.gz python/dist/*.whl typescript/*.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
