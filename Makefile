@@ -143,7 +143,7 @@ dev-quick: tests tests-core
 	@echo "✅ Quick test regeneration complete!"
 
 # Version bumping
-bump-version:
+bump-version: proto
 	@echo "🔢 Bumping all version strings from VERSION file..."
 	./scripts/update-all-versions.sh
 
