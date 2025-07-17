@@ -159,6 +159,8 @@ build-py:
 
 # Build TypeScript package(s)
 build-ts:
+	@echo "📦 Generating TypeScript code..."
+	cd typescript && npm run generate:all
 	@echo "📦 Building TypeScript package(s)..."
 	cd typescript && npm run build && npm pack
 
