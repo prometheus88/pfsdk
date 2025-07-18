@@ -1,4 +1,7 @@
 site_name: PostFiat SDK Documentation
+site_url: https://prometheus88.github.io/pfsdk/
+repo_url: https://github.com/prometheus88/pfsdk
+repo_name: prometheus88/pfsdk
 
 plugins:
   - search
