@@ -91,7 +91,6 @@ message MultiPartMessagePart {
 enum MessageType {
   CORE_MESSAGE = 0;
   MULTIPART_MESSAGE_PART = 1;
-  RESERVED_100 = 100;
 }
 
 // Encryption modes supported. Unchanged.
