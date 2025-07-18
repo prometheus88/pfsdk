@@ -27,6 +27,7 @@ from postfiat.envelope.storage import (
     CompositeStorage
 )
 from postfiat.exceptions import ValidationError
+from postfiat.logging import get_logger
 from google.protobuf.empty_pb2 import Empty
 
 
@@ -39,7 +40,14 @@ class ContentStorageServiceImpl(PostFiatContentStorageServiceServicer):
         Args:
             storage: Content storage backend. If None, creates default composite storage.
         """
+        self.logger = get_logger("service.content_storage")
         self.storage = storage or self._create_default_storage()
+        
+        self.logger.info(
+            "Initialized content storage service",
+            storage_type=type(self.storage).__name__,
+            is_composite=isinstance(self.storage, CompositeStorage)
+        )
     
     def _create_default_storage(self) -> ContentStorage:
         """Create default composite storage with all backends."""
@@ -52,6 +60,15 @@ class ContentStorageServiceImpl(PostFiatContentStorageServiceServicer):
     
     def StoreContent(self, request: StoreContentRequest, context: grpc.ServicerContext) -> StoreContentResponse:
         """Store content and return descriptor."""
+        content_size = len(request.content)
+        
+        self.logger.info(
+            "Store content request",
+            content_size=content_size,
+            content_type=request.content_type,
+            preferred_storage=request.preferred_storage or "auto"
+        )
+        
         try:
             # Convert request to storage parameters
             content = bytes(request.content)
@@ -62,12 +79,25 @@ class ContentStorageServiceImpl(PostFiatContentStorageServiceServicer):
             if request.preferred_storage:
                 storage = self._get_storage_by_type(request.preferred_storage)
                 if not storage:
+                    self.logger.error(
+                        "Unknown storage type requested",
+                        requested_type=request.preferred_storage,
+                        content_size=content_size
+                    )
                     context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
                     context.set_details(f"Unknown storage type: {request.preferred_storage}")
                     return ContentDescriptor()
             
             # Store content
             descriptor = storage.store(content, content_type)
+            
+            self.logger.info(
+                "Content stored successfully",
+                content_size=content_size,
+                storage_uri=descriptor.uri,
+                storage_type=type(storage).__name__,
+                content_hash=descriptor.content_hash.hex() if isinstance(descriptor.content_hash, bytes) else descriptor.content_hash
+            )
             
             # Convert to protobuf response
             pb_descriptor = ContentDescriptor()
@@ -83,22 +113,47 @@ class ContentStorageServiceImpl(PostFiatContentStorageServiceServicer):
             return StoreContentResponse(descriptor=pb_descriptor)
             
         except ValidationError as e:
+            self.logger.error(
+                "Content storage validation error",
+                error=str(e),
+                content_size=content_size,
+                content_type=request.content_type
+            )
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
             return StoreContentResponse()
         except Exception as e:
+            self.logger.error(
+                "Content storage internal error",
+                error=str(e),
+                content_size=content_size,
+                exc_info=True
+            )
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Storage error: {str(e)}")
             return StoreContentResponse()
     
     def RetrieveContent(self, request: RetrieveContentRequest, context: grpc.ServicerContext) -> RetrieveContentResponse:
         """Retrieve content by descriptor."""
+        self.logger.info(
+            "Retrieve content request",
+            uri=request.descriptor.uri,
+            content_type=request.descriptor.content_type
+        )
+        
         try:
             # Convert protobuf descriptor to storage descriptor
             descriptor = self._pb_to_storage_descriptor(request.descriptor)
             
             # Retrieve content
             content = self.storage.retrieve(descriptor)
+            
+            self.logger.info(
+                "Content retrieved successfully",
+                uri=descriptor.uri,
+                content_size=len(content),
+                content_type=descriptor.content_type
+            )
             
             # Create response
             response = RetrieveContentResponse()
@@ -109,14 +164,29 @@ class ContentStorageServiceImpl(PostFiatContentStorageServiceServicer):
             return response
             
         except ValidationError as e:
+            self.logger.error(
+                "Content retrieval validation error",
+                error=str(e),
+                uri=request.descriptor.uri
+            )
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
             return RetrieveContentResponse()
         except FileNotFoundError:
+            self.logger.warning(
+                "Content not found",
+                uri=request.descriptor.uri
+            )
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details("Content not found")
             return RetrieveContentResponse()
         except Exception as e:
+            self.logger.error(
+                "Content retrieval internal error",
+                error=str(e),
+                uri=request.descriptor.uri,
+                exc_info=True
+            )
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Retrieval error: {str(e)}")
             return RetrieveContentResponse()
