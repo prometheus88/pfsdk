@@ -12,7 +12,6 @@ postfiat/models/generated.py
 postfiat/services/generated.py
 postfiat/api/generated_routes.py
 postfiat/managers/
-postfiat/services/
 postfiat/clients/
 postfiat/integrations/
 
