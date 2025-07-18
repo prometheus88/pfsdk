@@ -4,12 +4,12 @@ A proto-first, multi-language SDK with Python and TypeScript support for buildin
 
 ## 📚 Documentation
 
-**[📖 Full Documentation](https://allenday.github.io/pfsdk)**
+**[📖 Full Documentation](https://prometheus88.github.io/pfsdk)**
 
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [Development Guide](docs/DEVELOPMENT.md)
 - [Contributing Guidelines](docs/CONTRIBUTING.md)
-- [API Reference](https://allenday.github.io/pfsdk/api/openapi/)
+- [API Reference](https://prometheus88.github.io/pfsdk/api/openapi/)
 
 ## 🚀 Quick Start
 

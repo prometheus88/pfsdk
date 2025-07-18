@@ -12,7 +12,7 @@ Welcome to the PostFiat SDK documentation. This is a proto-first, multi-language
 pip install postfiat-sdk==0.1.0-rc1
 
 # Or download from GitHub releases
-# wget https://github.com/allenday/pfsdk/releases/download/release-0.1.0-rc1/postfiat-sdk-0.1.0-rc1.whl
+# wget https://github.com/prometheus88/pfsdk/releases/download/release-0.1.0-rc1/postfiat-sdk-0.1.0-rc1.whl
 # pip install postfiat-sdk-0.1.0-rc1.whl
 ```
 
@@ -22,7 +22,7 @@ pip install postfiat-sdk==0.1.0-rc1
 npm install @postfiat/sdk@0.1.0-rc1
 
 # Or download from GitHub releases
-# wget https://github.com/allenday/pfsdk/releases/download/release-0.1.0-rc1/postfiat-sdk-0.1.0-rc1.tgz
+# wget https://github.com/prometheus88/pfsdk/releases/download/release-0.1.0-rc1/postfiat-sdk-0.1.0-rc1.tgz
 # npm install postfiat-sdk-0.1.0-rc1.tgz
 ```
 
