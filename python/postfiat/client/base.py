@@ -1,40 +1,61 @@
 """Base client functionality for PostFiat SDK."""
 
 import asyncio
-import logging
 from typing import Optional, Dict, Any, Union
-from dataclasses import dataclass
+from pydantic import BaseSettings, Field, validator
 import grpc
 import httpx
 
 from ..exceptions import NetworkError, AuthenticationError, ConfigurationError
+from ..logging import get_logger
 
 
-@dataclass
-class ClientConfig:
+class ClientConfig(BaseSettings):
     """Configuration for PostFiat clients."""
     
     # Server connection
-    grpc_endpoint: Optional[str] = None
-    http_endpoint: Optional[str] = None
+    grpc_endpoint: Optional[str] = Field(None, description="gRPC server endpoint")
+    http_endpoint: Optional[str] = Field(None, description="HTTP server endpoint")
     
     # Authentication
-    api_key: Optional[str] = None
-    session_token: Optional[str] = None
+    api_key: Optional[str] = Field(None, description="API key for authentication")
+    session_token: Optional[str] = Field(None, description="Session token for authentication")
     
     # Connection settings
-    timeout: float = 30.0
-    max_retries: int = 3
+    timeout: float = Field(30.0, description="Request timeout in seconds", gt=0)
+    max_retries: int = Field(3, description="Maximum number of retries", ge=0)
     
     # TLS settings
-    use_tls: bool = True
-    ca_cert_path: Optional[str] = None
+    use_tls: bool = Field(True, description="Use TLS for connections")
+    ca_cert_path: Optional[str] = Field(None, description="Path to CA certificate file")
     
     # Logging
-    log_level: str = "INFO"
+    log_level: str = Field("INFO", description="Logging level")
     
-    def __post_init__(self):
-        """Validate configuration after initialization."""
+    class Config:
+        env_prefix = "POSTFIAT_"
+        case_sensitive = False
+        
+    @validator('log_level')
+    def validate_log_level(cls, v):
+        """Validate log level."""
+        valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        if v.upper() not in valid_levels:
+            raise ValueError(f"log_level must be one of {valid_levels}")
+        return v.upper()
+    
+    @validator('ca_cert_path')
+    def validate_ca_cert_path(cls, v):
+        """Validate CA certificate path exists if provided."""
+        if v:
+            import os
+            if not os.path.exists(v):
+                raise ValueError(f"CA certificate file not found: {v}")
+        return v
+    
+    def __init__(self, **data):
+        """Initialize and validate configuration."""
+        super().__init__(**data)
         if not self.grpc_endpoint and not self.http_endpoint:
             raise ConfigurationError("Either grpc_endpoint or http_endpoint must be provided")
 
@@ -44,8 +65,7 @@ class BaseClient:
     
     def __init__(self, config: ClientConfig):
         self.config = config
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.logger.setLevel(getattr(logging, config.log_level.upper()))
+        self.logger = get_logger(f"client.{self.__class__.__name__}")
         
         # gRPC channel (lazy initialization)
         self._grpc_channel: Optional[grpc.aio.Channel] = None
@@ -67,6 +87,13 @@ class BaseClient:
         if self._grpc_channel is None:
             if not self.config.grpc_endpoint:
                 raise ConfigurationError("grpc_endpoint not configured")
+            
+            self.logger.info(
+                "Creating gRPC channel",
+                endpoint=self.config.grpc_endpoint,
+                use_tls=self.config.use_tls,
+                has_ca_cert=bool(self.config.ca_cert_path)
+            )
             
             if self.config.use_tls:
                 credentials = grpc.ssl_channel_credentials()
@@ -91,6 +118,13 @@ class BaseClient:
             if not self.config.http_endpoint:
                 raise ConfigurationError("http_endpoint not configured")
             
+            self.logger.info(
+                "Creating HTTP client",
+                endpoint=self.config.http_endpoint,
+                timeout=self.config.timeout,
+                has_auth=bool(self.config.api_key or self.config.session_token)
+            )
+            
             headers = {}
             if self.config.api_key:
                 headers["Authorization"] = f"Bearer {self.config.api_key}"
@@ -107,13 +141,17 @@ class BaseClient:
     
     async def close(self):
         """Close all connections."""
+        self.logger.info("Closing client connections")
+        
         if self._grpc_channel:
             await self._grpc_channel.close()
             self._grpc_channel = None
+            self.logger.debug("Closed gRPC channel")
         
         if self._http_client:
             await self._http_client.aclose()
             self._http_client = None
+            self.logger.debug("Closed HTTP client")
     
     def _get_metadata(self) -> list:
         """Get gRPC metadata for requests."""
@@ -131,6 +169,14 @@ class BaseClient:
         status_code = error.code()
         details = error.details()
         
+        self.logger.error(
+            "gRPC error occurred",
+            status_code=status_code.name,
+            details=details,
+            endpoint=self.config.grpc_endpoint,
+            exc_info=True
+        )
+        
         if status_code == grpc.StatusCode.UNAUTHENTICATED:
             raise AuthenticationError(f"Authentication failed: {details}")
         elif status_code == grpc.StatusCode.UNAVAILABLE:
@@ -140,6 +186,14 @@ class BaseClient:
     
     async def _handle_http_error(self, response: httpx.Response) -> None:
         """Handle and convert HTTP errors to SDK exceptions."""
+        self.logger.error(
+            "HTTP error occurred",
+            status_code=response.status_code,
+            response_text=response.text,
+            endpoint=self.config.http_endpoint,
+            url=str(response.url)
+        )
+        
         if response.status_code == 401:
             raise AuthenticationError(f"Authentication failed: {response.text}")
         elif response.status_code >= 500:

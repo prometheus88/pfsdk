@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
 from ..v3.messages_pb2 import Envelope
+from ..logging import get_logger
 
 
 class EnvelopeStore(ABC):
@@ -144,11 +145,19 @@ class CompositeEnvelopeStore(EnvelopeStore):
             stores: Dictionary of store name to store instance
             default_store: Name of the default store to use
         """
+        self.logger = get_logger("store.composite")
         self.stores = stores
         self.default_store = default_store
         
         if default_store not in stores:
             raise ValueError(f"Default store '{default_store}' not found in stores")
+            
+        self.logger.info(
+            "Initialized composite envelope store",
+            store_count=len(stores),
+            store_names=list(stores.keys()),
+            default_store=default_store
+        )
     
     def get_store(self, store_name: Optional[str] = None) -> EnvelopeStore:
         """Get a specific store instance.
@@ -169,53 +178,162 @@ class CompositeEnvelopeStore(EnvelopeStore):
     
     async def store(self, envelope: Envelope) -> str:
         """Store using default store."""
+        self.logger.info(
+            "Storing envelope in composite store",
+            message_type=envelope.message_type,
+            default_store=self.default_store
+        )
         return await self.get_store().store(envelope)
     
     async def retrieve(self, envelope_id: str) -> Envelope:
         """Retrieve from all stores until found."""
-        for store in self.stores.values():
+        self.logger.info(
+            "Retrieving envelope from composite store",
+            envelope_id=envelope_id[:16] + "...",
+            store_count=len(self.stores)
+        )
+        
+        for store_name, store in self.stores.items():
             try:
-                return await store.retrieve(envelope_id)
+                envelope = await store.retrieve(envelope_id)
+                self.logger.info(
+                    "Envelope found in store",
+                    envelope_id=envelope_id[:16] + "...",
+                    store_name=store_name,
+                    message_type=envelope.message_type
+                )
+                return envelope
             except EnvelopeNotFoundError:
                 continue
         
+        self.logger.warning(
+            "Envelope not found in any store",
+            envelope_id=envelope_id[:16] + "...",
+            searched_stores=list(self.stores.keys())
+        )
         raise EnvelopeNotFoundError(f"Envelope '{envelope_id}' not found in any store")
     
     async def find_by_content_hash(self, content_hash: bytes) -> List[Envelope]:
         """Find across all stores and combine results."""
+        self.logger.info(
+            "Finding envelopes by content hash across all stores",
+            content_hash=content_hash.hex()[:16] + "...",
+            store_count=len(self.stores)
+        )
+        
         results = []
-        for store in self.stores.values():
-            results.extend(await store.find_by_content_hash(content_hash))
+        for store_name, store in self.stores.items():
+            store_results = await store.find_by_content_hash(content_hash)
+            if store_results:
+                self.logger.debug(
+                    "Found envelopes in store",
+                    store_name=store_name,
+                    count=len(store_results),
+                    content_hash=content_hash.hex()[:16] + "..."
+                )
+            results.extend(store_results)
+        
+        self.logger.info(
+            "Content hash search completed",
+            total_found=len(results),
+            content_hash=content_hash.hex()[:16] + "..."
+        )
         return results
     
     async def find_by_context(self, context_hash: bytes) -> List[Envelope]:
         """Find across all stores and combine results."""
+        self.logger.info(
+            "Finding envelopes by context hash across all stores",
+            context_hash=context_hash.hex()[:16] + "...",
+            store_count=len(self.stores)
+        )
+        
         results = []
-        for store in self.stores.values():
-            results.extend(await store.find_by_context(context_hash))
+        for store_name, store in self.stores.items():
+            store_results = await store.find_by_context(context_hash)
+            if store_results:
+                self.logger.debug(
+                    "Found envelopes in store",
+                    store_name=store_name,
+                    count=len(store_results),
+                    context_hash=context_hash.hex()[:16] + "..."
+                )
+            results.extend(store_results)
+        
+        self.logger.info(
+            "Context hash search completed",
+            total_found=len(results),
+            context_hash=context_hash.hex()[:16] + "..."
+        )
         return results
     
     async def list_by_sender(self, sender: str, limit: int = 100) -> List[Envelope]:
         """List across all stores and combine results."""
+        self.logger.info(
+            "Listing envelopes by sender across all stores",
+            sender=sender,
+            limit=limit,
+            store_count=len(self.stores)
+        )
+        
         results = []
         remaining_limit = limit
         
-        for store in self.stores.values():
+        for store_name, store in self.stores.items():
             if remaining_limit <= 0:
                 break
             
             store_results = await store.list_by_sender(sender, remaining_limit)
+            if store_results:
+                self.logger.debug(
+                    "Found envelopes in store",
+                    store_name=store_name,
+                    count=len(store_results),
+                    sender=sender
+                )
             results.extend(store_results)
             remaining_limit -= len(store_results)
         
-        return results[:limit]
+        final_results = results[:limit]
+        self.logger.info(
+            "Sender listing completed",
+            sender=sender,
+            total_found=len(final_results),
+            requested_limit=limit
+        )
+        return final_results
     
     async def delete(self, envelope_id: str) -> bool:
         """Delete from all stores."""
+        self.logger.info(
+            "Deleting envelope from all stores",
+            envelope_id=envelope_id[:16] + "...",
+            store_count=len(self.stores)
+        )
+        
         deleted = False
-        for store in self.stores.values():
-            if await store.delete(envelope_id):
-                deleted = True
+        for store_name, store in self.stores.items():
+            try:
+                if await store.delete(envelope_id):
+                    self.logger.info(
+                        "Envelope deleted from store",
+                        envelope_id=envelope_id[:16] + "...",
+                        store_name=store_name
+                    )
+                    deleted = True
+            except Exception as e:
+                self.logger.warning(
+                    "Failed to delete from store",
+                    envelope_id=envelope_id[:16] + "...",
+                    store_name=store_name,
+                    error=str(e)
+                )
+        
+        self.logger.info(
+            "Delete operation completed",
+            envelope_id=envelope_id[:16] + "...",
+            deleted=deleted
+        )
         return deleted
     
     async def exists(self, envelope_id: str) -> bool:
