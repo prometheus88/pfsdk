@@ -7,7 +7,7 @@ name = "postfiat-sdk"
 dynamic = ["version"]
 description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     { name = "PostFiat Team", email = "team@postfiat.org" }
 ]

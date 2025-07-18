@@ -3,6 +3,16 @@ site_name: PostFiat SDK Documentation
 plugins:
   - search
   - swagger-ui-tag
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+            merge_init_into_class: true
+            show_signature_annotations: true
 
 nav:
   - Home: index.md
@@ -11,7 +21,7 @@ nav:
   - Contributing: CONTRIBUTING.md
   - API Reference:
       - OpenAPI Specification: api/openapi.md
-      - Python SDK: generated/python/index.html
+      - Python SDK: generated/python/index.md
       - Protocol Buffers: generated/proto/index.md
   - Research:
       - Key Management: research/KEY-MANAGEMENT.md

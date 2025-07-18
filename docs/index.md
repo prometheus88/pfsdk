@@ -36,7 +36,7 @@ npm install @postfiat/sdk@0.1.0-rc1
 
 ## API Documentation
 
-- **[Python SDK API](generated/python/index.html)** - Complete Python API reference with Sphinx
+- **[Python SDK API](generated/python/index.md)** - Complete Python API reference with mkdocstrings
 - **[OpenAPI Specification](api/openapi.md)** - Interactive REST API documentation
 - **[Protocol Buffers](generated/proto/index.md)** - Proto message definitions
 
