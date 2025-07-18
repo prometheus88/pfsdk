@@ -26,10 +26,16 @@ class TestContentStorageServiceImpl:
 
     def test_storecontent(self):
         """Test StoreContent method."""
-        # TODO: Implement StoreContent test
+        # Create a proper mock request with expected attributes
         request = Mock()
+        request.content = b"test content data"
+        request.content_type = "text/plain"
+        request.preferred_storage = "inline"
+        
         response = self.service.StoreContent(request, self.context)
         assert response is not None
+        assert hasattr(response, 'descriptor')
+        assert response.descriptor.content_length == len(request.content)
 
     def test_retrievecontent(self):
         """Test RetrieveContent method."""

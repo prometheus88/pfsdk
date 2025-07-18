@@ -60,7 +60,7 @@ deps:
 	pip install -e "python/[dev]"
 	pip install build twine sphinx sphinx-rtd-theme sphinx-autoapi myst-parser mkdocs mkdocs-material mkdocs-swagger-ui-tag
 	@echo "📦 Installing TypeScript dependencies (workaround for rollup native module bug)..."
-	cd typescript && rm -rf node_modules package-lock.json && npm install
+	cd typescript && rm -rf node_modules package-lock.json && timeout 300 npm install || echo "⚠️  TypeScript dependency installation timed out after 5 minutes"
 
 # Code generation
 proto: deps
@@ -83,7 +83,7 @@ tests:
 	@echo "🧪 Running core dynamic Python tests..."
 	cd python && python scripts/dev_test_regen.py --run-tests --core-only
 	@echo "🧪 Running all TypeScript unit and integration tests..."
-	cd typescript && npm install && npm run test:all
+	cd typescript && (test -d node_modules || timeout 300 npm install) && npm run test:all
 	@echo "✅ All Python and TypeScript tests completed!"
 
 test: tests
@@ -95,7 +95,7 @@ tests-all:
 	@echo "🧪 Running manual Python tests..."
 	cd python && python -m pytest tests/manual/ -v
 	@echo "🧪 Running all TypeScript unit and integration tests..."
-	cd typescript && npm install && npm run test:all
+	cd typescript && (test -d node_modules || timeout 300 npm install) && npm run test:all
 	@echo "✅ All Python and TypeScript tests completed!"
 
 tests-manual:
@@ -105,15 +105,15 @@ tests-manual:
 # TypeScript build and test
 ts-build:
 	@echo "🔨 Building TypeScript SDK..."
-	cd typescript && npm install && npm run build
+	cd typescript && (test -d node_modules || timeout 300 npm install) && npm run build
 
 ts-test:
 	@echo "🧪 Running TypeScript tests..."
-	cd typescript && npm install && npm test
+	cd typescript && (test -d node_modules || timeout 300 npm install) && npm test
 
 ts-test-all:
 	@echo "🧪 Running all TypeScript unit and integration tests..."
-	cd typescript && npm install && npm run test:all
+	cd typescript && (test -d node_modules || timeout 300 npm install) && npm run test:all
 
 # Unified test target
 # test: tests-manual tests-core ts-test-all # This line is now redundant as 'test' is an alias for 'tests'

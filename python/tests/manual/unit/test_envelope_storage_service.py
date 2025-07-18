@@ -26,10 +26,23 @@ class TestEnvelopeStorageServiceImpl:
 
     def test_storeenvelope(self):
         """Test StoreEnvelope method."""
-        # TODO: Implement StoreEnvelope test
+        # Create a proper mock request with expected attributes
         request = Mock()
+        request.envelope = Mock()
+        request.envelope.message_type = "test_message"
+        request.envelope.content_hash = Mock()
+        request.envelope.content_hash.hex = Mock(return_value="abcdef1234567890abcdef1234567890")
+        request.envelope.version = 1
+        request.envelope.encryption = 0
+        request.envelope.message = b"test message"
+        request.envelope.reply_to = ""
+        request.envelope.metadata = {}
+        request.preferred_storage = "redis"
+        
         response = self.service.StoreEnvelope(request, self.context)
         assert response is not None
+        assert hasattr(response, 'envelope_id')
+        assert hasattr(response, 'storage_backend')
 
     def test_retrieveenvelope(self):
         """Test RetrieveEnvelope method."""
