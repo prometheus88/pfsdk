@@ -40,20 +40,18 @@ jobs:
           chmod +x scripts/setup-a2a-dependency.sh
           ./scripts/setup-a2a-dependency.sh
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
       - name: Install protoc-gen-doc
         run: |
-          # Install Go if needed for protoc-gen-doc
-          GO_VERSION="1.21"
-          wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
-          sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
-          
           # Install protoc-gen-doc
-          export PATH=$PATH:/usr/local/go/bin
-          export GOPATH=$HOME/go
-          /usr/local/go/bin/go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
+          go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
           
           # Make it available in PATH
-          sudo cp $HOME/go/bin/protoc-gen-doc /usr/local/bin/
+          sudo cp $(go env GOPATH)/bin/protoc-gen-doc /usr/local/bin/
           
           # Verify installation
           which protoc-gen-doc
