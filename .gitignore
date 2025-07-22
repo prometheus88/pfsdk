@@ -269,6 +269,9 @@ third_party/googleapis/
 # Buf lock file (commit this)
 # proto/buf.lock
 
+# Local buf CLI binary (downloaded by Makefile)
+bin/
+
 # OS and IDE files
 .DS_Store
 .DS_Store?

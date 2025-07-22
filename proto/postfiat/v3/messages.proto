@@ -91,7 +91,6 @@ message MultiPartMessagePart {
 enum MessageType {
   CORE_MESSAGE = 0;
   MULTIPART_MESSAGE_PART = 1;
-  RESERVED_100 = 100;
 }
 
 // Encryption modes supported. Unchanged.
@@ -175,7 +174,7 @@ message PostFiatA2AMessage {
 // PostFiat Agent Registry Service
 service PostFiatAgentRegistryService {
   // Get agent card (A2A compliant)
-  rpc GetAgentCard(GetAgentCardRequest) returns (GetAgentCardResponse) {
+  rpc GetAgentCard(PostFiatAgentRegistryServiceGetAgentCardRequest) returns (PostFiatAgentRegistryServiceGetAgentCardResponse) {
     option (google.api.http) = {
       get: "/v3/agents/card"
     };
@@ -453,11 +452,11 @@ message ListEnvelopesBySenderResponse {
 }
 
 // Request/Response message types for proper gRPC service compliance
-message GetAgentCardRequest {
+message PostFiatAgentRegistryServiceGetAgentCardRequest {
   string agent_id = 1;
 }
 
-message GetAgentCardResponse {
+message PostFiatAgentRegistryServiceGetAgentCardResponse {
   a2a.v1.AgentCard agent_card = 1;
 }
 

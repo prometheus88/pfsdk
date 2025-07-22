@@ -7,7 +7,7 @@ name = "postfiat-sdk"
 dynamic = ["version"]
 description = "PostFiat SDK - Comprehensive SDK for PostFiat protocol"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     { name = "PostFiat Team", email = "team@postfiat.org" }
 ]
@@ -136,13 +136,9 @@ heavy = [
     "protoc-gen-openapiv2>=0.0.1,<1.0.0",   # OpenAPI generation
 ]
 
-# Advanced observability (OpenTelemetry stack)
+# Advanced logging and monitoring
 observability = [
-    "opentelemetry-api>=1.34.1,<2.0.0",      # Distributed tracing API
-    "opentelemetry-sdk>=1.34.1,<2.0.0",      # Observability SDK
-    "opentelemetry-exporter-otlp-proto-http>=1.34.1,<2.0.0",  # OTLP export
-    "opentelemetry-semantic-conventions>=0.55b1,<1.0.0",       # Standard conventions
-    "logfire>=0.1.0,<1.0.0",                 # Pydantic Logfire
+    "logfire>=0.1.0,<1.0.0",                 # Pydantic Logfire (optional structured logging enhancement)
 ]
 
 # LLM provider dependencies (optional)

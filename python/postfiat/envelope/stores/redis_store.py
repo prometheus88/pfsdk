@@ -12,6 +12,7 @@ from datetime import datetime
 
 from ..envelope_store import EnvelopeStore, EnvelopeNotFoundError, StorageError
 from ...v3.messages_pb2 import Envelope
+from ...logging import get_logger
 
 
 class RedisEnvelopeStore(EnvelopeStore):
@@ -24,22 +25,39 @@ class RedisEnvelopeStore(EnvelopeStore):
             redis_url: Redis connection URL
             key_prefix: Prefix for Redis keys
         """
+        self.logger = get_logger("store.redis")
         self.redis_url = redis_url
         self.key_prefix = key_prefix
         self._client = None
+        
+        self.logger.info(
+            "Initialized Redis envelope store",
+            redis_url=redis_url,
+            key_prefix=key_prefix
+        )
     
     @property
     def client(self):
         """Lazy-load Redis client."""
         if self._client is None:
+            self.logger.info("Connecting to Redis", redis_url=self.redis_url)
             try:
                 import redis.asyncio as redis
                 self._client = redis.from_url(self.redis_url)
+                self.logger.info("Successfully connected to Redis")
             except ImportError:
+                self.logger.error("Redis client dependency missing")
                 raise ImportError(
                     "redis is required for Redis storage. "
                     "Install with: pip install postfiat-sdk[storage]"
                 )
+            except Exception as e:
+                self.logger.error(
+                    "Failed to connect to Redis",
+                    redis_url=self.redis_url,
+                    error=str(e)
+                )
+                raise
         return self._client
     
     def _envelope_key(self, envelope_id: str) -> str:
@@ -69,9 +87,17 @@ class RedisEnvelopeStore(EnvelopeStore):
     
     async def store(self, envelope: Envelope) -> str:
         """Store envelope in Redis with indexing."""
+        envelope_id = self._generate_envelope_id(envelope)
+        
+        self.logger.info(
+            "Storing envelope in Redis",
+            envelope_id=envelope_id[:16] + "...",
+            message_type=envelope.message_type,
+            has_public_refs=len(envelope.public_references) > 0,
+            sender=envelope.metadata.get("sender", "unknown")
+        )
+        
         try:
-            envelope_id = self._generate_envelope_id(envelope)
-            
             # Add storage-specific metadata to envelope
             envelope.metadata["storage_backend"] = "redis"
             envelope.metadata["envelope_id"] = envelope_id
@@ -109,9 +135,23 @@ class RedisEnvelopeStore(EnvelopeStore):
             
             await pipe.execute()
             
+            self.logger.info(
+                "Envelope stored successfully in Redis",
+                envelope_id=envelope_id[:16] + "...",
+                envelope_size=len(envelope_data),
+                indexed_contexts=len(envelope.public_references),
+                has_sender_index=bool(sender)
+            )
+            
             return envelope_id
             
         except Exception as e:
+            self.logger.error(
+                "Failed to store envelope in Redis",
+                envelope_id=envelope_id[:16] + "...",
+                error=str(e),
+                exc_info=True
+            )
             raise StorageError(f"Failed to store envelope: {e}")
     
     async def retrieve(self, envelope_id: str) -> Envelope:

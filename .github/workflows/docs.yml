@@ -40,6 +40,23 @@ jobs:
           chmod +x scripts/setup-a2a-dependency.sh
           ./scripts/setup-a2a-dependency.sh
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install protoc-gen-doc
+        run: |
+          # Install protoc-gen-doc
+          go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
+          
+          # Make it available in PATH
+          sudo cp $(go env GOPATH)/bin/protoc-gen-doc /usr/local/bin/
+          
+          # Verify installation
+          which protoc-gen-doc
+          protoc-gen-doc --version || true
+
       # Use Makefile for all documentation generation
       - name: Makefile help (discoverability)
         run: make help

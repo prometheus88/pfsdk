@@ -14,6 +14,7 @@ from ..v3.messages_pb2 import (
     MultiPartMessagePart, MessageType, EncryptionMode
 )
 from ..exceptions import ValidationError
+from ..logging import get_logger
 
 
 class ContentStorage(ABC):
@@ -66,34 +67,61 @@ class IPFSStorage(ContentStorage):
         Args:
             gateway_url: IPFS API gateway URL
         """
+        self.logger = get_logger("storage.ipfs")
         self.gateway_url = gateway_url
         self._client = None
+        
+        self.logger.info(
+            "Initialized IPFS storage",
+            gateway_url=gateway_url
+        )
     
     @property
     def client(self):
         """Lazy-load IPFS client."""
         if self._client is None:
+            self.logger.info("Connecting to IPFS", gateway_url=self.gateway_url)
             try:
                 import ipfshttpclient
                 self._client = ipfshttpclient.connect(self.gateway_url)
+                self.logger.info("Successfully connected to IPFS")
             except ImportError:
+                self.logger.error("IPFS client dependency missing")
                 raise ImportError(
                     "ipfshttpclient is required for IPFS storage. "
                     "Install with: pip install postfiat-sdk[storage]"
                 )
             except Exception as e:
+                self.logger.error(
+                    "Failed to connect to IPFS",
+                    gateway_url=self.gateway_url,
+                    error=str(e)
+                )
                 raise ConnectionError(f"Failed to connect to IPFS at {self.gateway_url}: {e}")
         return self._client
     
     def store(self, content: bytes, content_type: str) -> ContentDescriptor:
         """Store content in IPFS."""
-        # Calculate content hash
+        content_size = len(content)
         content_hash = hashlib.sha256(content).digest()
+        
+        self.logger.info(
+            "Storing content in IPFS",
+            content_size=content_size,
+            content_type=content_type
+        )
         
         try:
             # Add content to IPFS
             result = self.client.add_bytes(content)
             cid = result
+            
+            self.logger.info(
+                "Content stored successfully in IPFS",
+                cid=cid,
+                content_size=content_size,
+                content_hash=content_hash.hex()
+            )
             
             return ContentDescriptor(
                 uri=f"ipfs://{cid}",
@@ -108,6 +136,14 @@ class IPFSStorage(ContentStorage):
         except Exception as e:
             # Fallback to simulated CID if IPFS is not available
             cid = f"Qm{content_hash.hex()[:44]}"
+            
+            self.logger.warning(
+                "IPFS storage failed, using simulated CID",
+                error=str(e),
+                simulated_cid=cid,
+                content_size=content_size
+            )
+            
             return ContentDescriptor(
                 uri=f"ipfs://{cid}",
                 content_type=content_type,
@@ -291,22 +327,53 @@ class CompositeStorage(ContentStorage):
         Args:
             storages: List of storage backends to use
         """
+        self.logger = get_logger("storage.composite")
         self.storages = storages
+        
+        self.logger.info(
+            "Initialized composite storage",
+            backend_count=len(storages),
+            backend_types=[type(storage).__name__ for storage in storages]
+        )
     
     def store(self, content: bytes, content_type: str) -> ContentDescriptor:
         """Store using the first available storage backend."""
         if not self.storages:
+            self.logger.error("No storage backends configured")
             raise ValidationError("No storage backends configured")
+        
+        self.logger.info(
+            "Storing content using composite storage",
+            content_size=len(content),
+            content_type=content_type,
+            primary_backend=type(self.storages[0]).__name__
+        )
         
         # Use first storage backend for storing
         return self.storages[0].store(content, content_type)
     
     def retrieve(self, descriptor: ContentDescriptor) -> bytes:
         """Retrieve using appropriate storage backend based on URI."""
+        self.logger.info(
+            "Retrieving content using composite storage",
+            uri=descriptor.uri,
+            content_type=descriptor.content_type
+        )
+        
         for storage in self.storages:
             if storage.can_handle(descriptor.uri):
+                self.logger.debug(
+                    "Found compatible storage backend",
+                    backend_type=type(storage).__name__,
+                    uri=descriptor.uri
+                )
                 return storage.retrieve(descriptor)
         
+        self.logger.error(
+            "No compatible storage backend found",
+            uri=descriptor.uri,
+            available_backends=[type(s).__name__ for s in self.storages]
+        )
         raise ValidationError(f"No storage backend can handle URI: {descriptor.uri}")
     
     def can_handle(self, uri: str) -> bool:
@@ -324,9 +391,16 @@ class RedisStorage(ContentStorage):
             redis_url: Redis connection URL
             key_prefix: Prefix for Redis keys
         """
+        self.logger = get_logger("storage.redis")
         self.redis_url = redis_url
         self.key_prefix = key_prefix
         self._client = None
+        
+        self.logger.info(
+            "Initialized Redis storage",
+            redis_url=redis_url,
+            key_prefix=key_prefix
+        )
     
     @property
     def client(self):

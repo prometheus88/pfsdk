@@ -1,10 +1,10 @@
 # PostFiat SDK Architecture
 
-This document describes the technical architecture and technology stack of the PostFiat SDK, a modern proto-first multi-language SDK with Python and TypeScript support and AI integration capabilities.
+This document describes the technical architecture and technology stack of the PostFiat SDK, a modern proto-first multi-language SDK with Python, TypeScript, and Solidity support and AI integration capabilities.
 
 ## 🎯 Architecture Overview
 
-The PostFiat SDK is built on a **proto-first, API-driven architecture** that automatically generates type-safe Python and TypeScript code, REST APIs, and AI-powered integrations from Protocol Buffer definitions.
+The PostFiat SDK is built on a **proto-first, API-driven architecture** that automatically generates type-safe Python, TypeScript, and Solidity code, REST APIs, and AI-powered integrations from Protocol Buffer definitions.
 
 ```mermaid
 graph TB
@@ -13,43 +13,51 @@ graph TB
     end
     
     subgraph "Code Generation Layer"
-        B[Buf CLI<br/>Protobuf → Python]
+        B[Buf CLI<br/>Protobuf → Python/TypeScript]
         C[Custom Generators<br/>Types & Services]
         D[OpenAPI Generator<br/>REST API Specs]
+        E[Protobuf3-Solidity<br/>Protobuf → Solidity]
     end
     
     subgraph "Core SDK Layer"
-        E[Pydantic Models<br/>Type Safety & Validation]
-        F[SQLModel<br/>Database ORM]
-        G[FastAPI<br/>REST API Server]
-        H[gRPC Services<br/>High Performance RPC]
+        F[Pydantic Models<br/>Type Safety & Validation]
+        G[SQLModel<br/>Database ORM]
+        H[FastAPI<br/>REST API Server]
+        I[gRPC Services<br/>High Performance RPC]
+        J[Solidity Contracts<br/>Smart Contract Logic]
     end
     
     subgraph "AI Integration Layer"
-        I[PydanticAI<br/>AI Agent Framework]
-        J[LLM Integrations<br/>OpenAI, Anthropic, etc.]
+        K[PydanticAI<br/>AI Agent Framework]
+        L[LLM Integrations<br/>OpenAI, Anthropic, etc.]
     end
     
     subgraph "Client Layer"
-        K[Python SDK<br/>Type-safe Client]
-        L[REST API<br/>HTTP/JSON Interface]
-        M[gRPC Client<br/>Binary Protocol]
+        M[Python SDK<br/>Type-safe Client]
+        N[REST API<br/>HTTP/JSON Interface]
+        O[gRPC Client<br/>Binary Protocol]
+        P[TypeScript SDK<br/>Web Client]
+        Q[Solidity Contracts<br/>EVM Integration]
     end
     
     A --> B
     A --> C
     A --> D
-    B --> E
-    C --> E
+    A --> E
+    B --> F
     C --> F
-    E --> G
-    E --> H
-    E --> I
-    F --> G
-    I --> J
-    E --> K
-    G --> L
-    H --> M
+    C --> G
+    E --> J
+    F --> H
+    F --> I
+    F --> K
+    G --> H
+    K --> L
+    F --> M
+    H --> N
+    I --> O
+    F --> P
+    J --> Q
 ```
 
 ## 🛠️ Technology Stack
@@ -59,7 +67,7 @@ graph TB
 
 **Why Protocol Buffers:**
 
-- **Language agnostic:** Generate code for multiple languages
+- **Language agnostic:** Generate code for multiple languages (Python, TypeScript, Solidity)
 - **Schema evolution:** Backward/forward compatibility
 - **Performance:** Efficient binary serialization
 - **Type safety:** Strong typing across all generated code
@@ -86,6 +94,45 @@ service WalletService {
   rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
 }
 ```
+
+### Solidity (Smart Contracts)
+**Role:** Blockchain integration and decentralized application logic
+
+**Why Solidity:**
+
+- **EVM compatibility:** Deploy on Ethereum and EVM-compatible chains
+- **Proto-first generation:** Automatic contract generation from protobuf definitions
+- **Type safety:** Generated contracts maintain protobuf type safety
+- **Integration:** Seamless integration with Python and TypeScript SDKs
+- **Modern tooling:** Foundry-based build system for optimal performance
+
+**Generated Contracts:**
+```solidity
+// Auto-generated from protobuf definitions
+library Postfiat_V3 {
+    struct ContextualMessage {
+        string content;
+        MessageType message_type;
+        EncryptionMode encryption;
+    }
+    
+    enum MessageType {
+        CONTEXTUAL_MESSAGE,
+        MULTIPART_MESSAGE_PART
+    }
+    
+    enum EncryptionMode {
+        NONE,
+        NACL_SECRETBOX,
+        AES_256_GCM
+    }
+}
+```
+
+**Build System:**
+- **Foundry:** Fast, modern Solidity development framework
+- **Protobuf3-Solidity:** Automatic contract generation from .proto files
+- **Integrated tooling:** Seamless integration with Python and TypeScript workflows
 
 ### OpenAPI 3.0
 **Role:** REST API specification and documentation generation
@@ -309,54 +356,43 @@ classDiagram
     Message --> EncryptionMode
 ```
 
-### Observability Stack (structlog + loguru + OpenTelemetry)
-**Role:** Production-ready observability, logging, and distributed tracing
+### Observability Stack (structlog + loguru)
+**Role:** Production-ready observability and structured logging
 
-**Why this triple stack:**
+**Why this dual stack:**
 
 - **structlog:** Structured logging with rich context and JSON output
 - **loguru:** Beautiful console output and developer-friendly formatting
-- **OpenTelemetry:** Distributed tracing, metrics, and standardized observability
-- **Integration:** All three work together seamlessly for comprehensive observability
-- **Proto-native:** OpenTelemetry provides proto-native metrics and tracing
+- **Integration:** Both work together seamlessly for comprehensive observability
+- **Proto-native:** Rich context logging for proto-based operations
 
 **Features:**
 ```python
 from postfiat.logging import get_logger
-from opentelemetry import trace
 
-# Get structured logger with tracing
+# Get structured logger
 logger = get_logger("api.auth")
-tracer = trace.get_tracer("postfiat.api")
 
-# Log with rich context + distributed tracing
-with tracer.start_as_current_span("user_authentication") as span:
-    logger.info(
-        "User authentication successful",
-        user_id="user_123",
-        session_id="sess_456",
-        ip_address="192.168.1.1",
-        duration_ms=150,
-        trace_id=span.get_span_context().trace_id
-    )
-
-    # Span automatically includes structured context
-    span.set_attributes({
-        "user.id": "user_123",
-        "session.id": "sess_456",
-        "auth.duration_ms": 150
-    })
+# Log with rich context
+logger.info(
+    "User authentication successful",
+    user_id="user_123",
+    session_id="sess_456", 
+    ip_address="192.168.1.1",
+    duration_ms=150,
+    request_id="req_789"
+)
 
 # Development: Beautiful console output via loguru
-# Production: JSON logs + OpenTelemetry traces + metrics
-# {"user_id": "user_123", "trace_id": "abc123...",
+# Production: JSON logs with structured context
+# {"user_id": "user_123", "request_id": "req_789",
 #  "event": "User authentication successful", ...}
 ```
 
 **Observability Strategy:**
 
 - **Structured logging:** structlog for rich context, loguru for beautiful output
-- **Distributed tracing:** OpenTelemetry spans across gRPC/REST calls
+- **Request correlation:** Request IDs and user context tracking
 - **Metrics collection:** Proto-native performance and business metrics
 - **Behavior boundaries:** Log at factory functions, middleware, utilities
 - **Pure data classes:** No logging (enums, simple models)
@@ -750,24 +786,22 @@ graph TB
 
 - **[structlog](https://www.structlog.org/):** Structured logging with rich context
 - **[loguru](https://loguru.readthedocs.io/):** Beautiful console output and formatting
-- **[OpenTelemetry](https://opentelemetry.io/):** Distributed tracing, metrics, and observability
-- **Integration:** All three work together for comprehensive observability
+- **Integration:** Both work together for comprehensive observability
 
 **Implementation:**
 
 - **Structured logging:** JSON logs with correlation IDs and rich context (structlog)
 - **Beautiful development:** Human-readable console logs with colors (loguru)
-- **Distributed tracing:** Request tracing across gRPC/REST services (OpenTelemetry)
 - **Proto-native metrics:** gRPC method performance, serialization metrics
-- **Environment-aware:** Console for development, JSON + traces for production
-- **Request correlation:** Trace IDs + X-Request-ID tracking for distributed systems
+- **Environment-aware:** Console for development, JSON logs for production
+- **Request correlation:** Request IDs + X-Request-ID tracking for distributed systems
 - **Error tracking:** Comprehensive error reporting with proto-based error codes
-- **Audit trails:** User action logging with structured metadata and spans
+- **Audit trails:** User action logging with structured metadata
 
 **Observability Locations:**
 
-- **API Layer:** Request/response logging + tracing via FastAPI middleware
-- **gRPC Services:** Automatic method tracing with OpenTelemetry gRPC instrumentation
+- **API Layer:** Request/response logging via FastAPI middleware
+- **gRPC Services:** Method logging and performance metrics
 - **Exception System:** Factory function logging for error creation and processing
 - **Generation Scripts:** Structured logging for build-time observability
 - **Pure Data Classes:** No logging (follows best practices)

@@ -11,6 +11,7 @@ from ..v3.messages_pb2 import (
 )
 from ..exceptions import ValidationError
 from .storage import ContentStorage, IPFSStorage, MultipartStorage
+from ..logging import get_logger
 
 
 class EnvelopeFactory:
@@ -27,8 +28,15 @@ class EnvelopeFactory:
             max_envelope_size: Maximum allowed envelope size in bytes (default: 1000)
             storage: Content storage backend (defaults to IPFS)
         """
+        self.logger = get_logger("envelope.factory")
         self.max_envelope_size = max_envelope_size
         self.storage = storage or IPFSStorage()
+        
+        self.logger.info(
+            "Initialized envelope factory",
+            max_envelope_size=max_envelope_size,
+            storage_type=type(self.storage).__name__
+        )
     
     def create_envelope(
         self,
@@ -58,6 +66,16 @@ class EnvelopeFactory:
         Raises:
             ValidationError: If envelope creation fails
         """
+        content_size = len(content.encode('utf-8'))
+        
+        self.logger.info(
+            "Creating envelope",
+            content_size=content_size,
+            encryption_mode=encryption_mode.name,
+            has_context_refs=bool(context_references),
+            content_type=content_type
+        )
+        
         # Merge default metadata with provided metadata
         default_metadata = {"agent_id": "postfiat_research_agent_001"}
         if metadata:
@@ -70,15 +88,32 @@ class EnvelopeFactory:
         
         if envelope:
             # Content fits in envelope
+            self.logger.info(
+                "Created embedded envelope",
+                content_size=content_size,
+                envelope_size=len(envelope.SerializeToString())
+            )
             return envelope
         
         # Content too large - use storage backend
+        self.logger.info(
+            "Content too large for embedding, using external storage",
+            content_size=content_size,
+            max_envelope_size=self.max_envelope_size,
+            storage_type=type(self.storage).__name__
+        )
+        
         content_bytes = content.encode('utf-8')
         descriptor = self.storage.store(content_bytes, content_type)
         
         # Handle special case of multipart storage
         if isinstance(self.storage, MultipartStorage):
             # Create multiple envelopes for multipart storage
+            self.logger.info(
+                "Creating multipart envelopes",
+                content_size=content_size,
+                storage_uri=descriptor.uri if descriptor else None
+            )
             return self.storage.create_part_envelopes(
                 content_bytes, descriptor, encryption_mode, default_metadata
             )
@@ -86,6 +121,12 @@ class EnvelopeFactory:
         # Create minimal envelope that references external content
         reference_envelope = self._create_reference_envelope(
             descriptor, context_references, encryption_mode, default_metadata
+        )
+        
+        self.logger.info(
+            "Created reference envelope",
+            content_uri=descriptor.uri,
+            envelope_size=len(reference_envelope.SerializeToString())
         )
         
         return reference_envelope, descriptor
@@ -243,8 +284,16 @@ class EnvelopeFactory:
         Raises:
             ValidationError: If reconstruction fails or chunks are invalid
         """
+        logger = get_logger("envelope.factory.reconstruct")
+        
         if not envelopes:
+            logger.error("No envelopes provided for reconstruction")
             raise ValidationError("No envelopes provided for reconstruction")
+        
+        logger.info(
+            "Starting content reconstruction",
+            envelope_count=len(envelopes)
+        )
         
         # Import here to avoid circular dependency
         from ..v3.messages_pb2 import MultiPartMessagePart
@@ -307,8 +356,21 @@ class EnvelopeFactory:
         # Validate reconstructed content hash
         reconstructed_hash = hashlib.sha256(content_bytes).hexdigest()
         if reconstructed_hash != complete_message_hash:
+            logger.error(
+                "Content hash validation failed",
+                expected_hash=complete_message_hash,
+                reconstructed_hash=reconstructed_hash,
+                content_size=len(content_bytes)
+            )
             raise ValidationError(
                 "Reconstructed content hash does not match expected hash"
             )
+        
+        logger.info(
+            "Successfully reconstructed content",
+            content_size=len(content_bytes),
+            total_parts=len(parts),
+            content_hash=reconstructed_hash
+        )
         
         return content

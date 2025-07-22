@@ -11,6 +11,7 @@ from datetime import datetime
 
 from ..envelope_store import EnvelopeStore, EnvelopeNotFoundError, StorageError
 from ...v3.messages_pb2 import Envelope
+from ...logging import get_logger
 
 
 class EVMEnvelopeStore(EnvelopeStore):
@@ -29,25 +30,44 @@ class EVMEnvelopeStore(EnvelopeStore):
             private_key: Private key for sending transactions
             chain_id: EVM chain ID (1 for mainnet, 5 for goerli, etc.)
         """
+        self.logger = get_logger("store.evm")
         self.rpc_url = rpc_url
         self.contract_address = contract_address
         self.private_key = private_key
         self.chain_id = chain_id
         self._web3 = None
         self._contract = None
+        
+        self.logger.info(
+            "Initialized EVM envelope store",
+            rpc_url=rpc_url,
+            contract_address=contract_address or "not_set",
+            chain_id=chain_id,
+            has_private_key=bool(private_key)
+        )
     
     @property
     def web3(self):
         """Lazy-load Web3 instance."""
         if self._web3 is None:
+            self.logger.info("Connecting to EVM", rpc_url=self.rpc_url)
             try:
                 from web3 import Web3
                 self._web3 = Web3(Web3.HTTPProvider(self.rpc_url))
+                self.logger.info("Successfully connected to EVM")
             except ImportError:
+                self.logger.error("Web3 client dependency missing")
                 raise ImportError(
                     "web3 is required for EVM storage. "
                     "Install with: pip install postfiat-sdk[blockchain]"
                 )
+            except Exception as e:
+                self.logger.error(
+                    "Failed to connect to EVM",
+                    rpc_url=self.rpc_url,
+                    error=str(e)
+                )
+                raise
         return self._web3
     
     @property
@@ -115,9 +135,17 @@ class EVMEnvelopeStore(EnvelopeStore):
     
     async def store(self, envelope: Envelope) -> str:
         """Store envelope on EVM blockchain."""
+        envelope_id = self._generate_envelope_id(envelope)
+        
+        self.logger.info(
+            "Storing envelope on EVM",
+            envelope_id=envelope_id[:16] + "...",
+            message_type=envelope.message_type,
+            chain_id=self.chain_id,
+            contract_address=self.contract_address
+        )
+        
         try:
-            envelope_id = self._generate_envelope_id(envelope)
-            
             # Add EVM-specific metadata
             envelope.metadata["storage_backend"] = "evm"
             envelope.metadata["chain_id"] = str(self.chain_id)
@@ -146,6 +174,13 @@ class EVMEnvelopeStore(EnvelopeStore):
             signed_txn = self.web3.eth.account.sign_transaction(transaction, self.private_key)
             tx_hash = self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
             
+            self.logger.info(
+                "EVM transaction submitted",
+                envelope_id=envelope_id[:16] + "...",
+                tx_hash=tx_hash.hex(),
+                from_address=account.address
+            )
+            
             # Wait for transaction receipt
             receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
             
@@ -154,13 +189,34 @@ class EVMEnvelopeStore(EnvelopeStore):
             envelope.metadata["block_number"] = str(receipt.blockNumber)
             envelope.metadata["gas_used"] = str(receipt.gasUsed)
             
+            self.logger.info(
+                "Envelope stored successfully on EVM",
+                envelope_id=envelope_id[:16] + "...",
+                tx_hash=receipt.transactionHash.hex(),
+                block_number=receipt.blockNumber,
+                gas_used=receipt.gasUsed,
+                envelope_size=len(envelope_data)
+            )
+            
             return envelope_id
             
         except Exception as e:
+            self.logger.error(
+                "Failed to store envelope on EVM",
+                envelope_id=envelope_id[:16] + "...",
+                error=str(e),
+                exc_info=True
+            )
             raise StorageError(f"Failed to store envelope on EVM: {e}")
     
     async def retrieve(self, envelope_id: str) -> Envelope:
         """Retrieve envelope from EVM blockchain."""
+        self.logger.info(
+            "Retrieving envelope from EVM",
+            envelope_id=envelope_id[:16] + "...",
+            chain_id=self.chain_id
+        )
+        
         try:
             # Convert envelope ID to hash
             envelope_hash = bytes.fromhex(envelope_id)
@@ -169,17 +225,35 @@ class EVMEnvelopeStore(EnvelopeStore):
             envelope_data = self.contract.functions.getEnvelope(envelope_hash).call()
             
             if not envelope_data:
+                self.logger.warning(
+                    "Envelope not found on EVM",
+                    envelope_id=envelope_id[:16] + "...",
+                    chain_id=self.chain_id
+                )
                 raise EnvelopeNotFoundError(f"Envelope '{envelope_id}' not found on EVM")
             
             # Deserialize envelope
             envelope = Envelope()
             envelope.ParseFromString(envelope_data)
             
+            self.logger.info(
+                "Envelope retrieved successfully from EVM",
+                envelope_id=envelope_id[:16] + "...",
+                message_type=envelope.message_type,
+                envelope_size=len(envelope_data)
+            )
+            
             return envelope
             
         except EnvelopeNotFoundError:
             raise
         except Exception as e:
+            self.logger.error(
+                "Failed to retrieve envelope from EVM",
+                envelope_id=envelope_id[:16] + "...",
+                error=str(e),
+                exc_info=True
+            )
             raise StorageError(f"Failed to retrieve envelope from EVM: {e}")
     
     async def find_by_content_hash(self, content_hash: bytes) -> List[Envelope]:

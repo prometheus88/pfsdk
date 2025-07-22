@@ -32,6 +32,7 @@ from postfiat.envelope.stores.redis_store import RedisEnvelopeStore
 from postfiat.envelope.stores.evm_store import EVMEnvelopeStore
 from postfiat.envelope.stores.xrpl_store import XRPLEnvelopeStore
 from postfiat.exceptions import ValidationError
+from postfiat.logging import get_logger
 from google.protobuf.empty_pb2 import Empty
 
 
@@ -44,11 +45,25 @@ class EnvelopeStorageServiceImpl(PostFiatEnvelopeStorageServiceServicer):
         Args:
             store: Envelope store backend. If None, creates default Redis store.
         """
+        self.logger = get_logger("service.envelope_storage")
         self.store = store or RedisEnvelopeStore()
         self.executor = ThreadPoolExecutor(max_workers=10)
+        
+        self.logger.info(
+            "Initialized envelope storage service",
+            store_type=type(self.store).__name__,
+            max_workers=10
+        )
     
     def StoreEnvelope(self, request: StoreEnvelopeRequest, context: grpc.ServicerContext) -> StoreEnvelopeResponse:
         """Store envelope."""
+        self.logger.info(
+            "Store envelope request",
+            message_type=request.envelope.message_type,
+            content_hash=request.envelope.content_hash.hex()[:16] + "...",
+            preferred_storage=request.preferred_storage or "default"
+        )
+        
         try:
             # Convert protobuf envelope to storage envelope
             envelope = self._pb_to_storage_envelope(request.envelope)
@@ -58,6 +73,10 @@ class EnvelopeStorageServiceImpl(PostFiatEnvelopeStorageServiceServicer):
             if request.preferred_storage:
                 store = self._get_store_by_type(request.preferred_storage)
                 if not store:
+                    self.logger.error(
+                        "Unknown storage type requested",
+                        requested_type=request.preferred_storage
+                    )
                     context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
                     context.set_details(f"Unknown storage type: {request.preferred_storage}")
                     return StoreEnvelopeResponse()
@@ -65,6 +84,13 @@ class EnvelopeStorageServiceImpl(PostFiatEnvelopeStorageServiceServicer):
             # Store envelope (run async operation in executor)
             future = self.executor.submit(self._store_envelope_async, store, envelope)
             envelope_id = future.result(timeout=30)  # 30 second timeout
+            
+            self.logger.info(
+                "Envelope stored successfully",
+                envelope_id=envelope_id,
+                storage_backend=self._get_store_backend_name(store),
+                message_type=request.envelope.message_type
+            )
             
             # Create response
             response = StoreEnvelopeResponse()
@@ -78,29 +104,61 @@ class EnvelopeStorageServiceImpl(PostFiatEnvelopeStorageServiceServicer):
             return response
             
         except ValidationError as e:
+            self.logger.error(
+                "Envelope storage validation error",
+                error=str(e),
+                message_type=request.envelope.message_type
+            )
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
             return StoreEnvelopeResponse()
         except Exception as e:
+            self.logger.error(
+                "Envelope storage internal error",
+                error=str(e),
+                message_type=request.envelope.message_type,
+                exc_info=True
+            )
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Storage error: {str(e)}")
             return StoreEnvelopeResponse()
     
     def RetrieveEnvelope(self, request: RetrieveEnvelopeRequest, context: grpc.ServicerContext) -> Envelope:
         """Retrieve envelope by ID."""
+        self.logger.info(
+            "Retrieve envelope request",
+            envelope_id=request.envelope_id
+        )
+        
         try:
             # Retrieve envelope (run async operation in executor)
             future = self.executor.submit(self._retrieve_envelope_async, request.envelope_id)
             envelope = future.result(timeout=30)  # 30 second timeout
             
+            self.logger.info(
+                "Envelope retrieved successfully",
+                envelope_id=request.envelope_id,
+                message_type=envelope.message_type if hasattr(envelope, 'message_type') else 'unknown'
+            )
+            
             # Convert to protobuf
             return self._storage_to_pb_envelope(envelope)
             
         except FileNotFoundError:
+            self.logger.warning(
+                "Envelope not found",
+                envelope_id=request.envelope_id
+            )
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details("Envelope not found")
             return Envelope()
         except Exception as e:
+            self.logger.error(
+                "Envelope retrieval internal error",
+                error=str(e),
+                envelope_id=request.envelope_id,
+                exc_info=True
+            )
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Retrieval error: {str(e)}")
             return Envelope()
