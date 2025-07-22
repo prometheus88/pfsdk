@@ -3,7 +3,6 @@
 Generate comprehensive documentation for the PostFiat SDK
 """
 import os
-import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -45,34 +44,13 @@ def generate_protobuf_docs():
     # Use protoc-gen-doc directly for better documentation
     proto_dir = Path("proto")
     if proto_dir.exists():
-        # Try buf first since it's available in CI
+        # Use buf with protoc-gen-doc plugin
         if run_command(["buf", "generate", "--template", "buf.gen.docs.yaml"], cwd=proto_dir):
             print("✅ Generated protobuf documentation with buf")
             return
         else:
-            print("⚠️  buf documentation generation failed, trying protoc-gen-doc")
-            
-        # Try to use protoc-gen-doc for comprehensive documentation
-        protoc_cmd = [
-            "protoc",
-            "--doc_out=../docs/generated/proto",
-            "--doc_opt=markdown,index.md",
-            "postfiat/v3/errors.proto",
-            "postfiat/v3/messages.proto",
-            "-I.",
-            "-I../third_party/a2a/specification/grpc",
-            "-I../third_party/googleapis",
-            "--experimental_allow_proto3_optional"
-        ]
-        
-        if run_command(protoc_cmd, cwd=proto_dir):
-            print("✅ Generated comprehensive protobuf documentation")
-            return
-        else:
-            print("⚠️  protoc-gen-doc failed, creating basic docs")
-            create_basic_proto_docs()
-    else:
-        create_basic_proto_docs()
+            print("❌ Failed to generate protobuf documentation with buf")
+            raise Exception("Failed to generate protobuf documentation")
 
 
 def create_basic_proto_docs():

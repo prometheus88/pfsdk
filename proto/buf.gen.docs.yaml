@@ -1,7 +1,6 @@
-version: v1
+version: v2
 plugins:
-  # Generate Markdown documentation
-  - plugin: buf.build/pseudomuto/protoc-gen-doc:v1.5.1
+  # Generate Markdown documentation using local protoc-gen-doc
+  - local: protoc-gen-doc
     out: ../docs/generated/proto
-    opt:
-      - index.md,postfiat/v3/*.proto
+    opt: markdown,index.md
