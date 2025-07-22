@@ -45,6 +45,13 @@ def generate_protobuf_docs():
     # Use protoc-gen-doc directly for better documentation
     proto_dir = Path("proto")
     if proto_dir.exists():
+        # Try buf first since it's available in CI
+        if run_command(["buf", "generate", "--template", "buf.gen.docs.yaml"], cwd=proto_dir):
+            print("✅ Generated protobuf documentation with buf")
+            return
+        else:
+            print("⚠️  buf documentation generation failed, trying protoc-gen-doc")
+            
         # Try to use protoc-gen-doc for comprehensive documentation
         protoc_cmd = [
             "protoc",
@@ -62,13 +69,8 @@ def generate_protobuf_docs():
             print("✅ Generated comprehensive protobuf documentation")
             return
         else:
-            print("⚠️  protoc-gen-doc failed, trying buf generate")
-            if run_command(["buf", "generate", "--template", "buf.gen.docs.yaml"], cwd=proto_dir):
-                print("✅ Generated protobuf documentation with buf")
-                return
-            else:
-                print("⚠️  buf documentation generation failed, creating basic docs")
-                create_basic_proto_docs()
+            print("⚠️  protoc-gen-doc failed, creating basic docs")
+            create_basic_proto_docs()
     else:
         create_basic_proto_docs()
 
