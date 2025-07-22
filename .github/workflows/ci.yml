@@ -2,9 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+      - 'dev-*'
   pull_request:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+      - 'dev-*'
 
 permissions:
   contents: write  # Required for auto-committing generated files
