@@ -82,6 +82,8 @@ deps:
 proto: deps
 	@echo "🔄 Generating protobuf classes..."
 	cd proto && ../bin/buf generate --template buf.gen.yaml
+	@echo "🔧 Fixing empty structs in Solidity files..."
+	./scripts/fix-empty-structs.sh
 	@echo "✅ Protobuf generation complete (Python, TypeScript, Solidity)"
 
 types:
