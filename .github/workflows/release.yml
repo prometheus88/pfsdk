@@ -69,6 +69,14 @@ jobs:
           echo "Checking Solidity build artifacts..."
           ls -la solidity/out/
           echo "✅ Solidity build artifacts present"
+      
+      - name: Package Solidity artifacts
+        run: |
+          echo "Creating Solidity artifacts archive..."
+          cd solidity
+          tar -czf ../solidity-contracts-${{ github.ref_name }}.tar.gz out/
+          cd ..
+          echo "✅ Created solidity-contracts-${{ github.ref_name }}.tar.gz"
 
       - name: Extract tag name
         id: tag
@@ -113,7 +121,7 @@ jobs:
           - [Solidity Integration](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/docs/solidity/README.md)
           EOF
           )" \
-            python/dist/*.tar.gz python/dist/*.whl typescript/*.tgz solidity/out/
+            python/dist/*.tar.gz python/dist/*.whl typescript/*.tgz solidity-contracts-*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
