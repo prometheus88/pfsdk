@@ -31,6 +31,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
       
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
@@ -50,7 +55,7 @@ jobs:
       - name: Regenerate all code and tests
         run: make regen-all
 
-      - name: Build all release artifacts (Python + TypeScript)
+      - name: Build all release artifacts (Python + TypeScript + Solidity)
         run: make release
 
       - name: Verify all generated files exist
@@ -58,6 +63,12 @@ jobs:
           echo "Checking generated files..."
           ls -la python/postfiat/v3/*_pb2.py python/postfiat/types/enums.py python/postfiat/exceptions.py
           echo "✅ All generated files present"
+
+      - name: Verify Solidity build artifacts
+        run: |
+          echo "Checking Solidity build artifacts..."
+          ls -la solidity/out/
+          echo "✅ Solidity build artifacts present"
 
       - name: Extract tag name
         id: tag
@@ -77,18 +88,32 @@ jobs:
           - SQLModel database integration
           - FastAPI server components
           - EnvelopeFactory with automatic payload chunking
+          - Solidity smart contract generation
+          - Foundry-based build system
           
           ### 📦 Installation
           ```bash
+          # Python
           pip install postfiat-sdk==${{ steps.tag.outputs.tag }}
+          
+          # TypeScript
+          npm install @postfiat/sdk@${{ steps.tag.outputs.tag }}
+          
+          # Solidity (development)
+          git clone https://github.com/${{ github.repository }}.git
+          cd pfsdk
+          make sol-deps
+          make proto
+          make sol-build
           ```
           
           ### 📋 API Documentation
           - [OpenAPI Spec](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/api/openapi_v2_generated.swagger.json)
           - [Proto Definitions](https://github.com/${{ github.repository }}/tree/${{ steps.tag.outputs.tag }}/proto)
+          - [Solidity Integration](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/docs/solidity/README.md)
           EOF
           )" \
-            python/dist/*.tar.gz python/dist/*.whl typescript/*.tgz
+            python/dist/*.tar.gz python/dist/*.whl typescript/*.tgz solidity/out/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       

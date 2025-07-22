@@ -32,6 +32,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       - name: Setup Buf
         uses: bufbuild/buf-setup-action@v1
         with:
@@ -52,7 +57,7 @@ jobs:
       - name: Regenerate all code and tests
         run: make regen-all
 
-      - name: Build all release artifacts (Python + TypeScript)
+      - name: Build all release artifacts (Python + TypeScript + Solidity)
         run: make release
 
       - name: Extract tag name
@@ -71,10 +76,11 @@ jobs:
             typescript/*.tgz
             python/dist/*.whl
             python/dist/*.tar.gz
+            solidity/out/
           body: |
             ## PostFiat SDK Release ${{ steps.tag.outputs.tag }}
             
-            This release contains pre-built artifacts for both Python and TypeScript SDKs.
+            This release contains pre-built artifacts for Python, TypeScript, and Solidity SDKs.
             
             ### 📦 Python Package
             Download the `.whl` or `.tar.gz` file and install with:
@@ -87,6 +93,10 @@ jobs:
             ```bash
             npm install postfiat-sdk-*.tgz
             ```
+            
+            ### 📦 Solidity Contracts
+            The `solidity/out/` directory contains compiled smart contracts and artifacts.
+            For development setup, see the [Solidity Integration Guide](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.tag }}/docs/solidity/README.md).
             
             ### 📚 Documentation
             API documentation is available at [https://allenday.github.io/pfsdk](https://allenday.github.io/pfsdk)
@@ -104,4 +114,5 @@ jobs:
             typescript/*.tgz
             python/dist/*.whl
             python/dist/*.tar.gz
+            solidity/out/
           retention-days: 90

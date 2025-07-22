@@ -1,6 +1,6 @@
 # PostFiat SDK
 
-A proto-first, multi-language SDK with Python and TypeScript support for building AI-powered applications.
+A proto-first, multi-language SDK with Python, TypeScript, and Solidity support for building AI-powered applications and smart contracts.
 
 ## 📚 Documentation
 
@@ -23,9 +23,21 @@ pip install postfiat-sdk
 npm install @postfiat/sdk
 ```
 
+### Solidity
+```bash
+# Clone the repository for Solidity development
+git clone https://github.com/postfiat/pfsdk.git
+cd pfsdk
+
+# Install dependencies and generate contracts
+make sol-deps
+make proto
+make sol-build
+```
+
 ## 🏗️ Architecture
 
-The SDK follows a **proto-first architecture** where Protocol Buffer definitions are the single source of truth for all generated code across multiple languages.
+The SDK follows a **proto-first architecture** where Protocol Buffer definitions are the single source of truth for all generated code across multiple languages and platforms, including smart contracts.
 
 See the [Architecture Documentation](docs/ARCHITECTURE.md) for detailed information.
 

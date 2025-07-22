@@ -1,6 +1,6 @@
 # PostFiat SDK Documentation
 
-Welcome to the PostFiat SDK documentation. This is a proto-first, multi-language SDK with Python and TypeScript support.
+Welcome to the PostFiat SDK documentation. This is a proto-first, multi-language SDK with Python, TypeScript, and Solidity support.
 
 ## Latest Release: release-0.1.0-rc1
 
@@ -26,23 +26,38 @@ npm install @postfiat/sdk@0.1.0-rc1
 # npm install postfiat-sdk-0.1.0-rc1.tgz
 ```
 
+### Solidity
+```bash
+# Clone the repository for Solidity development
+git clone https://github.com/postfiat/pfsdk.git
+cd pfsdk
+
+# Install dependencies and generate contracts
+make sol-deps
+make proto
+make sol-build
+```
+
 ## Features
 
 - **Proto-first architecture**: Single source of truth for all APIs
-- **Multi-language support**: Python and TypeScript SDKs
-- **Type-safe**: Generated types and validation
-- **Modern tooling**: FastAPI, Pydantic, React hooks
+- **Multi-language support**: Python, TypeScript, and Solidity SDKs
+- **Type-safe**: Generated types and validation across all languages
+- **Modern tooling**: FastAPI, Pydantic, React hooks, Foundry
 - **AI integration**: PydanticAI support for agents
+- **Blockchain integration**: Smart contract generation and deployment
 
 ## API Documentation
 
 - **[Python SDK API](generated/python/index.html)** - Complete Python API reference with Sphinx
+- **[TypeScript SDK API](generated/typescript/index.html)** - Complete TypeScript API reference with TypeDoc
+- **[Solidity Integration](solidity/README.md)** - Smart contract development guide
 - **[OpenAPI Specification](api/openapi.md)** - Interactive REST API documentation
 - **[Protocol Buffers](generated/proto/index.md)** - Proto message definitions
 
 ## Architecture
 
-The SDK follows a [proto-first architecture](ARCHITECTURE.md) where Protocol Buffer definitions drive code generation for multiple languages.
+The SDK follows a [proto-first architecture](ARCHITECTURE.md) where Protocol Buffer definitions drive code generation for multiple languages and platforms, including smart contracts.
 
 ## Development
 
