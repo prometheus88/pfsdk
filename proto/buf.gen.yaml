@@ -36,4 +36,14 @@ plugins:
       - json_names_for_fields=true
       - include_package_in_tags=true
       - allow_delete_body=true
-      - generate_unbound_methods=true 
+      - generate_unbound_methods=true
+
+  # Solidity protobuf generation using protobuf3-solidity
+  - plugin: protobuf3-solidity
+    path: ../solidity/protoc-gen-sol/bin/protoc-gen-sol
+    out: ../solidity/src/generated
+    opt:
+      - strict_field_numbers=false
+      - strict_enum_validation=false
+      - allow_non_monotonic_fields=true
+      - protobuf_lib_import=@protobuf3-solidity-lib/ProtobufLib.sol 

@@ -23,6 +23,11 @@ pfsdk/
 │   ├── src/                 # TypeScript source code
 │   ├── scripts/             # TypeScript generation scripts
 │   └── tests/               # TypeScript test suites
+├── solidity/                # Solidity SDK
+│   ├── src/                 # Solidity source code
+│   ├── src/generated/       # Generated Solidity contracts
+│   ├── test/                # Solidity test suites
+│   └── foundry.toml         # Foundry configuration
 └── docs/                    # Shared documentation
 ```
 
@@ -31,24 +36,28 @@ graph TD
     A[Proto Files] --> B[Buf Generate]
     B --> C[Python Protobuf Classes]
     B --> D[TypeScript Protobuf Classes]
-    A --> E[Python Type Generator]
-    E --> F[Pydantic Enums]
-    E --> G[Exception Classes]
-    A --> H[Comprehensive Generator]
-    H --> I[SDK Managers]
-    H --> J[Client Stubs]
-    H --> K[OpenAPI Specs]
-    A --> L[Test Generator]
-    L --> M[Contract Tests]
-    L --> N[Serialization Tests]
-    L --> O[Integration Tests]
-    A --> P[TypeScript Type Generator]
-    P --> Q[TypeScript Enums]
-    P --> R[Exception Classes]
-    P --> S[Client SDK]
-    D --> T[TypeScript SDK]
-    T --> U[React Hooks]
-    T --> V[Web Client]
+    A --> E[Protobuf3-Solidity Generator]
+    E --> F[Solidity Libraries & Structs]
+    A --> G[Python Type Generator]
+    G --> H[Pydantic Enums]
+    G --> I[Exception Classes]
+    A --> J[Comprehensive Generator]
+    J --> K[SDK Managers]
+    J --> L[Client Stubs]
+    J --> M[OpenAPI Specs]
+    A --> N[Test Generator]
+    N --> O[Contract Tests]
+    N --> P[Serialization Tests]
+    N --> Q[Integration Tests]
+    A --> R[TypeScript Type Generator]
+    R --> S[TypeScript Enums]
+    R --> T[Exception Classes]
+    R --> U[Client SDK]
+    D --> V[TypeScript SDK]
+    V --> W[React Hooks]
+    V --> X[Web Client]
+    F --> Y[Solidity Contracts]
+    Y --> Z[EVM Integration]
 ```
 
 ## 🔧 Code Generation Pipeline
@@ -98,7 +107,59 @@ pb_value = msg_type.to_protobuf()
 pydantic_value = MessageType.from_protobuf(pb_value)
 ```
 
-### 3. TypeScript Type Generation
+### 3. Solidity Contract Generation
+
+**Tool:** [Protobuf3-Solidity](https://github.com/allenday/protobuf3-solidity)
+**Purpose:** Generate Solidity contracts and libraries from protobuf definitions
+
+**Generates:**
+- `solidity/src/generated/postfiat/v3/` - PostFiat protobuf contracts
+- `solidity/src/generated/a2a/v1/` - A2A protobuf contracts  
+- `solidity/src/generated/google/protobuf/` - Google protobuf types
+
+**Features:**
+- Automatic struct and enum generation from protobuf
+- Type-safe contract interfaces
+- Library-based organization for reusability
+- Foundry integration for modern Solidity development
+- Seamless integration with Python and TypeScript SDKs
+
+**Example:**
+```solidity
+// Auto-generated from protobuf definitions
+library Postfiat_V3 {
+    struct ContextualMessage {
+        string content;
+        MessageType message_type;
+        EncryptionMode encryption;
+    }
+    
+    enum MessageType {
+        CONTEXTUAL_MESSAGE,
+        MULTIPART_MESSAGE_PART
+    }
+    
+    enum EncryptionMode {
+        NONE,
+        NACL_SECRETBOX,
+        AES_256_GCM
+    }
+}
+```
+
+**Build System:**
+```bash
+# Generate Solidity contracts
+make proto
+
+# Build contracts with Foundry
+make sol-build
+
+# Run Solidity tests
+make sol-test
+```
+
+### 4. TypeScript Type Generation
 
 **Script:** `typescript/scripts/generate-typescript-types.ts`
 **Purpose:** Generate TypeScript types and SDK components from protobuf definitions
@@ -130,7 +191,7 @@ const pbValue = MessageType.toProtobuf(msgType);
 const tsValue = MessageType.fromProtobuf(pbValue);
 ```
 
-### 4. Comprehensive SDK Generation
+### 5. Comprehensive SDK Generation
 
 **Script:** `python/scripts/generate_protobuf.py`
 **Purpose:** Generate complete SDK components from protobuf definitions
@@ -150,7 +211,7 @@ const tsValue = MessageType.fromProtobuf(pbValue);
 - OpenAPI generation for REST endpoints
 - Discord integration for command handling
 
-### 5. TypeScript Test Generation
+### 6. TypeScript Test Generation
 
 **Script:** `typescript/scripts/generate-typescript-tests.ts`
 **Purpose:** Generate comprehensive TypeScript test suites from protobuf definitions
@@ -168,6 +229,51 @@ const tsValue = MessageType.fromProtobuf(pbValue);
 - Exception hierarchy testing
 - Client SDK integration testing
 - React hooks testing with modern patterns
+
+### 7. Solidity Test Generation
+
+**Tool:** Foundry (forge)
+**Purpose:** Test generated Solidity contracts and custom contract implementations
+
+**Test Structure:**
+- `solidity/test/` - Manual test files
+- `solidity/src/generated/` - Generated contract files (tested via integration)
+
+**Features:**
+- Foundry-based testing framework
+- Gas optimization testing
+- Contract integration testing
+- Protobuf serialization/deserialization testing
+- Cross-language compatibility testing
+
+**Example:**
+```solidity
+// Test generated protobuf contracts
+contract PostfiatV3Test is Test {
+    function testContextualMessage() public {
+        Postfiat_V3.ContextualMessage memory msg = Postfiat_V3.ContextualMessage({
+            content: "Hello, World!",
+            message_type: Postfiat_V3.MessageType.CONTEXTUAL_MESSAGE,
+            encryption: Postfiat_V3.EncryptionMode.NACL_SECRETBOX
+        });
+        
+        assertEq(msg.content, "Hello, World!");
+        assertEq(uint8(msg.message_type), uint8(Postfiat_V3.MessageType.CONTEXTUAL_MESSAGE));
+    }
+}
+```
+
+**Testing Commands:**
+```bash
+# Run all Solidity tests
+make sol-test
+
+# Run specific test file
+cd solidity && forge test --match-contract PostfiatV3Test
+
+# Run with gas reporting
+cd solidity && forge test --gas-report
+```
 - Auto-generated test data and scenarios
 
 ### 6. Test Generation

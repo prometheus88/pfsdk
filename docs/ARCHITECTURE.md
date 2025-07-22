@@ -1,10 +1,10 @@
 # PostFiat SDK Architecture
 
-This document describes the technical architecture and technology stack of the PostFiat SDK, a modern proto-first multi-language SDK with Python and TypeScript support and AI integration capabilities.
+This document describes the technical architecture and technology stack of the PostFiat SDK, a modern proto-first multi-language SDK with Python, TypeScript, and Solidity support and AI integration capabilities.
 
 ## 🎯 Architecture Overview
 
-The PostFiat SDK is built on a **proto-first, API-driven architecture** that automatically generates type-safe Python and TypeScript code, REST APIs, and AI-powered integrations from Protocol Buffer definitions.
+The PostFiat SDK is built on a **proto-first, API-driven architecture** that automatically generates type-safe Python, TypeScript, and Solidity code, REST APIs, and AI-powered integrations from Protocol Buffer definitions.
 
 ```mermaid
 graph TB
@@ -13,43 +13,51 @@ graph TB
     end
     
     subgraph "Code Generation Layer"
-        B[Buf CLI<br/>Protobuf → Python]
+        B[Buf CLI<br/>Protobuf → Python/TypeScript]
         C[Custom Generators<br/>Types & Services]
         D[OpenAPI Generator<br/>REST API Specs]
+        E[Protobuf3-Solidity<br/>Protobuf → Solidity]
     end
     
     subgraph "Core SDK Layer"
-        E[Pydantic Models<br/>Type Safety & Validation]
-        F[SQLModel<br/>Database ORM]
-        G[FastAPI<br/>REST API Server]
-        H[gRPC Services<br/>High Performance RPC]
+        F[Pydantic Models<br/>Type Safety & Validation]
+        G[SQLModel<br/>Database ORM]
+        H[FastAPI<br/>REST API Server]
+        I[gRPC Services<br/>High Performance RPC]
+        J[Solidity Contracts<br/>Smart Contract Logic]
     end
     
     subgraph "AI Integration Layer"
-        I[PydanticAI<br/>AI Agent Framework]
-        J[LLM Integrations<br/>OpenAI, Anthropic, etc.]
+        K[PydanticAI<br/>AI Agent Framework]
+        L[LLM Integrations<br/>OpenAI, Anthropic, etc.]
     end
     
     subgraph "Client Layer"
-        K[Python SDK<br/>Type-safe Client]
-        L[REST API<br/>HTTP/JSON Interface]
-        M[gRPC Client<br/>Binary Protocol]
+        M[Python SDK<br/>Type-safe Client]
+        N[REST API<br/>HTTP/JSON Interface]
+        O[gRPC Client<br/>Binary Protocol]
+        P[TypeScript SDK<br/>Web Client]
+        Q[Solidity Contracts<br/>EVM Integration]
     end
     
     A --> B
     A --> C
     A --> D
-    B --> E
-    C --> E
+    A --> E
+    B --> F
     C --> F
-    E --> G
-    E --> H
-    E --> I
-    F --> G
-    I --> J
-    E --> K
-    G --> L
-    H --> M
+    C --> G
+    E --> J
+    F --> H
+    F --> I
+    F --> K
+    G --> H
+    K --> L
+    F --> M
+    H --> N
+    I --> O
+    F --> P
+    J --> Q
 ```
 
 ## 🛠️ Technology Stack
@@ -59,7 +67,7 @@ graph TB
 
 **Why Protocol Buffers:**
 
-- **Language agnostic:** Generate code for multiple languages
+- **Language agnostic:** Generate code for multiple languages (Python, TypeScript, Solidity)
 - **Schema evolution:** Backward/forward compatibility
 - **Performance:** Efficient binary serialization
 - **Type safety:** Strong typing across all generated code
@@ -86,6 +94,45 @@ service WalletService {
   rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
 }
 ```
+
+### Solidity (Smart Contracts)
+**Role:** Blockchain integration and decentralized application logic
+
+**Why Solidity:**
+
+- **EVM compatibility:** Deploy on Ethereum and EVM-compatible chains
+- **Proto-first generation:** Automatic contract generation from protobuf definitions
+- **Type safety:** Generated contracts maintain protobuf type safety
+- **Integration:** Seamless integration with Python and TypeScript SDKs
+- **Modern tooling:** Foundry-based build system for optimal performance
+
+**Generated Contracts:**
+```solidity
+// Auto-generated from protobuf definitions
+library Postfiat_V3 {
+    struct ContextualMessage {
+        string content;
+        MessageType message_type;
+        EncryptionMode encryption;
+    }
+    
+    enum MessageType {
+        CONTEXTUAL_MESSAGE,
+        MULTIPART_MESSAGE_PART
+    }
+    
+    enum EncryptionMode {
+        NONE,
+        NACL_SECRETBOX,
+        AES_256_GCM
+    }
+}
+```
+
+**Build System:**
+- **Foundry:** Fast, modern Solidity development framework
+- **Protobuf3-Solidity:** Automatic contract generation from .proto files
+- **Integrated tooling:** Seamless integration with Python and TypeScript workflows
 
 ### OpenAPI 3.0
 **Role:** REST API specification and documentation generation

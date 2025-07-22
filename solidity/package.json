@@ -1,0 +1,27 @@
+{
+  "name": "@postfiat/solidity",
+  "version": "0.1.0",
+  "description": "PostFiat SDK Solidity contracts and protobuf integration",
+  "private": true,
+  "scripts": {
+    "install-foundry": "curl -L https://foundry.paradigm.xyz | bash && ~/.foundry/bin/foundryup",
+    "build": "forge build",
+    "test": "forge test",
+    "generate": "cd ../proto && buf generate",
+    "clean": "forge clean && rm -rf src/generated/*",
+    "deploy:local": "forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "deploy:testnet": "forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify"
+  },
+  "dependencies": {
+    "@lazyledger/protobuf3-solidity-lib": "^0.6.0",
+    "@openzeppelin/contracts": "^5.0.0"
+  },
+  "keywords": [
+    "solidity",
+    "protobuf",
+    "postfiat",
+    "blockchain",
+    "smart-contracts"
+  ],
+  "license": "Apache-2.0"
+}
