@@ -83,7 +83,7 @@ proto: deps
 	@echo "🔄 Generating protobuf classes..."
 	cd proto && ../bin/buf generate --template buf.gen.yaml
 	@echo "🔧 Fixing empty structs in Solidity files..."
-	./scripts/fix-empty-structs.sh
+	@cd . && ./scripts/fix-empty-structs.sh
 	@echo "✅ Protobuf generation complete (Python, TypeScript, Solidity)"
 
 types:
@@ -231,6 +231,8 @@ sol-clean:
 # Build Solidity package
 build-sol: sol-deps
 	@echo "📦 Building Solidity contracts..."
+	@echo "🔧 Running fix-empty-structs.sh first..."
+	./scripts/fix-empty-structs.sh
 	@echo "🔧 Fixing remaining issues..."
 	cd solidity && find src/generated -name "*.sol" -exec sed -i '' '/^struct Empty {/,/^}/d' {} \;
 	cd solidity && find src/generated -name "*.sol" -exec sed -i '' '/^library Google_Protobuf {/,/^}/d' {} \;
