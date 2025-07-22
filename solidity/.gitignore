@@ -1,0 +1,29 @@
+# Foundry
+out/
+cache/
+cache_forge/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Generated files  
+src/generated/
+
+# Environment files
+.env
+.env.local
+
+# Build artifacts
+*.tgz
+*.tar.gz
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
