@@ -202,34 +202,13 @@ docs:
 sol-deps:
 	@echo "📦 Installing Solidity dependencies..."
 	cd solidity && (test -d node_modules || npm install)
-	@echo "🔧 Installing/updating protoc-gen-sol plugin..."
-	@if [ ! -f solidity/protoc-gen-sol ]; then \
-		echo "📥 Downloading and building protoc-gen-sol from github.com/allenday/protobuf3-solidity..."; \
-		cd /tmp && rm -rf protobuf3-solidity && \
-		git clone https://github.com/allenday/protobuf3-solidity.git && \
-		cd protobuf3-solidity && \
-		git checkout protobuf-solidity-enhancements && \
-		go build -o protoc-gen-sol ./cmd/protoc-gen-sol && \
-		cp protoc-gen-sol /Users/allenday/src/postfiat/pfsdk/solidity/ && \
-		echo "✅ protoc-gen-sol plugin installed successfully"; \
+	@echo "🔧 Building protoc-gen-sol plugin from submodule..."
+	@if [ ! -f solidity/protoc-gen-sol/bin/protoc-gen-sol ]; then \
+		echo "🔨 Building protoc-gen-sol binary from submodule..."; \
+		cd solidity/protoc-gen-sol && make build && \
+		echo "✅ protoc-gen-sol plugin built successfully"; \
 	else \
-		echo "🔄 Updating protoc-gen-sol plugin from upstream..."; \
-		cd /tmp && \
-		if [ -d protobuf3-solidity ]; then \
-			cd protobuf3-solidity && \
-			git pull origin protobuf-solidity-enhancements && \
-			git checkout protobuf-solidity-enhancements && \
-			go build -o protoc-gen-sol ./cmd/protoc-gen-sol && \
-			cp protoc-gen-sol /Users/allenday/src/postfiat/pfsdk/solidity/ && \
-			echo "✅ protoc-gen-sol plugin updated successfully"; \
-		else \
-			git clone https://github.com/allenday/protobuf3-solidity.git && \
-			cd protobuf3-solidity && \
-			git checkout protobuf-solidity-enhancements && \
-			go build -o protoc-gen-sol ./cmd/protoc-gen-sol && \
-			cp protoc-gen-sol /Users/allenday/src/postfiat/pfsdk/solidity/ && \
-			echo "✅ protoc-gen-sol plugin installed successfully"; \
-		fi; \
+		echo "✅ protoc-gen-sol plugin already built"; \
 	fi
 
 sol-build: sol-deps

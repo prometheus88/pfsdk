@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
+import "@forge-std/Test.sol";
 import "../src/contracts/AgentRegistrySimple.sol";
 
 contract AgentRegistrySimpleTest is Test {
