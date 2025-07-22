@@ -33,6 +33,12 @@ cd pfsdk
 make sol-deps
 make proto
 make sol-build
+
+# Run tests
+cd solidity && forge test
+
+# Deploy contracts (local development)
+cd solidity && npm run deploy:local
 ```
 
 ## 🏗️ Architecture
