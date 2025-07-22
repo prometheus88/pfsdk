@@ -76,6 +76,7 @@ deps:
 	else \
 		echo "✅ buf CLI tool already exists"; \
 	fi
+	@$(MAKE) sol-deps
 
 # Code generation
 proto: deps
