@@ -10,6 +10,7 @@ optimizer_runs = 200
 remappings = [
     "@openzeppelin/=node_modules/@openzeppelin/",
     "@protobuf3-solidity-lib/=node_modules/@lazyledger/protobuf3-solidity-lib/contracts/",
+    "@forge-std/=../third_party/forge-std/src/",
 ]
 
 # Gas optimization

@@ -10,3 +10,6 @@
 [submodule "solidity/protoc-gen-sol"]
 	path = solidity/protoc-gen-sol
 	url = https://github.com/allenday/protobuf3-solidity.git
+[submodule "third_party/forge-std"]
+	path = third_party/forge-std
+	url = https://github.com/foundry-rs/forge-std.git
