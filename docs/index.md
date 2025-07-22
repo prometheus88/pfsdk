@@ -49,7 +49,7 @@ make sol-build
 
 ## API Documentation
 
-- **[Python SDK API](generated/python/index.html)** - Complete Python API reference with Sphinx
+- **[Python SDK API](generated/python/index.html)** - Complete Python API reference with mkdocstrings
 - **[TypeScript SDK API](generated/typescript/index.html)** - Complete TypeScript API reference with TypeDoc
 - **[Solidity Integration](solidity/README.md)** - Smart contract development guide
 - **[OpenAPI Specification](api/openapi.md)** - Interactive REST API documentation

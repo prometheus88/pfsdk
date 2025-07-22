@@ -63,7 +63,7 @@ deps:
 	@echo "📦 Installing Python dependencies..."
 	pip install -e .
 	pip install -e "python/[dev]"
-	pip install build twine sphinx sphinx-rtd-theme sphinx-autoapi myst-parser mkdocs mkdocs-material mkdocs-swagger-ui-tag
+	pip install build twine mkdocs mkdocs-material mkdocs-swagger-ui-tag mkdocstrings[python]
 	@echo "📦 Installing TypeScript dependencies (workaround for rollup native module bug)..."
 	cd typescript && rm -rf node_modules package-lock.json && timeout 300 npm install || echo "⚠️  TypeScript dependency installation timed out after 5 minutes"
 	@echo "🔧 Installing buf CLI tool..."
@@ -191,13 +191,13 @@ build-ts:
 # Build all documentation (mkdocs, Sphinx, TypeDoc, Swagger, etc.)
 docs:
 	@echo "📚 Building documentation..."
-	# Python API docs (Sphinx)
-	cd python && sphinx-build -b html docs docs/_build/html
+	# Generate protobuf documentation and copy API specs
+	python scripts/generate_docs.py
 	# TypeScript codegen (ensure src/index.ts exists)
 	cd typescript && npm run generate:all
 	# TypeScript API docs (TypeDoc)
 	cd typescript && npx typedoc --out ../docs/generated/typescript src/index.ts --plugin typedoc-plugin-markdown --theme markdown --skipErrorChecking
-	# MkDocs site
+	# MkDocs site (now includes Python API docs via mkdocstrings)
 	mkdocs build
 	@echo "✅ Documentation build complete!"
 
