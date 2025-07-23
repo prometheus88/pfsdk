@@ -192,7 +192,7 @@ build-ts:
 docs:
 	@echo "📚 Building documentation..."
 	# Generate protobuf documentation and copy API specs
-	python scripts/generate_docs.py
+	python3 scripts/generate_docs.py
 	# TypeScript codegen (ensure src/index.ts exists)
 	cd typescript && npm run generate:all
 	# TypeScript API docs (TypeDoc)

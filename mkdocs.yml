@@ -21,7 +21,7 @@ nav:
   - Contributing: CONTRIBUTING.md
   - API Reference:
       - OpenAPI Specification: api/openapi.md
-      - Python SDK: generated/python/index.md
+      - Python SDK: python-api.md
       - Protocol Buffers: generated/proto/index.md
   - Research:
       - Key Management: research/KEY-MANAGEMENT.md
