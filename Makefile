@@ -64,8 +64,8 @@ deps:
 	pip install -e .
 	pip install -e "python/[dev]"
 	pip install build twine mkdocs mkdocs-material mkdocs-swagger-ui-tag mkdocstrings[python]
-	@echo "📦 Installing TypeScript dependencies (workaround for rollup native module bug)..."
-	cd typescript && rm -rf node_modules package-lock.json && timeout 300 npm install || echo "⚠️  TypeScript dependency installation timed out after 5 minutes"
+	@echo "📦 Installing TypeScript dependencies..."
+	cd typescript && (test -d node_modules || npm ci || npm install)
 	@echo "🔧 Installing buf CLI tool..."
 	@if [ ! -f bin/buf ]; then \
 		echo "📥 Downloading buf CLI tool..."; \
