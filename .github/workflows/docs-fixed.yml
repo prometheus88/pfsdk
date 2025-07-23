@@ -1,0 +1,45 @@
+name: Documentation Fixed
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      deploy_to_pages:
+        description: 'Deploy to GitHub Pages (only works on main branch)'
+        required: false
+        default: 'true'
+        type: boolean
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Test step
+        run: |
+          echo "Documentation workflow is running!"
+          echo "Branch: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Deploy to pages: ${{ github.event.inputs.deploy_to_pages }}"
+
+  deploy:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_dispatch' || github.event.inputs.deploy_to_pages == 'true')
+    steps:
+      - name: Test deploy step
+        run: |
+          echo "Deploy step would run here"
+          echo "This is just a test - no actual deployment" 
