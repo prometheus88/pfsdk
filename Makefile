@@ -191,6 +191,8 @@ build-ts:
 # Build all documentation (mkdocs, Sphinx, TypeDoc, Swagger, etc.)
 docs:
 	@echo "📚 Building documentation..."
+	# Generate OpenAPI specification from protobuf
+	cd proto && ../bin/buf generate --template buf.gen.openapi-only.yaml
 	# Generate protobuf documentation and copy API specs
 	python3 scripts/generate_docs.py
 	# TypeScript codegen (ensure src/index.ts exists)
