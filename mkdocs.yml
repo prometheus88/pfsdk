@@ -4,6 +4,8 @@ site_url: https://prometheus88.github.io/pfsdk/
 plugins:
   - search
   - swagger-ui-tag
+  - mermaid2:
+      version: 10.6.1
   - mkdocstrings:
       handlers:
         python:
@@ -32,7 +34,11 @@ nav:
 markdown_extensions:
   - admonition
   - codehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid
   - pymdownx.tabbed
   - pymdownx.details
   - toc:
